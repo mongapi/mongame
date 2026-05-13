@@ -1,15 +1,30 @@
 import { useState, useEffect } from "react";
-import { useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { motion, AnimatePresence } from "motion/react";
 import {
     Users, Play, Pause, SkipForward,
     AlertTriangle, ShieldAlert, CheckCircle2,
-    WifiOff, BrainCircuit, Activity
+    WifiOff, BrainCircuit, Activity, PlusCircle
 } from "lucide-react";
 import echo from "@/lib/echo";
 import { sessionAPI } from "@/api/api";
 
 const API_URL = import.meta.env.VITE_API_URL;
+const RECENT_SESSIONS_PER_PAGE = 6;
+
+function formatDateTime(value) {
+    if (!value) {
+        return 'Sin fecha';
+    }
+
+    return new Intl.DateTimeFormat('es-ES', {
+        day: '2-digit',
+        month: 'short',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+    }).format(new Date(value));
+}
 
 const StatusBadge = ({ status }) => {
     const statusConfig = {
@@ -51,20 +66,52 @@ const StudentRow = ({ student, index }) => (
 
 export default function TeacherDashboard() {
     const { sessionId } = useParams();
+    const navigate = useNavigate();
     const token = localStorage.getItem("token");
     const headers = { "Content-Type": "application/json", "Accept": "application/json", "Authorization": `Bearer ${token}` };
 
     const [session, setSession] = useState(null);
     const [alerts, setAlerts]   = useState([]);
     const [loading, setLoading] = useState(true);
+    const [recentSessions, setRecentSessions] = useState([]);
+    const [emptyStateError, setEmptyStateError] = useState('');
+    const [recentSessionsPage, setRecentSessionsPage] = useState(1);
 
     useEffect(() => {
-        if (!sessionId) { setLoading(false); return; }
+        if (!sessionId) {
+            sessionAPI.list()
+                .then((result) => {
+                    if (!result.success) {
+                        setEmptyStateError(result.error);
+                        setLoading(false);
+                        return;
+                    }
+
+                    setRecentSessions(result.data ?? []);
+                    setRecentSessionsPage(1);
+                    setLoading(false);
+                })
+                .catch(() => setLoading(false));
+            return;
+        }
+
         fetch(`${API_URL}/api/sessions/${sessionId}`, { headers })
             .then(r => r.json())
             .then(({ data }) => { setSession(data); setLoading(false); })
             .catch(() => setLoading(false));
     }, [sessionId]);
+
+    const totalRecentSessionsPages = Math.max(1, Math.ceil(recentSessions.length / RECENT_SESSIONS_PER_PAGE));
+    const paginatedRecentSessions = recentSessions.slice(
+        (recentSessionsPage - 1) * RECENT_SESSIONS_PER_PAGE,
+        recentSessionsPage * RECENT_SESSIONS_PER_PAGE,
+    );
+
+    useEffect(() => {
+        if (recentSessionsPage > totalRecentSessionsPages) {
+            setRecentSessionsPage(totalRecentSessionsPages);
+        }
+    }, [recentSessionsPage, totalRecentSessionsPages]);
 
     useEffect(() => {
         if (!session) return;
@@ -97,10 +144,120 @@ export default function TeacherDashboard() {
     };
 
     if (loading) return <div className="min-h-screen flex items-center justify-center text-white font-['Orbitron']">CARGANDO SESIÓN...</div>;
+    if (!sessionId) {
+        if (recentSessions.length === 0) {
+            return (
+                <div className="min-h-screen flex items-center justify-center px-6">
+                    <div className="max-w-2xl rounded-3xl border border-white/10 bg-zinc-950/60 p-8 text-center text-white backdrop-blur-xl">
+                        <h1 className="font-['Orbitron'] text-2xl font-black text-cyan-300">TODAVÍA NO TIENES SESIONES</h1>
+                        <p className="mt-4 text-sm leading-6 text-zinc-400">
+                            {emptyStateError || 'Cuando crees una sesión desde un juego o un lesson plan aparecerá aquí para poder controlarla desde el dashboard.'}
+                        </p>
+                        <div className="mt-6 flex justify-center gap-3">
+                            <button
+                                type="button"
+                                onClick={() => navigate('/sessions/create')}
+                                className="inline-flex items-center gap-2 rounded-2xl border border-cyan-400/30 bg-cyan-400/15 px-5 py-3 font-bold text-cyan-200 transition hover:bg-cyan-400/25"
+                            >
+                                <PlusCircle className="h-5 w-5" />
+                                Iniciar una sesión
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
+        return (
+            <div className="min-h-screen flex items-center justify-center px-6">
+                <div className="w-full max-w-5xl rounded-3xl border border-white/10 bg-zinc-950/60 p-8 text-white backdrop-blur-xl">
+                    <div className="mb-6 flex items-end justify-between gap-6">
+                        <div>
+                            <h1 className="font-['Orbitron'] text-2xl font-black text-cyan-300">SESIONES RECIENTES</h1>
+                            <p className="mt-4 text-sm leading-6 text-zinc-400">
+                                Elige una sesión ya creada para retomarla o inicia una nueva.
+                            </p>
+                        </div>
+                        <button
+                            type="button"
+                            onClick={() => navigate('/sessions/create')}
+                            className="inline-flex items-center gap-2 rounded-2xl border border-cyan-400/30 bg-cyan-400/15 px-5 py-3 font-bold text-cyan-200 transition hover:bg-cyan-400/25"
+                        >
+                            <PlusCircle className="h-5 w-5" />
+                            Iniciar una sesión
+                        </button>
+                    </div>
+
+                    <div className="space-y-3">
+                        {paginatedRecentSessions.map((recentSession) => {
+                            const sessionTypeLabel = recentSession.lesson_plan
+                                ? `Lesson plan · ${recentSession.total_phases ?? 1} fase${(recentSession.total_phases ?? 1) === 1 ? '' : 's'}`
+                                : recentSession.game?.game_type?.name || 'Juego';
+
+                            return (
+                            <button
+                                key={recentSession.id}
+                                type="button"
+                                onClick={() => navigate(`/dashboard/${recentSession.id}`)}
+                                className="grid w-full grid-cols-[110px_minmax(0,1.2fr)_160px_210px_140px] items-center gap-4 rounded-2xl border border-white/10 bg-white/5 px-5 py-4 text-left transition hover:bg-white/10"
+                            >
+                                <span className="font-['Orbitron'] text-lg font-black text-white">#{recentSession.id}</span>
+                                <div className="min-w-0">
+                                    <p className="truncate font-bold text-white">{recentSession.lesson_plan?.name || recentSession.game?.name || 'Sesión sin título'}</p>
+                                    <p className="truncate text-sm text-zinc-500">{sessionTypeLabel}</p>
+                                </div>
+                                <span className="text-sm uppercase text-zinc-400">{recentSession.status}</span>
+                                <div className="text-sm text-zinc-500">
+                                    <p>Creada: {formatDateTime(recentSession.created_at)}</p>
+                                    <p>Actualizada: {formatDateTime(recentSession.updated_at)}</p>
+                                </div>
+                                <div className="text-right text-sm text-zinc-400">
+                                    <p className="font-semibold text-white">PIN {recentSession.pin}</p>
+                                    <p>Fase {Number(recentSession.current_phase_index ?? 0) + 1}/{recentSession.total_phases ?? 1}</p>
+                                </div>
+                            </button>
+                        );})}
+                    </div>
+
+                    {totalRecentSessionsPages > 1 ? (
+                        <div className="mt-6 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-white/10 bg-white/5 px-4 py-3">
+                            <p className="text-sm text-zinc-400">Paginación de sesiones · Página {recentSessionsPage} de {totalRecentSessionsPages}</p>
+                            <div className="flex items-center gap-3">
+                                <button
+                                    type="button"
+                                    onClick={() => setRecentSessionsPage((page) => Math.max(1, page - 1))}
+                                    disabled={recentSessionsPage === 1}
+                                    className="rounded-xl border border-white/10 bg-black/20 px-4 py-2 text-sm font-semibold text-white transition hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-40"
+                                >
+                                    Anterior
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => setRecentSessionsPage((page) => Math.min(totalRecentSessionsPages, page + 1))}
+                                    disabled={recentSessionsPage === totalRecentSessionsPages}
+                                    className="rounded-xl border border-white/10 bg-black/20 px-4 py-2 text-sm font-semibold text-white transition hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-40"
+                                >
+                                    Siguiente
+                                </button>
+                            </div>
+                        </div>
+                    ) : null}
+                </div>
+            </div>
+        );
+    }
+
     if (!session) return (
-        <div className="min-h-screen flex items-center justify-center flex-col gap-4">
-            <div className="text-red-400 font-['Orbitron'] text-xl">SIN SESIÓN ACTIVA</div>
-            <div className="text-zinc-500 text-sm">Navega a /dashboard/ID para cargar una sesión</div>
+        <div className="min-h-screen flex items-center justify-center flex-col gap-4 px-6 text-center">
+            <div className="text-red-400 font-['Orbitron'] text-xl">NO SE ENCONTRÓ ESA SESIÓN</div>
+            <div className="max-w-xl text-sm text-zinc-500">El dashboard solo puede abrir sesiones activas o existentes. Si acabas de guardar un juego, vuelve al editor y crea una sesión con ese juego.</div>
+            <button
+                type="button"
+                onClick={() => navigate('/games')}
+                className="rounded-2xl border border-cyan-400/30 bg-cyan-400/15 px-5 py-3 font-bold text-cyan-200 transition hover:bg-cyan-400/25"
+            >
+                Volver a juegos
+            </button>
         </div>
     );
 
@@ -109,8 +266,8 @@ export default function TeacherDashboard() {
     return (
         <div className="min-h-screen pl-24 pr-8 py-8 relative flex flex-col gap-6">
             <div className="fixed inset-0 overflow-hidden -z-10 pointer-events-none">
-                <motion.div animate={{ x: [0, 50, 0], y: [0, -30, 0] }} transition={{ duration: 15, repeat: Infinity }} className="absolute top-[10%] left-[20%] w-[600px] h-[600px] bg-purple-600/10 rounded-full blur-[120px]" />
-                <motion.div animate={{ x: [0, -50, 0], y: [0, 30, 0] }} transition={{ duration: 12, repeat: Infinity }} className="absolute bottom-[10%] right-[10%] w-[500px] h-[500px] bg-cyan-600/10 rounded-full blur-[100px]" />
+                <motion.div animate={{ x: [0, 50, 0], y: [0, -30, 0] }} transition={{ duration: 15, repeat: Infinity }} className="absolute top-[10%] left-[20%] h-150 w-150 rounded-full bg-purple-600/10 blur-[120px]" />
+                <motion.div animate={{ x: [0, -50, 0], y: [0, 30, 0] }} transition={{ duration: 12, repeat: Infinity }} className="absolute bottom-[10%] right-[10%] h-125 w-125 rounded-full bg-cyan-600/10 blur-[100px]" />
             </div>
 
             <header className="flex justify-between items-end bg-zinc-950/50 p-6 rounded-2xl border border-white/10 backdrop-blur-md">

@@ -77,10 +77,10 @@ export default function GameChooserView() {
                         <Gamepad2 className="w-16 h-16 text-white" />
                     </motion.div>
                     <h1 className="text-5xl font-black font-['Orbitron'] text-transparent bg-clip-text bg-linear-to-r from-purple-400 to-cyan-400 mb-4 tracking-wider drop-shadow-lg">
-                        SELECCIONA TU DESAFÍO
+                        CREA UNA SESIÓN
                     </h1>
                     <p className="text-zinc-400 text-lg max-w-2xl">
-                        Elige el tipo de juego que quieres crear y personalízalo con tu contenido.
+                        Elige la mecánica que vas a lanzar en clase. Después ajustarás el contenido y abrirás una sesión real para el alumnado.
                     </p>
                 </div>
 
@@ -88,7 +88,7 @@ export default function GameChooserView() {
                     {gamesList.map((game, idx) => (
                         <motion.div key={game.id} initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }}
                             transition={{ delay: idx * 0.1 }} whileHover={{ scale: 1.03, y: -5 }} whileTap={{ scale: 0.98 }}>
-                            <Card onClick={() => game.code && navigate(`/games/create/${game.code}`)}
+                            <Card onClick={() => game.code && navigate(`/sessions/create/${game.code}`)}
                                 className={`bg-black/40 backdrop-blur-xl border-zinc-800 transition-all group h-full overflow-hidden relative ${game.code ? 'cursor-pointer hover:border-cyan-500/50 hover:shadow-[0_0_30px_rgba(34,211,238,0.2)]' : 'cursor-not-allowed opacity-60'}`}>
                                 <div className="absolute inset-0 bg-linear-to-br from-cyan-500/0 to-purple-500/0 group-hover:from-cyan-500/10 group-hover:to-purple-500/10 transition-colors duration-500" />
                                 <CardContent className="p-6 relative z-10">

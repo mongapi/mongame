@@ -99,6 +99,16 @@ export const authAPI = {
 };
 
 export const sessionAPI = {
+    async list() {
+        try {
+            const response = await api.get('/sessions');
+            return { success: true, data: response.data.data ?? [] };
+        } catch (error) {
+            const message = error.response?.data?.message || 'No se pudieron cargar las sesiones';
+            return { success: false, error: message };
+        }
+    },
+
     async get(id) {
         try {
             const response = await api.get(`/sessions/${id}`);
@@ -164,6 +174,16 @@ export const gameTypeAPI = {
 };
 
 export const gameAPI = {
+    async list() {
+        try {
+            const response = await api.get('/games');
+            return { success: true, data: response.data.data ?? [] };
+        } catch (error) {
+            const message = error.response?.data?.message || 'No se pudieron cargar los juegos';
+            return { success: false, error: message };
+        }
+    },
+
     async get(id) {
         try {
             const response = await api.get(`/games/${id}`);
@@ -213,6 +233,26 @@ export const lessonPlanAPI = {
         } catch (error) {
             const message = error.response?.data?.message || 'No se pudo cargar el lesson plan';
             return { success: false, error: message };
+        }
+    },
+
+    async create(payload) {
+        try {
+            const response = await api.post('/lesson-plans', payload);
+            return { success: true, data: response.data.data };
+        } catch (error) {
+            const message = error.response?.data?.message || 'No se pudo crear el lesson plan';
+            return { success: false, error: message, details: error.response?.data?.errors ?? null };
+        }
+    },
+
+    async update(id, payload) {
+        try {
+            const response = await api.put(`/lesson-plans/${id}`, payload);
+            return { success: true, data: response.data.data };
+        } catch (error) {
+            const message = error.response?.data?.message || 'No se pudo actualizar el lesson plan';
+            return { success: false, error: message, details: error.response?.data?.errors ?? null };
         }
     },
 };

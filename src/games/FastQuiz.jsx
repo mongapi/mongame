@@ -1,69 +1,54 @@
-import { useEffect, useState } from "react";
-import { useLocation, useSearchParams } from "react-router-dom";
+import { useEffect, useMemo, useState } from "react";
 import { motion } from "motion/react";
 import { AlertCircle, CheckCircle2, Loader, Timer, XCircle, Zap } from "lucide-react";
 import { sessionAPI } from "@/api/api";
+import { GameErrorState, GameLoadingState } from "@/games/shared/GameScreenShell";
+import { useSessionGame } from "@/games/shared/useSessionGame";
 
-const fallbackQuestion = {
-    id: "q1",
-    text: "¿Cuál es el protocolo principal utilizado para enviar correos electrónicos en internet?",
-    timeLimit: 15,
-    options: [
-        { id: "a", text: "FTP (File Transfer Protocol)" },
-        { id: "b", text: "SMTP (Simple Mail Transfer Protocol)" },
-        { id: "c", text: "HTTP (Hypertext Transfer Protocol)" },
-        { id: "d", text: "SSH (Secure Shell)" }
-    ],
-    correctAnswer: "b"
-};
+function resolveQuizContent(gameContent) {
+    return {
+        questions: Array.isArray(gameContent?.questions) ? gameContent.questions : [],
+    };
+}
+
+function validateQuizContent(content) {
+    const firstQuestion = content.questions?.[0];
+
+    if (!firstQuestion) {
+        return 'Esta sesión no tiene ninguna pregunta configurada todavía.';
+    }
+
+    if (!firstQuestion.text || !Array.isArray(firstQuestion.options) || firstQuestion.options.length < 2) {
+        return 'La primera pregunta del quiz no tiene el contenido mínimo para jugar.';
+    }
+
+    return '';
+}
 
 export default function QuizGame() {
-    const location = useLocation();
-    const [searchParams] = useSearchParams();
-    const sessionId = searchParams.get('sessionId');
+    const {
+        session,
+        sessionId,
+        content,
+        isLoading,
+        error,
+        setError,
+    } = useSessionGame({
+        resolveContent: resolveQuizContent,
+        validateContent: validateQuizContent,
+    });
 
-    const [session, setSession] = useState(location.state?.session ?? null);
-    const [timeLeft, setTimeLeft] = useState((location.state?.session?.game_content?.questions?.[0]?.timeLimit) ?? fallbackQuestion.timeLimit);
+    const currentQuestion = useMemo(() => content.questions?.[0] ?? null, [content.questions]);
+    const [timeLeft, setTimeLeft] = useState(currentQuestion?.timeLimit ?? 15);
     const [selectedOption, setSelectedOption] = useState(null);
     const [gameState, setGameState] = useState("playing"); // 'playing', 'answered', 'timeout'
-    const [error, setError] = useState('');
-    const [isLoading, setIsLoading] = useState(Boolean(sessionId) && !location.state?.session);
     const [isSubmitting, setIsSubmitting] = useState(false);
 
-    const currentQuestion = session?.game_content?.questions?.[0] ?? fallbackQuestion;
-
     useEffect(() => {
-        setTimeLeft(currentQuestion.timeLimit ?? fallbackQuestion.timeLimit);
-    }, [currentQuestion.id, currentQuestion.timeLimit]);
-
-    useEffect(() => {
-        if (!sessionId || session) {
-            setIsLoading(false);
-            return;
-        }
-
-        let cancelled = false;
-
-        async function loadSession() {
-            const result = await sessionAPI.get(sessionId);
-            if (cancelled) return;
-
-            if (!result.success) {
-                setError(result.error);
-                setIsLoading(false);
-                return;
-            }
-
-            setSession(result.data);
-            setIsLoading(false);
-        }
-
-        loadSession();
-
-        return () => {
-            cancelled = true;
-        };
-    }, [session, sessionId]);
+        setTimeLeft(currentQuestion?.timeLimit ?? 15);
+        setSelectedOption(null);
+        setGameState('playing');
+    }, [currentQuestion?.id, currentQuestion?.timeLimit]);
 
     // Lógica del Temporizador
     useEffect(() => {
@@ -77,6 +62,7 @@ export default function QuizGame() {
 
     // Manejador de selección
     const handleSelect = async (optionId) => {
+        if (!currentQuestion) return;
         if (gameState !== "playing" || isSubmitting) return;
 
         setError('');
@@ -115,11 +101,11 @@ export default function QuizGame() {
         }
 
         if (gameState === "answered" || gameState === "timeout") {
-            if (optionId === currentQuestion.correctAnswer) {
+            if (optionId === currentQuestion?.correctAnswer) {
                 // Respuesta correcta brilla en verde
                 return baseStyle + "bg-green-500/20 border-green-500 shadow-[0_0_30px_rgba(34,197,94,0.4)] text-white scale-[1.02] z-10";
             }
-            if (optionId === selectedOption && optionId !== currentQuestion.correctAnswer) {
+            if (optionId === selectedOption && optionId !== currentQuestion?.correctAnswer) {
                 // Respuesta incorrecta seleccionada brilla en rojo
                 return baseStyle + "bg-red-500/20 border-red-500 shadow-[0_0_20px_rgba(239,68,68,0.4)] text-white opacity-90";
             }
@@ -129,12 +115,11 @@ export default function QuizGame() {
     };
 
     if (isLoading) {
-        return (
-            <div className="min-h-screen flex items-center justify-center gap-3 text-white">
-                <Loader className="h-6 w-6 animate-spin" />
-                CARGANDO SESION...
-            </div>
-        );
+        return <GameLoadingState title="Cargando sesión del quiz..." />;
+    }
+
+    if (error || !currentQuestion) {
+        return <GameErrorState message={error || 'No hay una pregunta disponible para esta sesión.'} />;
     }
 
     return (

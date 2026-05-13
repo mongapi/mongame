@@ -14,6 +14,8 @@ import HomeView from "@/views/HomeView";
 import DashboardView from "@/views/DashboardView";
 import GameChooserView from "@/views/GameChooserView";
 import GameEditorView from "@/views/GameEditorView";
+import GameLibraryView from "@/views/GameLibraryView";
+import LessonPlanEditorView from "@/views/LessonPlanEditorView";
 
 // Vistas admin (las crearemos después)
 import AdminDashboardView from "@/views/admin/AdminDashboardView";
@@ -44,10 +46,14 @@ export default function AppRoutes() {
             <Route element={<TeacherLayout />}>
                 <Route path="/dashboard" element={<DashboardView />} />
                 <Route path="/dashboard/:sessionId" element={<DashboardView />} />
-                <Route path="/games" element={<GameChooserView />} />
+                <Route path="/games" element={<GameLibraryView />} />
                 <Route path="/games/create" element={<GameChooserView />} />
                 <Route path="/games/create/:type" element={<GameEditorView />} />
                 <Route path="/games/:id/edit" element={<GameEditorView />} />
+                <Route path="/lesson-plans/create" element={<LessonPlanEditorView />} />
+                <Route path="/lesson-plans/:id/edit" element={<LessonPlanEditorView />} />
+                <Route path="/sessions/create" element={<GameChooserView />} />
+                <Route path="/sessions/create/:type" element={<GameEditorView />} />
             </Route>
 
             {/* Admin - descomentar cuando tengamos las vistas */}

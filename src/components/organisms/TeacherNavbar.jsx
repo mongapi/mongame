@@ -46,8 +46,8 @@ export default function TeacherNavbar() {
             <div className="flex-1 w-full px-4 space-y-4">
                 <NavItem icon={Home}     label="INICIO"      path="/dashboard" />
                 <NavItem icon={Activity} label="DASHBOARD"   path="/dashboard" />
-                <NavItem icon={Gamepad2} label="MIS JUEGOS"  path="/games" />
-                <NavItem icon={Library}  label="PLANTILLAS"  path="/games/create" />
+                <NavItem icon={Library}  label="BIBLIOTECA"  path="/games" />
+                <NavItem icon={Gamepad2} label="CREAR SESIÓN" path="/sessions/create" />
                 <NavItem icon={Settings} label="CONFIG"      path="/config" />
                 <NavItem icon={Power}    label="CERRAR"      path="/login" />
             </div>

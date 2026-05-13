@@ -1,40 +1,28 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useMemo, useState, useRef, useEffect } from 'react';
 import { useFrame } from '@react-three/fiber';
 import { Text, Float, Sparkles, Html } from '@react-three/drei';
 import * as THREE from 'three';
 import RoomCanvas from '../components/canvas3D/scenes/RoomCanvas';
 import { motion, AnimatePresence } from 'motion/react';
 import { Crosshair, ShieldAlert, Zap, Award, RotateCcw, AlertTriangle } from 'lucide-react';
+import { GameErrorState, GameLoadingState } from '@/games/shared/GameScreenShell';
+import { useSessionGame } from '@/games/shared/useSessionGame';
+import { validateGameContent } from '@/games/shared/gameContentValidation';
 
-const QUESTIONS = [
-  {
-    q: "¿Qué componente de la computadora es considerado el 'cerebro'?",
-    answers: [
-      { text: "CPU", correct: true, id: 1 },
-      { text: "Disco Duro", correct: false, id: 2 },
-      { text: "Tarjeta Gráfica", correct: false, id: 3 },
-      { text: "Memoria RAM", correct: false, id: 4 }
-    ]
-  },
-  {
-    q: "¿Qué lenguaje se usa principalmente para estructurar contenido web?",
-    answers: [
-      { text: "HTML", correct: true, id: 1 },
-      { text: "CSS", correct: false, id: 2 },
-      { text: "JavaScript", correct: false, id: 3 },
-      { text: "Python", correct: false, id: 4 }
-    ]
-  },
-  {
-    q: "¿Cuál fue la primera red antecesora del Internet actual?",
-    answers: [
-      { text: "ARPANET", correct: true, id: 1 },
-      { text: "Intranet", correct: false, id: 2 },
-      { text: "Ethernet", correct: false, id: 3 },
-      { text: "NSFNET", correct: false, id: 4 }
-    ]
-  }
-];
+function resolveShootingContent(gameContent) {
+  const questions = Array.isArray(gameContent?.questions)
+    ? gameContent.questions.map((question, questionIndex) => ({
+        q: question.text,
+        answers: (question.options ?? []).map((option, optionIndex) => ({
+          text: option,
+          correct: Number(question.correct) === optionIndex,
+          id: `${question.id ?? questionIndex}-${optionIndex}`,
+        })),
+      }))
+    : [];
+
+  return { questions };
+}
 
 const INTER_FONT = "https://fonts.gstatic.com/s/inter/v12/UcCO3FwrK3iLTeHuS_fvQtMwCp50KnMw2boKoduKmMEVuLyeMZhrib2Bg-4.ttf";
 
@@ -144,15 +132,37 @@ const AnswerTarget = ({ answer, position, onClick, disabled }) => {
 };
 
 export default function Shooter3D() {
+  const { content, isLoading, error } = useSessionGame({
+    resolveContent: resolveShootingContent,
+    validateContent: (resolvedContent) => validateGameContent('shooting', {
+      questions: resolvedContent.questions.map((question) => ({
+        text: question.q,
+        options: question.answers.map((answer) => answer.text),
+        correct: question.answers.findIndex((answer) => answer.correct),
+      })),
+    }),
+  });
+
+  const questions = useMemo(() => content.questions ?? [], [content.questions]);
   const [qIndex, setQIndex] = useState(0);
   const [score, setScore] = useState(0);
-  const [enemyHealth, setEnemyHealth] = useState(QUESTIONS.length * 100);
-  const maxEnemyHealth = QUESTIONS.length * 100;
+  const maxEnemyHealth = questions.length * 100;
+  const [enemyHealth, setEnemyHealth] = useState(maxEnemyHealth);
 
   const [isComputing, setIsComputing] = useState(false);
   const [tookDamage, setTookDamage] = useState(false);
   const [feedback, setFeedback] = useState(null); // { text, type }
   const [gameState, setGameState] = useState('playing'); // playing, won, lost
+
+  useEffect(() => {
+    setEnemyHealth(maxEnemyHealth);
+    setQIndex(0);
+    setScore(0);
+    setGameState('playing');
+    setFeedback(null);
+    setIsComputing(false);
+    setTookDamage(false);
+  }, [maxEnemyHealth]);
 
   const handleShoot = (answer) => {
     if (gameState !== 'playing' || isComputing) return;
@@ -174,7 +184,7 @@ export default function Shooter3D() {
       setFeedback(null);
       setIsComputing(false);
 
-      if (qIndex < QUESTIONS.length - 1) {
+      if (qIndex < questions.length - 1) {
         setQIndex(prev => prev + 1);
       } else {
         // En of game
@@ -186,6 +196,14 @@ export default function Shooter3D() {
       }
     }, 2000);
   };
+
+  if (isLoading) {
+    return <GameLoadingState title="Cargando shooter..." />;
+  }
+
+  if (error || questions.length === 0) {
+    return <GameErrorState message={error || 'Este shooter no tiene preguntas configuradas todavía.'} />;
+  }
 
   const restartGame = () => {
     setQIndex(0);
@@ -205,7 +223,7 @@ export default function Shooter3D() {
     [2, 1, -2]
   ];
 
-  const currentQ = QUESTIONS[qIndex];
+  const currentQ = questions[qIndex];
 
   return (
     <div className="flex flex-col h-screen bg-zinc-950 text-white overflow-hidden relative cursor-crosshair">
@@ -217,7 +235,7 @@ export default function Shooter3D() {
               <Crosshair className="w-6 h-6 text-indigo-400" />
             </div>
             <div>
-              <h1 className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-indigo-400 to-purple-400">
+              <h1 className="text-xl font-bold bg-clip-text text-transparent bg-linear-to-r from-indigo-400 to-purple-400">
                 Cyber Target 3D
               </h1>
               <div className="flex items-center gap-2 text-sm text-zinc-400 font-semibold tracking-wider mt-0.5">
@@ -245,13 +263,13 @@ export default function Shooter3D() {
           </AnimatePresence>
         </div>
 
-        <div className="bg-zinc-900/80 backdrop-blur-md px-6 py-4 rounded-2xl border border-white/10 border-t-rose-500/50 shadow-lg shadow-rose-500/10 pointer-events-auto min-w-[200px] text-right">
+        <div className="bg-zinc-900/80 backdrop-blur-md px-6 py-4 rounded-2xl border border-white/10 border-t-rose-500/50 shadow-lg shadow-rose-500/10 pointer-events-auto min-w-50 text-right">
           <h2 className="text-sm font-bold text-rose-400 flex items-center justify-end gap-2 mb-2 uppercase tracking-widest">
             Sistema Enemigo <ShieldAlert className="w-4 h-4" />
           </h2>
           <div className="w-full bg-zinc-800 rounded-full h-3 overflow-hidden">
             <motion.div
-              className="bg-gradient-to-r from-rose-600 to-orange-500 h-full"
+              className="bg-linear-to-r from-rose-600 to-orange-500 h-full"
               initial={{ width: '100%' }}
               animate={{ width: `${(enemyHealth / maxEnemyHealth) * 100}%` }}
               transition={{ type: 'spring', bounce: 0.2 }}
@@ -270,12 +288,12 @@ export default function Shooter3D() {
             animate={{ opacity: 1, y: 0 }}
             className="bg-black/80 backdrop-blur-xl border border-indigo-500/40 shadow-[0_10px_40px_rgba(99,102,241,0.2)] max-w-2xl w-full mx-4 rounded-3xl p-6 text-center pointer-events-auto relative overflow-hidden"
           >
-            <div className="absolute inset-0 bg-gradient-to-b from-indigo-500/10 to-transparent pointer-events-none" />
+            <div className="absolute inset-0 bg-linear-to-b from-indigo-500/10 to-transparent pointer-events-none" />
             <h3 className="text-indigo-400 font-bold mb-2 uppercase tracking-widest text-xs flex items-center justify-center gap-2">
               <div className="w-2 h-2 rounded-full bg-indigo-400 animate-pulse" />
-              Cargando Pregunta {qIndex + 1} de {QUESTIONS.length}
+              Cargando Pregunta {qIndex + 1} de {questions.length}
             </h3>
-            <p className="text-xl md:text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-br from-white to-zinc-400 leading-tight">
+            <p className="text-xl md:text-2xl font-bold bg-clip-text text-transparent bg-linear-to-br from-white to-zinc-400 leading-tight">
               {currentQ.q}
             </p>
             <p className="text-sm font-medium text-zinc-500 mt-4 bg-zinc-900 inline-block px-4 py-1.5 rounded-full border border-zinc-800">

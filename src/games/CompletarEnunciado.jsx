@@ -1,34 +1,141 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { CheckCircle2, XCircle, RotateCcw, Sparkles } from 'lucide-react';
+import { GameErrorState, GameLoadingState } from '@/games/shared/GameScreenShell';
+import { useSessionGame } from '@/games/shared/useSessionGame';
+import { validateGameContent } from '@/games/shared/gameContentValidation';
 
-const levelData = {
-    title: "Ciencias Naturales",
-    instruction: "Arrastra los términos correctos a los huecos para completar el texto.",
-    textParts: [
-        "La ", 
-        " es el proceso mediante el cual las plantas producen su propio alimento utilizando la luz del ",
-        " y el dióxido de ",
-        "."
-    ],
-    blanks: [
-        { id: "b1", correctAnswer: "o1" },
-        { id: "b2", correctAnswer: "o2" },
-        { id: "b3", correctAnswer: "o3" }
-    ],
-    options: [
-        { id: "o1", text: "fotosíntesis" },
-        { id: "o2", text: "sol" },
-        { id: "o3", text: "carbono" },
-        { id: "o4", text: "oxígeno" },
-        { id: "o5", text: "agua" },
-        { id: "o6", text: "clorofila" }
-    ]
-};
+function escapeRegExp(value) {
+    return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+function getHiddenWords(gameContent) {
+    const hiddenWords = Array.isArray(gameContent?.hiddenWords)
+        ? gameContent.hiddenWords
+        : [gameContent?.hiddenWord ?? gameContent?.answer];
+
+    return hiddenWords
+        .map((word) => String(word ?? '').trim())
+        .filter(Boolean);
+}
+
+function splitTextAroundHiddenWords(text, hiddenWords) {
+    if (text.includes('___')) {
+        return text.split('___');
+    }
+
+    if (hiddenWords.length === 0) {
+        return [text];
+    }
+
+    const parts = [];
+    let remainingText = text;
+
+    hiddenWords.forEach((hiddenWord) => {
+        const pattern = new RegExp(escapeRegExp(hiddenWord), 'i');
+        const match = remainingText.match(pattern);
+
+        if (!match || match.index == null) {
+            parts.push(remainingText);
+            remainingText = '';
+            return;
+        }
+
+        const start = match.index;
+        const end = start + match[0].length;
+        parts.push(remainingText.slice(0, start));
+        remainingText = remainingText.slice(end);
+    });
+
+    parts.push(remainingText);
+    return parts;
+}
+
+function ensureOptionsContainAnswers(options, hiddenWords) {
+    const normalizedOptions = [...options];
+
+    hiddenWords.forEach((hiddenWord) => {
+        if (!normalizedOptions.some((option) => option.toLowerCase() === hiddenWord.toLowerCase())) {
+            normalizedOptions.push(hiddenWord);
+        }
+    });
+
+    return normalizedOptions;
+}
+
+function buildBlankMappings(options, hiddenWords) {
+    return hiddenWords.map((hiddenWord, index) => {
+        const correctOptionIndex = options.findIndex((option) => option.toLowerCase() === hiddenWord.toLowerCase());
+
+        return {
+            id: `b${index + 1}`,
+            correctAnswer: correctOptionIndex >= 0 ? `o${correctOptionIndex + 1}` : '',
+        };
+    });
+}
+
+function hasMissingParts(parts, hiddenWords) {
+    return !parts.length || parts.length !== hiddenWords.length + 1;
+}
+
+function splitLegacyText(text, hiddenWords) {
+    if (hiddenWords.length === 0) {
+        return [text, ''];
+    }
+
+    return [text, ''];
+}
+
+function buildBlankData(gameContent) {
+    const text = String(gameContent?.text ?? gameContent?.prompt ?? '');
+    const hiddenWords = getHiddenWords(gameContent);
+    const rawOptions = Array.isArray(gameContent?.options)
+        ? gameContent.options
+        : hiddenWords;
+    const normalizedOptions = ensureOptionsContainAnswers(
+        rawOptions
+        .map((option) => String(option ?? '').trim())
+        .filter(Boolean)
+        .filter((option, index, list) => list.findIndex((item) => item.toLowerCase() === option.toLowerCase()) === index),
+        hiddenWords,
+    );
+    const splitParts = splitTextAroundHiddenWords(text, hiddenWords);
+    const textParts = hasMissingParts(splitParts, hiddenWords)
+        ? splitLegacyText(text, hiddenWords)
+        : splitParts;
+    const blanks = buildBlankMappings(normalizedOptions, hiddenWords);
+
+    const options = normalizedOptions.map((option, index) => ({
+        id: `o${index + 1}`,
+        text: option,
+    }));
+
+    return {
+        title: gameContent?.title ?? 'Completa el enunciado',
+        instruction: gameContent?.hint || 'Arrastra los términos correctos a los huecos para completar el texto.',
+        textParts,
+        blanks,
+        options,
+    };
+}
 
 export default function CompletarEnunciado() {
+    const { content, isLoading, error } = useSessionGame({
+        resolveContent: (gameContent) => gameContent ?? {},
+        validateContent: (gameContent) => validateGameContent('filling_blanks', gameContent),
+    });
+
+    const levelData = useMemo(() => buildBlankData(content), [content]);
     const [filledBlanks, setFilledBlanks] = useState({});
     const [status, setStatus] = useState('playing'); // playing, error, success
+
+    if (isLoading) {
+        return <GameLoadingState title="Cargando ejercicio de completar..." />;
+    }
+
+    if (error || levelData.blanks.length === 0) {
+        return <GameErrorState message={error || 'El ejercicio no tiene huecos configurados todavía.'} />;
+    }
 
     const handleDragStart = (e, optionId, sourceBlankId = null) => {
         e.dataTransfer.setData("optionId", optionId);
@@ -134,9 +241,9 @@ export default function CompletarEnunciado() {
                 <div className="absolute top-[60%] -right-[10%] w-[40%] h-[40%] rounded-full bg-purple-900/10 blur-[100px]" />
             </div>
 
-            <div className="relative z-10 w-full max-w-5xl rounded-[2.5rem] border border-white/5 bg-white/[0.02] p-8 shadow-2xl backdrop-blur-3xl sm:p-12">
+            <div className="relative z-10 w-full max-w-5xl rounded-[2.5rem] border border-white/5 bg-white/2 p-8 shadow-2xl backdrop-blur-3xl sm:p-12">
                 <div className="mb-12 text-center">
-                    <h1 className="mb-4 text-4xl font-black tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-indigo-300 via-purple-300 to-indigo-300 sm:text-5xl flex items-center justify-center gap-4">
+                    <h1 className="mb-4 flex items-center justify-center gap-4 bg-linear-to-r from-indigo-300 via-purple-300 to-indigo-300 bg-clip-text text-4xl font-black tracking-tight text-transparent sm:text-5xl">
                         <Sparkles className="w-8 h-8 text-indigo-400" />
                         {levelData.title}
                         <Sparkles className="w-8 h-8 text-purple-400" />
@@ -146,15 +253,15 @@ export default function CompletarEnunciado() {
                     </p>
                 </div>
 
-                <div className="mb-12 rounded-3xl bg-black/40 p-8 sm:p-12 shadow-[inset_0_0_40px_rgba(0,0,0,0.5)] border border-white/[0.05]">
-                    <p className="text-2xl leading-[3.5rem] sm:leading-[4rem] font-medium text-zinc-200 text-center">
+                <div className="mb-12 rounded-3xl border border-white/5 bg-black/40 p-8 shadow-[inset_0_0_40px_rgba(0,0,0,0.5)] sm:p-12">
+                    <p className="text-center text-2xl font-medium leading-14 text-zinc-200 sm:leading-16">
                         {levelData.textParts.map((part, index) => {
                             const blank = levelData.blanks[index];
-                            
+
                             return (
                                 <React.Fragment key={`part-${index}`}>
                                     <span>{part}</span>
-                                    {blank && (
+                                    {blank ? (
                                         <BlankDropzone
                                             blankId={blank.id}
                                             filledOptionId={filledBlanks[blank.id]}
@@ -166,7 +273,7 @@ export default function CompletarEnunciado() {
                                             status={status}
                                             correctAnswer={blank.correctAnswer}
                                         />
-                                    )}
+                                    ) : null}
                                 </React.Fragment>
                             );
                         })}
@@ -175,7 +282,7 @@ export default function CompletarEnunciado() {
 
                 {/* Options Pool */}
                 <div 
-                    className="min-h-[160px] p-8 rounded-3xl bg-zinc-900/40 border border-zinc-800/60 shadow-inner mb-10 transition-colors duration-300 flex items-center justify-center"
+                    className="mb-10 flex min-h-40 items-center justify-center rounded-3xl border border-zinc-800/60 bg-zinc-900/40 p-8 shadow-inner transition-colors duration-300"
                     onDrop={handleDropOnPool}
                     onDragOver={handleDragOver}
                 >
@@ -204,7 +311,7 @@ export default function CompletarEnunciado() {
                 </div>
 
                 {/* Controls */}
-                <div className="flex flex-col items-center gap-8 min-h-[100px]">
+                <div className="flex min-h-25 flex-col items-center gap-8">
                     <AnimatePresence mode="wait">
                         {status !== 'success' ? (
                             <motion.button
@@ -219,7 +326,7 @@ export default function CompletarEnunciado() {
                                 <span className="relative z-10 flex items-center gap-3 text-lg">
                                     Comprobar Respuesta <CheckCircle2 className="w-6 h-6" />
                                 </span>
-                                <div className="absolute inset-0 z-0 bg-gradient-to-r from-indigo-500 to-purple-600 opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+                                <div className="absolute inset-0 z-0 bg-linear-to-r from-indigo-500 to-purple-600 opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
                             </motion.button>
                         ) : (
                             <motion.div 
@@ -287,10 +394,10 @@ function BlankDropzone({ blankId, filledOptionId, options, onDrop, onDragOver, o
             onDragOver={onDragOver}
             className={`
                 relative inline-flex items-center justify-center
-                min-w-[160px] px-5 py-2 mx-3 align-middle
+                mx-3 min-w-40 px-5 py-2 align-middle
                 border-2 rounded-xl transition-all duration-300
                 ${stateStyles}
-                ${!filledOption && status !== 'success' ? "hover:border-indigo-500/50 hover:bg-white/[0.03]" : ""}
+                ${!filledOption && status !== 'success' ? "hover:border-indigo-500/50 hover:bg-white/3" : ""}
             `}
         >
             {filledOption ? (
@@ -327,7 +434,7 @@ function DraggableOption({ option, onDragStart, onDragEnd, disabled }) {
                 px-7 py-3.5 rounded-xl font-bold tracking-wide text-lg shadow-xl
                 ${disabled 
                     ? 'opacity-50 cursor-not-allowed bg-zinc-800/80 text-zinc-500 border border-zinc-700/50' 
-                    : 'cursor-grab active:cursor-grabbing bg-gradient-to-br from-indigo-500 to-violet-600 text-white border border-indigo-400/30 hover:scale-105 hover:-translate-y-1 transition-transform hover:shadow-[0_10px_20px_rgba(99,102,241,0.3)]'}
+                    : 'cursor-grab active:cursor-grabbing border border-indigo-400/30 bg-linear-to-br from-indigo-500 to-violet-600 text-white transition-transform hover:-translate-y-1 hover:scale-105 hover:shadow-[0_10px_20px_rgba(99,102,241,0.3)]'}
             `}
         >
             {option.text}

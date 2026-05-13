@@ -1,24 +1,26 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { Cpu, Zap, ShieldCheck, Timer } from "lucide-react";
+import { Cpu, Zap, ShieldCheck } from "lucide-react";
+import { GameErrorState, GameLoadingState } from "@/games/shared/GameScreenShell";
+import { useSessionGame } from "@/games/shared/useSessionGame";
+import { validateGameContent } from "@/games/shared/gameContentValidation";
 
-// Conceptos y sus pares (Esto vendría de la plantilla del profesor)
-const initialPairs = [
-    { id: 1, pairId: "A", text: "HTML" },
-    { id: 2, pairId: "A", text: "Estructura Web" },
-    { id: 3, pairId: "B", text: "CSS" },
-    { id: 4, pairId: "B", text: "Estilos y Diseño" },
-    { id: 5, pairId: "C", text: "JavaScript" },
-    { id: 6, pairId: "C", text: "Interactividad" },
-    { id: 7, pairId: "D", text: "React" },
-    { id: 8, pairId: "D", text: "Librería UI" },
-    { id: 9, pairId: "E", text: "API" },
-    { id: 10, pairId: "E", text: "Conexión de Datos" },
-    { id: 11, pairId: "F", text: "Git" },
-    { id: 12, pairId: "F", text: "Control Versiones" },
-];
+function shuffleCards(cards) {
+    return [...cards].sort(() => Math.random() - 0.5);
+}
+
+function resolveMemoryContent(gameContent) {
+    return {
+        pairs: Array.isArray(gameContent?.pairs) ? gameContent.pairs : [],
+    };
+}
 
 export default function MemoryGame() {
+    const { content, isLoading, error } = useSessionGame({
+        resolveContent: resolveMemoryContent,
+        validateContent: (resolvedContent) => validateGameContent('memory', resolvedContent),
+    });
+
     const [cards, setCards] = useState([]);
     const [flippedIndexes, setFlippedIndexes] = useState([]);
     const [matchedPairs, setMatchedPairs] = useState([]);
@@ -26,11 +28,24 @@ export default function MemoryGame() {
     const [isLocked, setIsLocked] = useState(false);
     const [gameWon, setGameWon] = useState(false);
 
-    // Mezclar cartas al iniciar
+    const totalPairs = useMemo(() => {
+        const pairIds = new Set((content.pairs ?? []).map((card) => card.pairId));
+        return pairIds.size;
+    }, [content.pairs]);
+
     useEffect(() => {
-        const shuffled = [...initialPairs].sort(() => Math.random() - 0.5);
-        setCards(shuffled);
-    }, []);
+        if (!content.pairs?.length) {
+            setCards([]);
+            return;
+        }
+
+        setCards(shuffleCards(content.pairs));
+        setFlippedIndexes([]);
+        setMatchedPairs([]);
+        setMoves(0);
+        setIsLocked(false);
+        setGameWon(false);
+    }, [content.pairs]);
 
     // Lógica de emparejamiento
     const handleCardClick = (index) => {
@@ -54,7 +69,7 @@ export default function MemoryGame() {
                 setIsLocked(false);
 
                 // Comprobar si ganó
-                if (matchedPairs.length + 1 === initialPairs.length / 2) {
+                if (matchedPairs.length + 1 === totalPairs) {
                     setTimeout(() => setGameWon(true), 500);
                 }
             } else {
@@ -66,6 +81,14 @@ export default function MemoryGame() {
             }
         }
     };
+
+    if (isLoading) {
+        return <GameLoadingState title="Cargando memory..." />;
+    }
+
+    if (error) {
+        return <GameErrorState message={error} />;
+    }
 
     return (
         <div className="min-h-screen flex flex-col items-center justify-center p-8 relative overflow-hidden">
@@ -93,7 +116,7 @@ export default function MemoryGame() {
                         <div className="flex flex-col items-end">
                             <span className="text-[10px] text-zinc-500 font-bold tracking-wider">EMPAREJADOS</span>
                             <span className="text-xl font-black font-['Orbitron'] text-green-400">
-                                {matchedPairs.length} / {initialPairs.length / 2}
+                                {matchedPairs.length} / {totalPairs}
                             </span>
                         </div>
                     </div>
