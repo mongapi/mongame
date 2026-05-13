@@ -1,107 +1,336 @@
-import { AuroraBackground } from "@/components/organisms/AuroraBackground";
-import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Brain, Search, Type, PlayCircle, Clock, Target, Box, Layers, Shuffle } from "lucide-react";
-import { motion } from "motion/react";
+import { useEffect, useState } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
+import { motion } from 'motion/react';
+import { AlertCircle, CheckCircle2, Loader, Save } from 'lucide-react';
+import { gameAPI, gameTypeAPI, sessionAPI } from '@/api/api';
 
-// Mini componentes visuales (Previsualización)
-const GamePreview = ({ type }) => {
-    if (type === 'memory') return (
-        <div className="h-32 bg-zinc-900/50 rounded-lg border border-zinc-700 p-4 grid grid-cols-4 gap-2">
-            {[...Array(8)].map((_, i) => <div key={i} className="bg-blue-500/20 border border-blue-500/30 rounded-sm"></div>)}
-        </div>
-    );
-    if (type === 'blank') return (
-        <div className="h-32 bg-zinc-900/50 rounded-lg border border-zinc-700 p-4 flex flex-col items-center justify-center gap-2">
-            <div className="text-2xl font-mono text-green-500 tracking-[0.5em]">_ E _ C T</div>
-        </div>
-    );
-    if (type === 'timeline') return (
-        <div className="h-32 bg-zinc-900/50 rounded-lg border border-zinc-700 p-4 flex flex-col justify-between">
-            {[...Array(4)].map((_, i) => <div key={i} className="h-4 bg-yellow-500/20 border border-yellow-500/30 rounded-sm"></div>)}
-        </div>
-    );
-    if (type === 'shooter') return (
-        <div className="h-32 bg-zinc-900/50 rounded-lg border border-zinc-700 p-4 flex items-center justify-center relative">
-            <Target className="w-12 h-12 text-red-500/50" />
-            <div className="absolute top-2 right-2 w-4 h-4 rounded-full bg-red-400"></div>
-        </div>
-    );
-    if (type === 'guess') return (
-        <div className="h-32 bg-zinc-900/50 rounded-lg border border-zinc-700 p-4 flex items-center justify-center">
-            <Box className="w-16 h-16 text-cyan-500/50" />
-        </div>
-    );
-    if (type === 'memory3d') return (
-        <div className="h-32 bg-zinc-900/50 rounded-lg border border-zinc-700 p-4 grid grid-cols-2 gap-2 transform perspective-1000 rotate-x-12 cursor-pointer">
-            {[...Array(4)].map((_, i) => <div key={i} className="bg-blue-600 border border-blue-400 rounded-sm shadow-xl"></div>)}
-        </div>
-    );
-    if (type === 'orbital') return (
-        <div className="h-32 bg-zinc-900/50 rounded-lg border border-zinc-700 p-4 flex items-center justify-center relative overflow-hidden">
-            <div className="absolute w-28 h-10 border-2 border-emerald-500/40 rounded-[100%]"></div>
-            <div className="absolute w-16 h-6 border-2 border-blue-500/40 rounded-[100%]"></div>
-            <div className="w-6 h-6 bg-yellow-400 rounded-full shadow-[0_0_20px_var(--tw-shadow-color)] shadow-yellow-500 z-10"></div>
-            <div className="absolute w-3 h-3 bg-emerald-400 rounded-full left-[20%] top-[40%] animate-pulse"></div>
-        </div>
-    );
-    return null;
+const templatesByCode = {
+    quiz: {
+        questions: [
+            {
+                id: 'q1',
+                text: 'Pregunta de ejemplo',
+                timeLimit: 15,
+                options: [
+                    { id: 'a', text: 'Opcion A' },
+                    { id: 'b', text: 'Opcion B' },
+                    { id: 'c', text: 'Opcion C' },
+                    { id: 'd', text: 'Opcion D' }
+                ],
+                correctAnswer: 'a'
+            }
+        ]
+    },
+    memory: {
+        pairs: [
+            { id: 1, pairId: 'A', text: 'Concepto' },
+            { id: 2, pairId: 'A', text: 'Definicion' }
+        ]
+    },
+    timeline: {
+        items: [
+            { id: 't1', text: 'Evento 1', date: '1900', question: 'Pregunta', options: ['A', 'B', 'C'], correct: 0 }
+        ]
+    },
+    filling_blanks: {
+        prompt: 'Completa la frase',
+        answer: 'respuesta',
+        hint: 'Pista corta'
+    },
+    guess_who: {
+        answer: 'Elemento secreto',
+        clues: ['Pista 1', 'Pista 2']
+    },
+    shooting: {
+        questions: [
+            {
+                id: 's1',
+                text: 'Pregunta de ejemplo',
+                options: ['A', 'B', 'C'],
+                correct: 0
+            }
+        ]
+    },
+    hangman: {
+        word: 'codigo',
+        clue: 'Pista del ahorcado'
+    }
+};
+
+function formatContent(content) {
+    return JSON.stringify(content, null, 2);
 }
 
-// AHORA CADA JUEGO TIENE UNA RUTA ASOCIADA (viewTarget)
-const templates = [
-    { id: 'memory', viewTarget: "GameMemory", name: "Memory", icon: Search, desc: "Encuentra las parejas corruptas.", color: "text-blue-400" },
-    { id: 'memory3d', viewTarget: "GameMemory3D", name: "Memory 3D", icon: Layers, desc: "Encuentra las parejas en un espacio 3D.", color: "text-blue-300" },
-    { id: 'blank', viewTarget: "GameCompletarEnunciado", name: "Completa el Enunciado", icon: Type, desc: "Adivina y completa la frase.", color: "text-green-400" },
-    { id: 'timeline', viewTarget: "GameOrdenarCronologias", name: "Cronología", icon: Clock, desc: "Ordena los eventos históricos.", color: "text-yellow-400" },
-    { id: 'shooter', viewTarget: "GameShooter3D", name: "Shooter 3D", icon: Target, desc: "Dispara a los objetivos.", color: "text-red-400" },
-    { id: 'guess', viewTarget: "GameAdivinaQue3D", name: "Adivina qué 3D", icon: Box, desc: "Identifica el modelo 3D.", color: "text-cyan-400" },
-    { id: 'orbital', viewTarget: "GameOrbitalOrder", name: "Orbital Order", icon: Target, desc: "Clasificación jerárquica en órbitas 3D.", color: "text-emerald-400" },
-];
+export default function GameEditorView() {
+    const navigate = useNavigate();
+    const { type, id } = useParams();
+    const isEditing = Boolean(id);
 
-// RECIBIMOS setView COMO PROP
-export default function GameTemplates({ setView }) {
-    return (
-        <AuroraBackground className="pl-20">
-            <div className="h-screen p-12 overflow-y-auto">
-                <h2 className="text-4xl font-bold text-white mb-2 font-cyber">LIBRERÍA DE JUEGOS</h2>
-                <p className="text-zinc-400 mb-12">Selecciona la estructura base del juego para iniciar simulación.</p>
+    const [gameTypes, setGameTypes] = useState([]);
+    const [isLoading, setIsLoading] = useState(true);
+    const [isSaving, setIsSaving] = useState(false);
+    const [error, setError] = useState('');
+    const [success, setSuccess] = useState('');
+    const [form, setForm] = useState({
+        name: '',
+        description: '',
+        game_type_id: '',
+        game_content: formatContent(templatesByCode[type] ?? { items: [] }),
+    });
 
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                    {templates.map((t) => (
-                        <motion.div
-                            key={t.id}
-                            whileHover={{ scale: 1.02 }}
-                            whileTap={{ scale: 0.98 }}
-                        >
-                            <Card
-                                onClick={() => setView(t.viewTarget)} // <--- LA MAGIA ESTÁ AQUÍ
-                                className="bg-black/40 backdrop-blur-xl border-zinc-800 hover:border-purple-500/50 transition-all cursor-pointer group h-full"
-                            >
-                                <CardContent className="p-6 space-y-6">
-                                    <div className="flex justify-between items-start">
-                                        <div className="flex items-center gap-3">
-                                            <div className={`p-2 rounded-lg bg-white/5 ${t.color}`}><t.icon /></div>
-                                            <h3 className="text-xl font-bold text-white group-hover:text-purple-400 transition-colors">{t.name}</h3>
-                                        </div>
-                                        <Badge variant="outline" className="border-white/10 text-zinc-400 group-hover:border-purple-500 group-hover:text-purple-300">JUGAR</Badge>
-                                    </div>
+    useEffect(() => {
+        let mounted = true;
 
-                                    {/* Preview con overlay de "Play" al hacer hover */}
-                                    <div className="relative group-hover:shadow-[0_0_20px_rgba(168,85,247,0.15)] transition-shadow rounded-lg overflow-hidden">
-                                        <GamePreview type={t.id} />
-                                        <div className="absolute inset-0 bg-black/60 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                                            <PlayCircle className="w-12 h-12 text-white" />
-                                        </div>
-                                    </div>
+        async function loadEditor() {
+            setIsLoading(true);
+            setError('');
 
-                                    <p className="text-sm text-zinc-400">{t.desc}</p>
-                                </CardContent>
-                            </Card>
-                        </motion.div>
-                    ))}
-                </div>
+            const typesResult = await gameTypeAPI.list();
+            if (!typesResult.success) {
+                if (mounted) {
+                    setError(typesResult.error);
+                    setIsLoading(false);
+                }
+                return;
+            }
+
+            if (!mounted) return;
+
+            setGameTypes(typesResult.data);
+
+            if (isEditing) {
+                const gameResult = await gameAPI.get(id);
+                if (!gameResult.success) {
+                    if (mounted) {
+                        setError(gameResult.error);
+                        setIsLoading(false);
+                    }
+                    return;
+                }
+
+                if (!mounted) return;
+
+                setForm({
+                    name: gameResult.data.name ?? '',
+                    description: gameResult.data.description ?? '',
+                    game_type_id: String(gameResult.data.game_type_id ?? ''),
+                    game_content: formatContent(gameResult.data.game_content ?? {}),
+                });
+                setIsLoading(false);
+                return;
+            }
+
+            const selectedType = typesResult.data.find((item) => item.code === type);
+
+            if (!selectedType) {
+                setError('Ese tipo de juego no esta disponible todavia en el backend.');
+                setIsLoading(false);
+                return;
+            }
+
+            setForm((current) => ({
+                ...current,
+                game_type_id: String(selectedType.id),
+                game_content: formatContent(templatesByCode[selectedType.code] ?? { items: [] }),
+            }));
+            setIsLoading(false);
+        }
+
+        loadEditor();
+
+        return () => {
+            mounted = false;
+        };
+    }, [id, isEditing, type]);
+
+    const handleSubmit = async (event) => {
+        event.preventDefault();
+        await saveGame();
+    };
+
+    const buildPayload = () => {
+        const parsedContent = JSON.parse(form.game_content);
+
+        return {
+            payload: {
+                name: form.name.trim(),
+                description: form.description.trim(),
+                game_type_id: Number(form.game_type_id),
+                game_content: parsedContent,
+            },
+            parsedContent,
+        };
+    };
+
+    const saveGame = async () => {
+        setError('');
+        setSuccess('');
+
+        try {
+            buildPayload();
+        } catch {
+            setError('El contenido del juego debe ser un JSON valido.');
+            return null;
+        }
+
+        setIsSaving(true);
+        const { payload } = buildPayload();
+
+        const result = isEditing
+            ? await gameAPI.update(id, payload)
+            : await gameAPI.create(payload);
+
+        setIsSaving(false);
+
+        if (!result.success) {
+            setError(result.error);
+            return null;
+        }
+
+        setSuccess(isEditing ? 'Juego actualizado.' : 'Juego creado.');
+
+        if (!isEditing) {
+            navigate(`/games/${result.data.id}/edit`, { replace: true });
+        }
+
+        return result.data;
+    };
+
+    const handleCreateSession = async () => {
+        const savedGame = await saveGame();
+        if (!savedGame) {
+            return;
+        }
+
+        const parsedContent = JSON.parse(form.game_content);
+        const sessionResult = await sessionAPI.create({
+            game_id: savedGame.id,
+            game_content: parsedContent,
+        });
+
+        if (!sessionResult.success) {
+            setError(sessionResult.error);
+            return;
+        }
+
+        navigate(`/dashboard/${sessionResult.data.id}`);
+    };
+
+    if (isLoading) {
+        return (
+            <div className="min-h-screen flex items-center justify-center text-white font-['Orbitron']">
+                CARGANDO EDITOR...
             </div>
-        </AuroraBackground>
+        );
+    }
+
+    return (
+        <div className="min-h-screen px-8 py-10 text-white">
+            <div className="mx-auto max-w-5xl">
+                <div className="mb-8 flex items-end justify-between gap-6">
+                    <div>
+                        <h1 className="text-4xl font-black font-['Orbitron']">{isEditing ? 'EDITAR JUEGO' : 'CREAR JUEGO'}</h1>
+                        <p className="mt-2 max-w-2xl text-sm text-zinc-400">
+                            Este editor ya guarda nombre, tipo, descripcion y contenido estructurado del juego en backend.
+                        </p>
+                    </div>
+                    <button
+                        type="button"
+                        onClick={() => navigate('/games/create')}
+                        className="rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm font-semibold text-zinc-200 transition hover:bg-white/10"
+                    >
+                        Volver a plantillas
+                    </button>
+                </div>
+
+                <form onSubmit={handleSubmit} className="space-y-6">
+                    {(error || success) && (
+                        <motion.div
+                            initial={{ opacity: 0, y: -8 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            className={`flex items-center gap-3 rounded-2xl border p-4 ${error ? 'border-red-500/30 bg-red-500/10 text-red-200' : 'border-emerald-500/30 bg-emerald-500/10 text-emerald-200'}`}
+                        >
+                            {error ? <AlertCircle className="h-5 w-5 shrink-0" /> : <CheckCircle2 className="h-5 w-5 shrink-0" />}
+                            <span className="text-sm">{error || success}</span>
+                        </motion.div>
+                    )}
+
+                    <div className="grid gap-6 lg:grid-cols-2">
+                        <div className="rounded-3xl border border-white/10 bg-black/30 p-6 backdrop-blur-xl">
+                            <label className="mb-2 block text-sm font-medium text-zinc-300">Nombre</label>
+                            <input
+                                type="text"
+                                required
+                                value={form.name}
+                                onChange={(event) => setForm((current) => ({ ...current, name: event.target.value }))}
+                                className="mb-5 w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-white outline-none transition focus:border-cyan-400"
+                                placeholder="Ejemplo: Quiz redes y protocolos"
+                            />
+
+                            <label className="mb-2 block text-sm font-medium text-zinc-300">Tipo de juego</label>
+                            <select
+                                required
+                                value={form.game_type_id}
+                                onChange={(event) => {
+                                    const selected = gameTypes.find((item) => String(item.id) === event.target.value);
+                                    setForm((current) => ({
+                                        ...current,
+                                        game_type_id: event.target.value,
+                                        game_content: selected ? formatContent(templatesByCode[selected.code] ?? { items: [] }) : current.game_content,
+                                    }));
+                                }}
+                                className="mb-5 w-full rounded-2xl border border-white/10 bg-zinc-950 px-4 py-3 text-white outline-none transition focus:border-cyan-400"
+                            >
+                                <option value="">Selecciona un tipo</option>
+                                {gameTypes.map((gameType) => (
+                                    <option key={gameType.id} value={gameType.id}>{gameType.name}</option>
+                                ))}
+                            </select>
+
+                            <label className="mb-2 block text-sm font-medium text-zinc-300">Descripcion</label>
+                            <textarea
+                                rows={6}
+                                value={form.description}
+                                onChange={(event) => setForm((current) => ({ ...current, description: event.target.value }))}
+                                className="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-white outline-none transition focus:border-cyan-400"
+                                placeholder="Describe la actividad, objetivos o reglas del juego."
+                            />
+                        </div>
+
+                        <div className="rounded-3xl border border-white/10 bg-black/30 p-6 backdrop-blur-xl">
+                            <div className="mb-2 flex items-center justify-between gap-4">
+                                <label className="block text-sm font-medium text-zinc-300">Contenido del juego (JSON)</label>
+                                <span className="text-xs font-semibold uppercase tracking-[0.2em] text-zinc-500">game_content</span>
+                            </div>
+                            <textarea
+                                rows={22}
+                                value={form.game_content}
+                                onChange={(event) => setForm((current) => ({ ...current, game_content: event.target.value }))}
+                                className="w-full rounded-2xl border border-white/10 bg-zinc-950 px-4 py-4 font-mono text-sm text-cyan-100 outline-none transition focus:border-cyan-400"
+                            />
+                        </div>
+                    </div>
+
+                    <div className="flex items-center justify-end gap-3">
+                        <button
+                            type="button"
+                            onClick={handleCreateSession}
+                            disabled={isSaving}
+                            className="rounded-2xl border border-emerald-400/30 bg-emerald-400/15 px-5 py-3 font-bold text-emerald-200 transition hover:bg-emerald-400/25 disabled:cursor-not-allowed disabled:opacity-50"
+                        >
+                            Guardar y abrir sesión
+                        </button>
+                        <button
+                            type="submit"
+                            disabled={isSaving}
+                            className="flex items-center gap-2 rounded-2xl bg-cyan-400 px-5 py-3 font-bold text-zinc-950 transition hover:bg-cyan-300 disabled:cursor-not-allowed disabled:opacity-50"
+                        >
+                            {isSaving ? <Loader className="h-5 w-5 animate-spin" /> : <Save className="h-5 w-5" />}
+                            {isEditing ? 'Guardar cambios' : 'Crear juego'}
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
     );
 }

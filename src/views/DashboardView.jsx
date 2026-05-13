@@ -7,6 +7,7 @@ import {
     WifiOff, BrainCircuit, Activity
 } from "lucide-react";
 import echo from "@/lib/echo";
+import { sessionAPI } from "@/api/api";
 
 const API_URL = import.meta.env.VITE_API_URL;
 
@@ -67,21 +68,32 @@ export default function TeacherDashboard() {
 
     useEffect(() => {
         if (!session) return;
-        const channel = echo.channel(`classroom.${session.classroom_id ?? 1}`);
+        const channel = echo.channel(`session.${session.id}`);
         channel.listen(".session.state", ({ state }) => {
-            setSession(prev => ({ ...prev, status: state }));
-            setAlerts(prev => [{ id: Date.now(), type: "info", message: `Sesión ${state}`, time: new Date().toLocaleTimeString() }, ...prev]);
+            setSession(prev => prev ? ({ ...prev, status: state }) : prev);
+            setAlerts(prev => [{ id: Date.now(), type: "info", message: state === 'phase_changed' ? 'Fase actualizada' : `Sesión ${state}`, time: new Date().toLocaleTimeString() }, ...prev]);
         });
         channel.listen(".player.answered", (data) => {
             setAlerts(prev => [{ id: Date.now(), type: data.is_correct ? "success" : "warning", message: `Mesa ${data.device_id}: ${data.is_correct ? "✓ Correcto" : "✗ Incorrecto"} — ${data.score} pts`, time: new Date().toLocaleTimeString() }, ...prev.slice(0, 9)]);
         });
-        return () => echo.leaveChannel(`classroom.${session.classroom_id ?? 1}`);
+        return () => echo.leaveChannel(`session.${session.id}`);
     }, [session?.id]);
 
     const action = async (endpoint) => {
         const res = await fetch(`${API_URL}/api/sessions/${sessionId}/${endpoint}`, { method: "POST", headers });
         const { data } = await res.json();
         setSession(prev => ({ ...prev, ...data }));
+    };
+
+    const nextPhase = async () => {
+        const result = await sessionAPI.nextPhase(sessionId);
+        if (!result.success) {
+            setAlerts(prev => [{ id: Date.now(), type: 'error', message: result.error, time: new Date().toLocaleTimeString() }, ...prev.slice(0, 9)]);
+            return;
+        }
+
+        setSession(result.data);
+        setAlerts(prev => [{ id: Date.now(), type: 'info', message: `Fase ${result.data.current_phase_index + 1} cargada`, time: new Date().toLocaleTimeString() }, ...prev.slice(0, 9)]);
     };
 
     if (loading) return <div className="min-h-screen flex items-center justify-center text-white font-['Orbitron']">CARGANDO SESIÓN...</div>;
@@ -103,9 +115,11 @@ export default function TeacherDashboard() {
 
             <header className="flex justify-between items-end bg-zinc-950/50 p-6 rounded-2xl border border-white/10 backdrop-blur-md">
                 <div>
-                    <h1 className="text-3xl font-black font-['Orbitron'] text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-cyan-400 mb-2">CONTROL DE SESIÓN</h1>
+                    <h1 className="text-3xl font-black font-['Orbitron'] text-transparent bg-clip-text bg-linear-to-r from-purple-400 to-cyan-400 mb-2">CONTROL DE SESIÓN</h1>
                     <div className="flex items-center gap-4 text-sm text-zinc-400 font-bold tracking-wider">
                         <span className="flex items-center gap-2"><Activity className="w-4 h-4 text-green-400" /> ID: {session.id}</span>
+                        <span className="text-white/20">|</span>
+                        <span>FASE {Number(session.current_phase_index ?? 0) + 1}/{session.total_phases ?? 1}</span>
                         <span className="text-white/20">|</span>
                         <span className={`uppercase font-bold ${session.status === 'playing' ? 'text-green-400' : session.status === 'paused' ? 'text-yellow-400' : 'text-zinc-400'}`}>{session.status}</span>
                     </div>
@@ -131,6 +145,11 @@ export default function TeacherDashboard() {
                             <button onClick={() => action("finish")}
                                 className="p-3 rounded-xl bg-purple-500/20 hover:bg-purple-500/40 text-purple-300 border border-purple-500/50 transition-all flex items-center gap-2 font-bold text-sm">
                                 FINALIZAR <SkipForward className="w-4 h-4" />
+                            </button>
+                            <button onClick={nextPhase}
+                                disabled={(session.total_phases ?? 1) <= Number(session.current_phase_index ?? 0) + 1}
+                                className="p-3 rounded-xl bg-cyan-500/20 hover:bg-cyan-500/40 disabled:opacity-40 disabled:cursor-not-allowed text-cyan-300 border border-cyan-500/50 transition-all flex items-center gap-2 font-bold text-sm">
+                                SIGUIENTE FASE <SkipForward className="w-4 h-4" />
                             </button>
                         </div>
                     </div>

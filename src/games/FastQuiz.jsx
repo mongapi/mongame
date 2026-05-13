@@ -1,9 +1,10 @@
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
+import { useLocation, useSearchParams } from "react-router-dom";
 import { motion } from "motion/react";
-import { Timer, Zap, CheckCircle2, XCircle } from "lucide-react";
+import { AlertCircle, CheckCircle2, Loader, Timer, XCircle, Zap } from "lucide-react";
+import { sessionAPI } from "@/api/api";
 
-// Mock Data de la pregunta (Esto vendría del Template del Profesor)
-const currentQuestion = {
+const fallbackQuestion = {
     id: "q1",
     text: "¿Cuál es el protocolo principal utilizado para enviar correos electrónicos en internet?",
     timeLimit: 15,
@@ -17,9 +18,52 @@ const currentQuestion = {
 };
 
 export default function QuizGame() {
-    const [timeLeft, setTimeLeft] = useState(currentQuestion.timeLimit);
+    const location = useLocation();
+    const [searchParams] = useSearchParams();
+    const sessionId = searchParams.get('sessionId');
+
+    const [session, setSession] = useState(location.state?.session ?? null);
+    const [timeLeft, setTimeLeft] = useState((location.state?.session?.game_content?.questions?.[0]?.timeLimit) ?? fallbackQuestion.timeLimit);
     const [selectedOption, setSelectedOption] = useState(null);
     const [gameState, setGameState] = useState("playing"); // 'playing', 'answered', 'timeout'
+    const [error, setError] = useState('');
+    const [isLoading, setIsLoading] = useState(Boolean(sessionId) && !location.state?.session);
+    const [isSubmitting, setIsSubmitting] = useState(false);
+
+    const currentQuestion = session?.game_content?.questions?.[0] ?? fallbackQuestion;
+
+    useEffect(() => {
+        setTimeLeft(currentQuestion.timeLimit ?? fallbackQuestion.timeLimit);
+    }, [currentQuestion.id, currentQuestion.timeLimit]);
+
+    useEffect(() => {
+        if (!sessionId || session) {
+            setIsLoading(false);
+            return;
+        }
+
+        let cancelled = false;
+
+        async function loadSession() {
+            const result = await sessionAPI.get(sessionId);
+            if (cancelled) return;
+
+            if (!result.success) {
+                setError(result.error);
+                setIsLoading(false);
+                return;
+            }
+
+            setSession(result.data);
+            setIsLoading(false);
+        }
+
+        loadSession();
+
+        return () => {
+            cancelled = true;
+        };
+    }, [session, sessionId]);
 
     // Lógica del Temporizador
     useEffect(() => {
@@ -32,13 +76,34 @@ export default function QuizGame() {
     }, [timeLeft, gameState]);
 
     // Manejador de selección
-    const handleSelect = (optionId) => {
-        if (gameState !== "playing") return;
+    const handleSelect = async (optionId) => {
+        if (gameState !== "playing" || isSubmitting) return;
+
+        setError('');
         setSelectedOption(optionId);
         setGameState("answered");
 
-        // Aquí emitiríamos el evento al servidor por WebSockets para que el profe lo vea en tiempo real
-        // socket.emit('answer_submitted', { studentId: 'me', questionId: currentQuestion.id, answer: optionId });
+        if (!sessionId) {
+            return;
+        }
+
+        setIsSubmitting(true);
+        const existingDeviceId = localStorage.getItem('device_id') || `web-${Math.random().toString(36).slice(2, 10)}`;
+        localStorage.setItem('device_id', existingDeviceId);
+
+        const result = await sessionAPI.submitAnswer(sessionId, {
+            question_id: currentQuestion.id,
+            answer: optionId,
+            device_id: existingDeviceId,
+            player_name: 'Jugador web',
+            player_number: 1,
+        });
+
+        if (!result.success) {
+            setError(result.error);
+        }
+
+        setIsSubmitting(false);
     };
 
     // Función para determinar estilos de los botones según el estado
@@ -63,6 +128,15 @@ export default function QuizGame() {
         }
     };
 
+    if (isLoading) {
+        return (
+            <div className="min-h-screen flex items-center justify-center gap-3 text-white">
+                <Loader className="h-6 w-6 animate-spin" />
+                CARGANDO SESION...
+            </div>
+        );
+    }
+
     return (
         <div className="min-h-screen flex flex-col items-center justify-center p-8 relative">
             {/* Fondo Aurora para el juego */}
@@ -75,7 +149,7 @@ export default function QuizGame() {
                 <motion.div
                     animate={{ scale: [1, 1.5, 1], opacity: [0.2, 0.4, 0.2] }}
                     transition={{ duration: 10, repeat: Infinity, delay: 1 }}
-                    className="absolute bottom-1/4 right-1/4 w-[30rem] h-[30rem] bg-cyan-600/20 rounded-full blur-[120px]"
+                    className="absolute bottom-1/4 right-1/4 w-120 h-120 bg-cyan-600/20 rounded-full blur-[120px]"
                 />
             </div>
 
@@ -85,7 +159,7 @@ export default function QuizGame() {
                 <div className="flex justify-between items-center bg-zinc-950/50 border border-white/10 p-4 rounded-2xl backdrop-blur-xl">
                     <div className="flex items-center gap-3 text-cyan-400">
                         <Zap className="w-6 h-6 animate-pulse" />
-                        <span className="font-['Orbitron'] font-bold tracking-widest">PREGUNTA 1/10</span>
+                        <span className="font-['Orbitron'] font-bold tracking-widest">PREGUNTA 1/1</span>
                     </div>
                     <div className={`flex items-center gap-3 px-6 py-2 rounded-xl border ${timeLeft <= 5 ? 'border-red-500/50 text-red-400 bg-red-500/10 animate-pulse' : 'border-white/10 text-white bg-white/5'}`}>
                         <Timer className="w-6 h-6" />
@@ -93,13 +167,20 @@ export default function QuizGame() {
                     </div>
                 </div>
 
+                {error && (
+                    <div className="flex items-center gap-2 rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-red-200">
+                        <AlertCircle className="h-4 w-4 shrink-0" />
+                        <span className="text-sm">{error}</span>
+                    </div>
+                )}
+
                 {/* Tarjeta de la Pregunta */}
                 <motion.div
                     initial={{ opacity: 0, y: -20 }}
                     animate={{ opacity: 1, y: 0 }}
                     className="bg-white/5 border border-white/10 p-10 rounded-3xl backdrop-blur-xl shadow-[0_10px_40px_rgba(0,0,0,0.5)] relative overflow-hidden"
                 >
-                    <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-purple-500 via-cyan-500 to-purple-500" />
+                    <div className="absolute top-0 left-0 w-full h-1 bg-linear-to-r from-purple-500 via-cyan-500 to-purple-500" />
                     <h2 className="text-3xl md:text-4xl font-bold leading-tight text-center text-white drop-shadow-md">
                         {currentQuestion.text}
                     </h2>
@@ -130,7 +211,7 @@ export default function QuizGame() {
                             </div>
 
                             {/* Resplandor de hover interno */}
-                            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent -translate-x-full group-hover:animate-[shimmer_1.5s_infinite] pointer-events-none" />
+                            <div className="absolute inset-0 bg-linear-to-r from-transparent via-white/5 to-transparent -translate-x-full group-hover:animate-[shimmer_1.5s_infinite] pointer-events-none" />
                         </motion.button>
                     ))}
                 </div>

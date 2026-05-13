@@ -55,14 +55,14 @@ const GamePreview = ({ type }) => {
 }
 
 const gamesList = [
-    { id: 'quiz',      route: "/jugar/quiz",       name: "FastQuiz",              icon: Brain,   color: "text-purple-400" },
-    { id: 'memory',    route: "/jugar/memory",      name: "Memory",                icon: Search,  color: "text-blue-400" },
-    { id: 'memory3d',  route: "/jugar/memory3d",    name: "Memory 3D",             icon: Layers,  color: "text-blue-300" },
-    { id: 'blank',     route: "/jugar/completar",   name: "Completa el Enunciado", icon: Type,    color: "text-green-400" },
-    { id: 'timeline',  route: "/jugar/cronologias", name: "Cronología",            icon: Clock,   color: "text-yellow-400" },
-    { id: 'orbital',   route: "/jugar/orbital",     name: "Orbital Order",         icon: Shuffle, color: "text-orange-400" },
-    { id: 'shooter',   route: "/jugar/shooter",     name: "Shooter 3D",            icon: Target,  color: "text-red-400" },
-    { id: 'guess',     route: "/jugar/adivina",     name: "Adivina qué 3D",        icon: Box,     color: "text-cyan-400" },
+    { id: 'quiz', code: 'quiz', name: "FastQuiz", icon: Brain, color: "text-purple-400", cta: 'CREAR' },
+    { id: 'memory', code: 'memory', name: "Memory", icon: Search, color: "text-blue-400", cta: 'CREAR' },
+    { id: 'blank', code: 'filling_blanks', name: "Completa el Enunciado", icon: Type, color: "text-green-400", cta: 'CREAR' },
+    { id: 'timeline', code: 'timeline', name: "Cronología", icon: Clock, color: "text-yellow-400", cta: 'CREAR' },
+    { id: 'shooter', code: 'shooting', name: "Shooter 3D", icon: Target, color: "text-red-400", cta: 'CREAR' },
+    { id: 'guess', code: 'guess_who', name: "Adivina qué 3D", icon: Box, color: "text-cyan-400", cta: 'CREAR' },
+    { id: 'memory3d', name: "Memory 3D", icon: Layers, color: "text-blue-300", cta: 'PRONTO' },
+    { id: 'orbital', name: "Orbital Order", icon: Shuffle, color: "text-orange-400", cta: 'PRONTO' },
 ];
 
 export default function GameChooserView() {
@@ -76,7 +76,7 @@ export default function GameChooserView() {
                         className="bg-white/10 p-5 rounded-full mb-6 border border-white/20">
                         <Gamepad2 className="w-16 h-16 text-white" />
                     </motion.div>
-                    <h1 className="text-5xl font-black font-['Orbitron'] text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-cyan-400 mb-4 tracking-wider drop-shadow-lg">
+                    <h1 className="text-5xl font-black font-['Orbitron'] text-transparent bg-clip-text bg-linear-to-r from-purple-400 to-cyan-400 mb-4 tracking-wider drop-shadow-lg">
                         SELECCIONA TU DESAFÍO
                     </h1>
                     <p className="text-zinc-400 text-lg max-w-2xl">
@@ -88,16 +88,16 @@ export default function GameChooserView() {
                     {gamesList.map((game, idx) => (
                         <motion.div key={game.id} initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }}
                             transition={{ delay: idx * 0.1 }} whileHover={{ scale: 1.03, y: -5 }} whileTap={{ scale: 0.98 }}>
-                            <Card onClick={() => navigate(game.route)}
-                                className="bg-black/40 backdrop-blur-xl border-zinc-800 hover:border-cyan-500/50 hover:shadow-[0_0_30px_rgba(34,211,238,0.2)] transition-all cursor-pointer group h-full overflow-hidden relative">
-                                <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/0 to-purple-500/0 group-hover:from-cyan-500/10 group-hover:to-purple-500/10 transition-colors duration-500" />
+                            <Card onClick={() => game.code && navigate(`/games/create/${game.code}`)}
+                                className={`bg-black/40 backdrop-blur-xl border-zinc-800 transition-all group h-full overflow-hidden relative ${game.code ? 'cursor-pointer hover:border-cyan-500/50 hover:shadow-[0_0_30px_rgba(34,211,238,0.2)]' : 'cursor-not-allowed opacity-60'}`}>
+                                <div className="absolute inset-0 bg-linear-to-br from-cyan-500/0 to-purple-500/0 group-hover:from-cyan-500/10 group-hover:to-purple-500/10 transition-colors duration-500" />
                                 <CardContent className="p-6 relative z-10">
                                     <div className="flex justify-between items-center mb-6">
                                         <div className={`p-3 rounded-xl bg-white/5 border border-white/10 ${game.color} group-hover:bg-white/10 transition-colors`}>
                                             <game.icon className="w-6 h-6" />
                                         </div>
-                                        <Badge className="bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 group-hover:bg-cyan-500 group-hover:text-black transition-colors font-bold tracking-widest px-4 py-1">
-                                            CREAR
+                                        <Badge className={`border px-4 py-1 font-bold tracking-widest ${game.code ? 'bg-cyan-500/20 text-cyan-300 border-cyan-500/30 group-hover:bg-cyan-500 group-hover:text-black transition-colors' : 'bg-white/10 text-zinc-400 border-white/10'}`}>
+                                            {game.cta}
                                         </Badge>
                                     </div>
                                     <h3 className="text-2xl font-black text-white group-hover:text-cyan-400 transition-colors mb-4">{game.name}</h3>

@@ -98,5 +98,124 @@ export const authAPI = {
     }
 };
 
+export const sessionAPI = {
+    async get(id) {
+        try {
+            const response = await api.get(`/sessions/${id}`);
+            return { success: true, data: response.data.data };
+        } catch (error) {
+            const message = error.response?.data?.message || 'No se pudo cargar la sesión';
+            return { success: false, error: message };
+        }
+    },
+
+    async joinByPin(pin) {
+        try {
+            const response = await api.get(`/sessions/join/${pin}`);
+            return { success: true, data: response.data.data, meta: response.data.meta ?? {} };
+        } catch (error) {
+            const errors = error.response?.data?.errors;
+            const message = errors?.pin?.[0] || error.response?.data?.message || 'No se pudo unir a la sesión';
+            return { success: false, error: message };
+        }
+    },
+
+    async create(payload) {
+        try {
+            const response = await api.post('/sessions', payload);
+            return { success: true, data: response.data.data };
+        } catch (error) {
+            const message = error.response?.data?.message || 'No se pudo crear la sesión';
+            return { success: false, error: message, details: error.response?.data?.errors ?? null };
+        }
+    },
+
+    async nextPhase(sessionId) {
+        try {
+            const response = await api.post(`/sessions/${sessionId}/next-phase`);
+            return { success: true, data: response.data.data };
+        } catch (error) {
+            const message = error.response?.data?.message || 'No se pudo avanzar de fase';
+            return { success: false, error: message, details: error.response?.data?.errors ?? null };
+        }
+    },
+
+    async submitAnswer(sessionId, payload) {
+        try {
+            const response = await api.post(`/sessions/${sessionId}/answers`, payload);
+            return { success: true, data: response.data.data };
+        } catch (error) {
+            const message = error.response?.data?.message || 'No se pudo enviar la respuesta';
+            return { success: false, error: message, details: error.response?.data?.errors ?? null };
+        }
+    }
+};
+
+export const gameTypeAPI = {
+    async list() {
+        try {
+            const response = await api.get('/game-types');
+            return { success: true, data: response.data.data ?? [] };
+        } catch (error) {
+            const message = error.response?.data?.message || 'No se pudieron cargar los tipos de juego';
+            return { success: false, error: message };
+        }
+    }
+};
+
+export const gameAPI = {
+    async get(id) {
+        try {
+            const response = await api.get(`/games/${id}`);
+            return { success: true, data: response.data.data };
+        } catch (error) {
+            const message = error.response?.data?.message || 'No se pudo cargar el juego';
+            return { success: false, error: message };
+        }
+    },
+
+    async create(payload) {
+        try {
+            const response = await api.post('/games', payload);
+            return { success: true, data: response.data.data };
+        } catch (error) {
+            const message = error.response?.data?.message || 'No se pudo crear el juego';
+            return { success: false, error: message, details: error.response?.data?.errors ?? null };
+        }
+    },
+
+    async update(id, payload) {
+        try {
+            const response = await api.put(`/games/${id}`, payload);
+            return { success: true, data: response.data.data };
+        } catch (error) {
+            const message = error.response?.data?.message || 'No se pudo actualizar el juego';
+            return { success: false, error: message, details: error.response?.data?.errors ?? null };
+        }
+    }
+};
+
+export const lessonPlanAPI = {
+    async list() {
+        try {
+            const response = await api.get('/lesson-plans');
+            return { success: true, data: response.data.data ?? [] };
+        } catch (error) {
+            const message = error.response?.data?.message || 'No se pudieron cargar los lesson plans';
+            return { success: false, error: message };
+        }
+    },
+
+    async get(id) {
+        try {
+            const response = await api.get(`/lesson-plans/${id}`);
+            return { success: true, data: response.data.data };
+        } catch (error) {
+            const message = error.response?.data?.message || 'No se pudo cargar el lesson plan';
+            return { success: false, error: message };
+        }
+    },
+};
+
 // 5. EXPORTAR API CONFIGURADA PARA OTRAS PETICIONES
 export default api;
