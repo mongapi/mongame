@@ -3,34 +3,17 @@ import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { Text, Float } from '@react-three/drei';
 import * as THREE from 'three';
 import { motion, AnimatePresence } from 'motion/react';
-import { CheckCircle2, AlertTriangle, FastForward, Play, ShieldAlert } from 'lucide-react';
+import { CheckCircle2, AlertTriangle, Play, ShieldAlert } from 'lucide-react';
+import { sessionAPI } from '@/api/api';
+import { GameErrorState, GameLoadingState } from '@/games/shared/GameScreenShell';
+import { useSessionGame } from '@/games/shared/useSessionGame';
+import { validateGameContent } from '@/games/shared/gameContentValidation';
 
-const TIMELINES = [
-    {
-        id: 'timeline-1',
-        title: 'Evolución de la Computación',
-        items: [
-            { id: 't1-1', text: 'Invención del Ábaco', date: 'Antigüedad', info: 'Considerado el primer instrumento de cálculo en la prehistoria, permitía realizar operaciones matemáticas básicas desplazando cuentas a lo largo de varillas.', question: '¿Qué operación mecánica principal facilita el ábaco?', options: ['Desplazar cuentas manuales', 'Rotar engranajes de metal', 'Leer tarjetas perforadas'], correct: 0 },
-            { id: 't1-2', text: 'Máquina Analítica', date: '1837', info: 'Diseñada por Charles Babbage, fue el primer concepto de un computador moderno de propósito general, programable mediante tarjetas perforadas.', question: '¿Quién es reconocida como la primera programadora por su trabajo en esto?', options: ['Marie Curie', 'Ada Lovelace', 'Grace Hopper'], correct: 1 },
-            { id: 't1-3', text: 'Máquina de Turing', date: '1936', info: 'Un modelo matemático propuesto por Alan Turing que unificó y sentó las bases lógicas y teóricas indudables de la computación y los algoritmos.', question: 'La máquina de Turing demostró teóricamente que...', options: ['Cualquier problema matemático se puede resolver', 'Existen límites a lo que puede ser computado', 'El código binario es la única forma de procesar'], correct: 1 },
-            { id: 't1-4', text: 'ENIAC', date: '1945', info: 'La primera computadora electrónica real de propósito general. Ocupaba una habitación enorme entera y consumía una cantidad inmensa de energía.', question: '¿Qué tecnología de hardware usaba predominantemente la ENIAC?', options: ['Microchips de silicio', 'Tubos de vacío (Válvulas)', 'Transistores cuánticos'], correct: 1 },
-            { id: 't1-5', text: 'Microprocesador', date: '1971', info: 'El primer microprocesador comercial (Intel 4004). Integraba las funciones principales de toda una computadora en un solo chip muy pequeño.', question: 'La invención del microprocesador fue directamente responsable de...', options: ['La computación en la nube', 'Las redes sociales', 'Las computadoras personales (PC)'], correct: 2 },
-            { id: 't1-6', text: 'World Wide Web', date: '1989', info: 'Tim Berners-Lee propuso un complejo sistema de gestión de información descentralizada por hipertexto, creando la web.', question: '¿Qué protocolo subyacente se utiliza principalmente para navegar por la web?', options: ['HTTP / HTTPS', 'SMTP', 'FTP'], correct: 0 },
-        ]
-    },
-    {
-        id: 'timeline-2',
-        title: 'Desarrollo de Lenguajes',
-        items: [
-            { id: 't2-1', text: 'Lenguaje Assembly', date: 'Años 40s', info: 'El lenguaje ensamblador permitió escribir instrucciones en mnemónicos legibles en vez del puro e intratable código máquina binario.', question: '¿Qué característica define al lenguaje Assembly en relación al hardware?', options: ['Es independiente de la arquitectura', 'Es un lenguaje de alto nivel', 'Está ligado a la arquitectura específica del procesador'], correct: 2 },
-            { id: 't2-2', text: 'Creación de FORTRAN', date: '1957', info: 'Desarrollado en la emblemática IBM, fue uno de los primerísimos lenguajes de programación de alto nivel que alcanzó éxito comercial masivo.', question: '¿Para qué ámbito aplicativo fue especializado principalmente FORTRAN?', options: ['Diseño gráfico web', 'Cálculos científicos y de pura ingeniería', 'Bases de datos comerciales'], correct: 1 },
-            { id: 't2-3', text: 'Lenguaje C', date: '1972', info: 'Lenguaje base, monumental y fundamental que permitió construir el mismísimo sistema operativo UNIX.', question: '¿Quién es el legendario creador del lenguaje C?', options: ['Dennis Ritchie', 'Bjarne Stroustrup', 'James Gosling'], correct: 0 },
-            { id: 't2-4', text: 'C++ y la Programación Orientada a Objetos', date: '1985', info: 'Una extensión revolucionaria del lenguaje C que añadió soporte robusto a la programación orientada a objetos (POO).', question: '¿Qué concepto clave introduce la POO fuertemente en C++?', options: ['Clases y Herencia', 'Variables Globales Inmutables', 'Punteros Aritméticos'], correct: 0 },
-            { id: 't2-5', text: 'Lanzamiento de Java', date: '1995', info: 'Prometía "Escribir una vez, ejecutar en cualquier lugar", marcando a toda una industria global de software.', question: '¿Qué componente es totalmente esencial para la portabilidad única de Java?', options: ['El compilador GCC', 'Java Virtual Machine (JVM)', 'Navegador Web Dedicado'], correct: 1 },
-            { id: 't2-6', text: 'Nacimiento de JavaScript (JS)', date: '1995', info: 'Creado frenéticamente en 10 días por Brendan Eich para Netscape. Inicialmente simple, hoy domina absolutamente la web mundial.', question: '¿Dónde se ejecuta nativamente y por defecto el JavaScript clásico?', options: ['En el servidor de base de datos', 'En el navegador web', 'En la tarjeta gráfica (GPU)'], correct: 1 }
-        ]
-    }
-];
+function resolveTimelineContent(gameContent) {
+    return {
+        items: Array.isArray(gameContent?.items) ? gameContent.items : [],
+    };
+}
 
 // Reutilizamos Particles y GridTunnel en la escena principal
 function Particles({ speedMulti }) {
@@ -274,19 +257,71 @@ const MainScene = ({ gameState, setGameState, isFail, timeline, solvedHitos, cur
 }
 
 export default function OrdenarCronologias() {
-    const [currentLevel, setCurrentLevel] = useState(0);
+    const {
+        session,
+        sessionId,
+        content,
+        isLoading,
+        error,
+        setError,
+    } = useSessionGame({
+        resolveContent: resolveTimelineContent,
+        validateContent: (resolvedContent) => validateGameContent('timeline', resolvedContent),
+    });
     // START, EXPLORING, QUESTION, END
     const [gameState, setGameState] = useState('START'); 
     const [currentHito, setCurrentHito] = useState(null);
     const [solvedHitos, setSolvedHitos] = useState([]);
     const [isFail, setIsFail] = useState(false);
     const [movementZ, setMovementZ] = useState(80); // Start position
+    const [isSubmitting, setIsSubmitting] = useState(false);
 
-    const timeline = TIMELINES[currentLevel];
+    const timeline = useMemo(() => ({
+        id: session?.game_id ?? 'timeline-session',
+        title: session?.game?.name ?? 'Cronología interactiva',
+        items: content.items ?? [],
+    }), [content.items, session?.game?.name, session?.game_id]);
     const currentHitoData = currentHito !== null ? timeline.items[currentHito] : null;
 
-    const handleAnswer = (optionIdx) => {
+    useEffect(() => {
+        setCurrentHito(null);
+        setSolvedHitos([]);
+        setGameState('START');
+        setMovementZ(80);
+        setIsFail(false);
+        setError('');
+    }, [setError, timeline.id]);
+
+    const handleAnswer = async (optionIdx) => {
         if (!currentHitoData) return;
+
+        setError('');
+
+        if (isSubmitting) {
+            return;
+        }
+
+        if (sessionId) {
+            setIsSubmitting(true);
+            const existingDeviceId = localStorage.getItem('device_id') || `web-${Math.random().toString(36).slice(2, 10)}`;
+            localStorage.setItem('device_id', existingDeviceId);
+
+            const result = await sessionAPI.submitAnswer(sessionId, {
+                question_id: currentHitoData.id,
+                answer: optionIdx,
+                device_id: existingDeviceId,
+                player_name: 'Jugador web',
+                player_number: 1,
+            });
+
+            if (!result.success) {
+                setError(result.error);
+                setIsSubmitting(false);
+                return;
+            }
+
+            setIsSubmitting(false);
+        }
 
         if (optionIdx === currentHitoData.correct) {
             setIsFail(false);
@@ -314,16 +349,21 @@ export default function OrdenarCronologias() {
     };
 
     const resetGame = () => {
-        if (currentLevel < TIMELINES.length - 1) {
-            setCurrentLevel(prev => prev + 1);
-        } else {
-            setCurrentLevel(0);
-        }
         setCurrentHito(null);
         setSolvedHitos([]);
         setGameState('START');
         setMovementZ(80);
+        setIsFail(false);
+        setError('');
     };
+
+    if (isLoading) {
+        return <GameLoadingState title="Cargando cronología..." />;
+    }
+
+    if (error) {
+        return <GameErrorState message={error} />;
+    }
 
     return (
         <div className="w-full h-screen relative bg-zinc-950 font-sans overflow-hidden fade-in select-none">
@@ -413,20 +453,27 @@ export default function OrdenarCronologias() {
                                 </p>
 
                                 <div className="bg-black/50 rounded-3xl p-6 md:p-8 border border-white/5 space-y-6 shadow-inner relative overflow-hidden">
-                                    <div className="absolute top-0 w-full h-1 bg-gradient-to-r from-transparent via-emerald-500/50 to-transparent left-0"></div>
+                                    <div className="absolute top-0 left-0 h-1 w-full bg-linear-to-r from-transparent via-emerald-500/50 to-transparent"></div>
                                     <h3 className="text-2xl font-extrabold text-emerald-400 flex items-center gap-3">
                                         <CheckCircle2 className="w-7 h-7" /> Protocolo de Paso:
                                     </h3>
                                     <p className="text-white text-xl font-semibold mb-2">{currentHitoData.question}</p>
+
+                                    {error ? (
+                                        <div className="rounded-2xl border border-red-500/30 bg-red-500/10 p-4 text-sm text-red-200">
+                                            {error}
+                                        </div>
+                                    ) : null}
 
                                     <div className="grid grid-cols-1 md:grid-cols-1 gap-4 mt-6">
                                         {currentHitoData.options.map((opt, i) => (
                                             <button
                                                 key={i}
                                                 onClick={() => handleAnswer(i)}
+                                                disabled={isSubmitting}
                                                 className={`w-full text-left p-5 rounded-2xl font-bold text-lg md:text-xl transition-all duration-200 outline-none
                                                    bg-zinc-800/80 hover:bg-indigo-600 text-zinc-100 hover:text-white
-                                                   border border-white/5 hover:border-indigo-400 focus:ring-4 focus:ring-indigo-500/50 hover:-translate-y-1 hover:shadow-xl current
+                                                   border border-white/5 hover:border-indigo-400 focus:ring-4 focus:ring-indigo-500/50 hover:-translate-y-1 hover:shadow-xl disabled:cursor-not-allowed disabled:opacity-50
                                                `}
                                             >
                                                 <span className="opacity-50 mr-4 font-mono text-base bg-black/30 px-3 py-1 rounded-lg">[{i + 1}]</span>
@@ -462,7 +509,7 @@ export default function OrdenarCronologias() {
                             animate={{ opacity: 1, scale: 1 }}
                             className="bg-black/80 w-full h-full flex flex-col justify-center items-center pointer-events-auto backdrop-blur-xl absolute inset-0"
                         >
-                            <h1 className="text-5xl md:text-7xl lg:text-9xl font-black text-transparent bg-clip-text bg-gradient-to-br from-emerald-400 to-cyan-600 mb-8 drop-shadow-[0_0_50px_rgba(52,211,153,0.5)] text-center px-4 leading-tight">
+                            <h1 className="text-5xl md:text-7xl lg:text-9xl font-black text-transparent bg-clip-text bg-linear-to-br from-emerald-400 to-cyan-600 mb-8 drop-shadow-[0_0_50px_rgba(52,211,153,0.5)] text-center px-4 leading-tight">
                                 ¡Flujo Restaurado!
                             </h1>
                             <p className="text-2xl md:text-3xl text-zinc-200 mb-14 max-w-3xl text-center px-6 leading-relaxed font-medium">
@@ -470,9 +517,9 @@ export default function OrdenarCronologias() {
                             </p>
                             <button
                                 onClick={resetGame}
-                                className="group flex items-center gap-4 px-12 py-6 bg-gradient-to-r from-emerald-500 to-cyan-600 text-2xl font-black rounded-full transition-all duration-300 hover:scale-105 text-white shadow-[0_0_60px_rgba(16,185,129,0.5)] hover:shadow-[0_0_80px_rgba(16,185,129,0.8)] cursor-pointer"
+                                className="group flex items-center gap-4 px-12 py-6 bg-linear-to-r from-emerald-500 to-cyan-600 text-2xl font-black rounded-full transition-all duration-300 hover:scale-105 text-white shadow-[0_0_60px_rgba(16,185,129,0.5)] hover:shadow-[0_0_80px_rgba(16,185,129,0.8)] cursor-pointer"
                             >
-                                Siguiente Línea <FastForward className="w-8 h-8 group-hover:translate-x-2 transition-transform" />
+                                Reiniciar cronología <Play className="w-8 h-8 group-hover:translate-x-2 transition-transform" />
                             </button>
                         </motion.div>
                     )}
@@ -483,7 +530,7 @@ export default function OrdenarCronologias() {
                     {gameState === 'BOOST' && (
                         <motion.div
                             initial={{ opacity: 0 }} animate={{ opacity: 0.4 }} exit={{ opacity: 0 }}
-                            className="absolute inset-0 pointer-events-none mix-blend-screen z-0 bg-blue-400/20 shadow-[inset_0_0_200px_rgba(96,165,250,0.5)] bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-transparent via-transparent to-blue-500/30"
+                            className="absolute inset-0 pointer-events-none mix-blend-screen z-0 bg-blue-400/20 shadow-[inset_0_0_200px_rgba(96,165,250,0.5)] bg-[radial-gradient(ellipse_at_center,var(--tw-gradient-stops))] from-transparent via-transparent to-blue-500/30"
                         />
                     )}
                     {isFail && gameState !== 'QUESTION' && (
