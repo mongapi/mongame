@@ -1,7 +1,7 @@
 import { AuroraBackground } from "@/components/organisms/AuroraBackground";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Brain, Search, Type, PlayCircle, Clock, Target, Box, Gamepad2, Layers, Shuffle } from "lucide-react";
+import { Brain, Search, Type, PlayCircle, Clock, Target, Box, Gamepad2, Layers, Shuffle, Route, Sparkles } from "lucide-react";
 import { motion } from "motion/react";
 import { useNavigate } from "react-router-dom";
 
@@ -80,8 +80,72 @@ export default function GameChooserView() {
                         CREA UNA SESIÓN
                     </h1>
                     <p className="text-zinc-400 text-lg max-w-2xl">
-                        Elige la mecánica que vas a lanzar en clase. Después ajustarás el contenido y abrirás una sesión real para el alumnado.
+                        Primero decide si quieres lanzar una sesión rápida con un solo juego o preparar una secuencia completa con un lesson plan.
                     </p>
+                </div>
+
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 max-w-6xl mx-auto mb-12">
+                    <motion.button
+                        type="button"
+                        initial={{ opacity: 0, y: 24 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        whileHover={{ y: -4, scale: 1.01 }}
+                        whileTap={{ scale: 0.99 }}
+                        onClick={() => navigate('/lesson-plans/create')}
+                        className="rounded-3xl border border-amber-400/30 bg-amber-400/10 p-7 text-left backdrop-blur-xl transition hover:bg-amber-400/15"
+                    >
+                        <div className="mb-5 flex items-center justify-between gap-4">
+                            <div className="flex items-center gap-3">
+                                <div className="rounded-2xl border border-amber-300/30 bg-amber-300/10 p-3 text-amber-200">
+                                    <Route className="h-6 w-6" />
+                                </div>
+                                <div>
+                                    <p className="text-xs font-bold uppercase tracking-[0.2em] text-amber-200/80">Opción recomendada</p>
+                                    <h2 className="text-2xl font-black text-white">Crear lesson plan</h2>
+                                </div>
+                            </div>
+                            <Badge className="border-amber-300/30 bg-amber-300/10 px-4 py-1 font-bold tracking-widest text-amber-100">
+                                VARIAS FASES
+                            </Badge>
+                        </div>
+                        <p className="max-w-xl text-sm leading-6 text-zinc-200/90">
+                            Usa esta opción si quieres encadenar varios juegos dentro de la misma sesión. El alumnado entra una sola vez con el PIN y tú vas cambiando de fase.
+                        </p>
+                    </motion.button>
+
+                    <motion.div
+                        initial={{ opacity: 0, y: 24 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.05 }}
+                        className="rounded-3xl border border-cyan-400/20 bg-black/30 p-7 text-left backdrop-blur-xl"
+                    >
+                        <div className="mb-5 flex items-center justify-between gap-4">
+                            <div className="flex items-center gap-3">
+                                <div className="rounded-2xl border border-cyan-400/30 bg-cyan-400/10 p-3 text-cyan-200">
+                                    <Sparkles className="h-6 w-6" />
+                                </div>
+                                <div>
+                                    <p className="text-xs font-bold uppercase tracking-[0.2em] text-cyan-200/80">Sesión simple</p>
+                                    <h2 className="text-2xl font-black text-white">Un solo juego</h2>
+                                </div>
+                            </div>
+                            <Badge className="border-cyan-400/30 bg-cyan-400/10 px-4 py-1 font-bold tracking-widest text-cyan-100">
+                                1 FASE
+                            </Badge>
+                        </div>
+                        <p className="max-w-xl text-sm leading-6 text-zinc-400">
+                            Si solo quieres lanzar un juego en clase, elige abajo la mecánica. Después ajustarás el contenido y crearás la sesión directamente.
+                        </p>
+                    </motion.div>
+                </div>
+
+                <div className="max-w-7xl mx-auto mb-6 flex items-center justify-between gap-4">
+                    <div>
+                        <h2 className="text-2xl font-black text-white">Sesión rápida con un juego</h2>
+                        <p className="mt-2 text-sm text-zinc-500">
+                            Elige una mecánica para crear una sesión de una sola fase.
+                        </p>
+                    </div>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-7xl mx-auto pb-20">

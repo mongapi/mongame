@@ -1,6 +1,7 @@
 import { motion } from 'motion/react';
 import { Home, Gamepad2, Activity, Settings, Power, Library } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { authAPI } from '@/api/api';
 import { cn } from '@/lib/utils';
 
 const NavItem = ({ icon: Icon, label, path }) => {
@@ -32,6 +33,11 @@ const NavItem = ({ icon: Icon, label, path }) => {
 export default function TeacherNavbar() {
     const navigate = useNavigate();
 
+    const handleLogout = async () => {
+        await authAPI.logout();
+        navigate('/login', { replace: true });
+    };
+
     return (
         <motion.nav className="fixed left-0 top-0 h-screen w-20 hover:w-64 bg-zinc-950/80 backdrop-blur-xl border-r border-white/10 z-50 flex flex-col items-center py-8 transition-all duration-500 ease-out group">
             <div className="mb-12 cursor-pointer" onClick={() => navigate('/dashboard')}>
@@ -49,7 +55,17 @@ export default function TeacherNavbar() {
                 <NavItem icon={Library}  label="BIBLIOTECA"  path="/games" />
                 <NavItem icon={Gamepad2} label="CREAR SESIÓN" path="/sessions/create" />
                 <NavItem icon={Settings} label="CONFIG"      path="/config" />
-                <NavItem icon={Power}    label="CERRAR"      path="/login" />
+                <motion.button
+                    whileHover={{ scale: 1.1, x: 5 }}
+                    whileTap={{ scale: 0.95 }}
+                    onClick={handleLogout}
+                    className="relative p-3 rounded-xl transition-all duration-300 group flex items-center gap-4 w-full overflow-hidden text-zinc-500 hover:text-white hover:bg-white/5"
+                >
+                    <Power className="w-6 h-6 z-10 relative" />
+                    <span className="text-sm font-bold tracking-wider whitespace-nowrap opacity-0 group-hover:opacity-100 transition-all duration-300 absolute left-14">
+                        CERRAR
+                    </span>
+                </motion.button>
             </div>
         </motion.nav>
     );
