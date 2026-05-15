@@ -35,7 +35,7 @@ export default function TeacherNavbar() {
 
     const handleLogout = async () => {
         await authAPI.logout();
-        navigate('/login', { replace: true });
+        navigate('/', { replace: true });
     };
 
     return (

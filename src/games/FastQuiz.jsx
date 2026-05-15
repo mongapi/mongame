@@ -3,7 +3,7 @@ import { motion } from "motion/react";
 import { AlertCircle, CheckCircle2, Loader, Timer, XCircle, Zap } from "lucide-react";
 import { sessionAPI } from "@/api/api";
 import { GameErrorState, GameLoadingState } from "@/games/shared/GameScreenShell";
-import { useSessionGame } from "@/games/shared/useSessionGame";
+import { useSessionGame } from "@/hooks/useSessionGame";
 
 function resolveQuizContent(gameContent) {
     return {

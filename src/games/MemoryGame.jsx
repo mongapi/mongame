@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from "motion/react";
 import { Cpu, Zap, ShieldCheck } from "lucide-react";
 import { sessionAPI } from '@/api/api';
 import { GameErrorState, GameLoadingState } from "@/games/shared/GameScreenShell";
-import { useSessionGame } from "@/games/shared/useSessionGame";
+import { useSessionGame } from "@/hooks/useSessionGame";
 import { validateGameContent } from "@/games/shared/gameContentValidation";
 
 function shuffleCards(cards) {

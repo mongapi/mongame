@@ -8,7 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { Separator } from '@/components/ui/separator';
 import { GameErrorState, GameLoadingState } from '@/games/shared/GameScreenShell';
-import { useSessionGame } from '@/games/shared/useSessionGame';
+import { useSessionGame } from '@/hooks/useSessionGame';
 import { validateGameContent } from '@/games/shared/gameContentValidation';
 
 function normalizeGuessContent(gameContent) {

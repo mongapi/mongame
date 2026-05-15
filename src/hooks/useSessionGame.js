@@ -23,6 +23,7 @@ export function useSessionGame({ resolveContent, validateContent }) {
     const [session, setSession] = useState(location.state?.session ?? null);
     const [isLoading, setIsLoading] = useState(Boolean(sessionId) && !location.state?.session);
     const [error, setError] = useState('');
+
     const participant = useMemo(() => {
         const deviceId = localStorage.getItem('device_id') || `web-${Math.random().toString(36).slice(2, 10)}`;
         localStorage.setItem('device_id', deviceId);
@@ -44,7 +45,9 @@ export function useSessionGame({ resolveContent, validateContent }) {
 
         async function loadSession() {
             const result = await sessionAPI.get(sessionId);
-            if (cancelled) return;
+            if (cancelled) {
+                return;
+            }
 
             if (!result.success) {
                 setError(result.error);

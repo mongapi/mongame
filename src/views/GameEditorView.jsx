@@ -1,193 +1,37 @@
-import { useEffect, useState } from 'react';
-import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { motion } from 'motion/react';
 import { AlertCircle, CheckCircle2, Code2, Loader, Save } from 'lucide-react';
-import { gameAPI, gameTypeAPI, sessionAPI } from '@/api/api';
-import GameContentForm, { getTemplateForGameType } from '@/components/gameForms/GameContentForm';
 import { SessionModeCards } from '@/components/organisms/SessionModeSelector';
 import { validateGameContent } from '@/games/shared/gameContentValidation';
+import { useGameEditor } from '@/hooks/useGameEditor';
 
 export default function GameEditorView() {
-    const navigate = useNavigate();
-    const location = useLocation();
-    const { type, id } = useParams();
-    const isEditing = Boolean(id);
-    const isSessionCreationFlow = location.pathname.startsWith('/sessions/create');
-
-    const [gameTypes, setGameTypes] = useState([]);
-    const [isLoading, setIsLoading] = useState(true);
-    const [isSaving, setIsSaving] = useState(false);
-    const [error, setError] = useState('');
-    const [success, setSuccess] = useState('');
-    const [showAdvancedJson, setShowAdvancedJson] = useState(false);
-    const [jsonDraft, setJsonDraft] = useState('');
-    const [sessionMode, setSessionMode] = useState('individual');
-    const [form, setForm] = useState({
-        name: '',
-        description: '',
-        game_type_id: '',
-        game_content: getTemplateForGameType(type),
-    });
-
-    const selectedGameType = gameTypes.find((item) => String(item.id) === String(form.game_type_id));
-    const selectedGameTypeCode = selectedGameType?.code ?? type;
-    const selectedGameTypeLabel = selectedGameType?.name ?? 'Sin seleccionar';
-    const showTemplateNotice = Boolean(location.state?.templateSaved);
-
-    useEffect(() => {
-        let mounted = true;
-
-        async function loadEditor() {
-            setIsLoading(true);
-            setError('');
-
-            const typesResult = await gameTypeAPI.list();
-            if (!typesResult.success) {
-                if (mounted) {
-                    setError(typesResult.error);
-                    setIsLoading(false);
-                }
-                return;
-            }
-
-            if (!mounted) return;
-
-            setGameTypes(typesResult.data);
-
-            if (isEditing) {
-                const gameResult = await gameAPI.get(id);
-                if (!gameResult.success) {
-                    if (mounted) {
-                        setError(gameResult.error);
-                        setIsLoading(false);
-                    }
-                    return;
-                }
-
-                if (!mounted) return;
-
-                setForm({
-                    name: gameResult.data.name ?? '',
-                    description: gameResult.data.description ?? '',
-                    game_type_id: String(gameResult.data.game_type_id ?? ''),
-                    game_content: gameResult.data.game_content ?? {},
-                });
-                setIsLoading(false);
-                return;
-            }
-
-            const selectedType = typesResult.data.find((item) => item.code === type);
-
-            if (!selectedType) {
-                setError('Ese tipo de juego no esta disponible todavia en el backend.');
-                setIsLoading(false);
-                return;
-            }
-
-            setForm((current) => ({
-                ...current,
-                game_type_id: String(selectedType.id),
-                game_content: getTemplateForGameType(selectedType.code),
-            }));
-            setIsLoading(false);
-        }
-
-        loadEditor();
-
-        return () => {
-            mounted = false;
-        };
-    }, [id, isEditing, type]);
-
-    useEffect(() => {
-        setJsonDraft(JSON.stringify(form.game_content ?? {}, null, 2));
-    }, [form.game_content]);
-
-    const handleSubmit = async (event) => {
-        event.preventDefault();
-        await saveGame({ createSessionFlow: false });
-    };
-
-    const buildPayload = () => {
-        return {
-            payload: {
-                name: form.name.trim(),
-                description: form.description.trim(),
-                game_type_id: Number(form.game_type_id),
-                game_content: form.game_content,
-            },
-            parsedContent: form.game_content,
-        };
-    };
-
-    const saveGame = async ({ createSessionFlow = false } = {}) => {
-        setError('');
-        setSuccess('');
-
-        const validationMessage = validateGameContent(selectedGameTypeCode, form.game_content);
-        if (validationMessage) {
-            setError(validationMessage);
-            return null;
-        }
-
-        setIsSaving(true);
-        const { payload } = buildPayload();
-
-        const result = isEditing
-            ? await gameAPI.update(id, payload)
-            : await gameAPI.create(payload);
-
-        setIsSaving(false);
-
-        if (!result.success) {
-            setError(result.error);
-            return null;
-        }
-
-        setSuccess(
-            isEditing
-                ? 'Juego actualizado.'
-                : createSessionFlow
-                    ? 'Juego guardado y listo para abrir la sesión.'
-                    : 'Juego guardado como plantilla.'
-        );
-
-        if (!isEditing && !createSessionFlow) {
-            navigate(`/games/${result.data.id}/edit`, {
-                replace: true,
-                state: {
-                    templateSaved: true,
-                },
-            });
-        }
-
-        return result.data;
-    };
-
-    const handleCreateSession = async () => {
-        const savedGame = await saveGame({ createSessionFlow: true });
-        if (!savedGame) {
-            return;
-        }
-
-        const sessionResult = await sessionAPI.create({
-            game_id: savedGame.id,
-            game_content: form.game_content,
-            game_mode: sessionMode,
-        });
-
-        if (!sessionResult.success) {
-            setError(sessionResult.error);
-            return;
-        }
-
-        navigate(`/dashboard/${sessionResult.data.id}`, {
-            state: {
-                justCreated: true,
-                createdSession: sessionResult.data,
-            },
-        });
-    };
+    const {
+        GameContentForm,
+        isEditing,
+        isSessionCreationFlow,
+        gameTypes,
+        isLoading,
+        isSaving,
+        error,
+        success,
+        showAdvancedJson,
+        jsonDraft,
+        sessionMode,
+        setSessionMode,
+        form,
+        selectedGameType,
+        selectedGameTypeCode,
+        selectedGameTypeLabel,
+        showTemplateNotice,
+        setShowAdvancedJson,
+        updateField,
+        updateGameType,
+        updateGameContent,
+        updateJson,
+        handleSubmit,
+        handleCreateSession,
+        goBack,
+    } = useGameEditor();
 
     if (isLoading) {
         return (
@@ -209,7 +53,7 @@ export default function GameEditorView() {
                     </div>
                     <button
                         type="button"
-                        onClick={() => navigate(isEditing ? '/games' : '/sessions/create')}
+                        onClick={goBack}
                         className="rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm font-semibold text-zinc-200 transition hover:bg-white/10"
                     >
                         {isEditing ? 'Volver a biblioteca' : 'Volver a crear sesión'}
@@ -255,7 +99,7 @@ export default function GameEditorView() {
                                 type="text"
                                 required
                                 value={form.name}
-                                onChange={(event) => setForm((current) => ({ ...current, name: event.target.value }))}
+                                onChange={(event) => updateField('name', event.target.value)}
                                 className="mb-5 w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-white outline-none transition focus:border-cyan-400"
                                 placeholder="Ejemplo: Quiz redes y protocolos"
                             />
@@ -269,14 +113,7 @@ export default function GameEditorView() {
                                 <select
                                     required
                                     value={form.game_type_id}
-                                    onChange={(event) => {
-                                        const selected = gameTypes.find((item) => String(item.id) === event.target.value);
-                                        setForm((current) => ({
-                                            ...current,
-                                            game_type_id: event.target.value,
-                                            game_content: selected ? getTemplateForGameType(selected.code) : current.game_content,
-                                        }));
-                                    }}
+                                    onChange={(event) => updateGameType(event.target.value)}
                                     className="mb-2 w-full rounded-2xl border border-white/10 bg-zinc-950 px-4 py-3 text-white outline-none transition focus:border-cyan-400"
                                 >
                                     <option value="" className="bg-white text-zinc-950">Selecciona un tipo</option>
@@ -297,7 +134,7 @@ export default function GameEditorView() {
                             <textarea
                                 rows={6}
                                 value={form.description}
-                                onChange={(event) => setForm((current) => ({ ...current, description: event.target.value }))}
+                                onChange={(event) => updateField('description', event.target.value)}
                                 className="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-white outline-none transition focus:border-cyan-400"
                                 placeholder="Describe la actividad, objetivos o reglas del juego."
                             />
@@ -334,7 +171,7 @@ export default function GameEditorView() {
                             <GameContentForm
                                 typeCode={selectedGameTypeCode}
                                 value={form.game_content}
-                                onChange={(gameContent) => setForm((current) => ({ ...current, game_content: gameContent }))}
+                                onChange={updateGameContent}
                             />
 
                             {showAdvancedJson ? (
@@ -346,18 +183,7 @@ export default function GameEditorView() {
                                     <textarea
                                         rows={18}
                                         value={jsonDraft}
-                                        onChange={(event) => {
-                                            const nextJson = event.target.value;
-                                            setJsonDraft(nextJson);
-
-                                            try {
-                                                const parsed = JSON.parse(nextJson);
-                                                setForm((current) => ({ ...current, game_content: parsed }));
-                                                setError('');
-                                            } catch {
-                                                setError('El JSON avanzado no es valido todavia.');
-                                            }
-                                        }}
+                                        onChange={(event) => updateJson(event.target.value)}
                                         className="w-full rounded-2xl border border-white/10 bg-zinc-950 px-4 py-4 font-mono text-sm text-cyan-100 outline-none transition focus:border-cyan-400"
                                     />
                                 </div>

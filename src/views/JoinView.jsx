@@ -1,62 +1,9 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { motion } from 'motion/react';
 import { AlertCircle, ArrowRight, Loader, Radio } from 'lucide-react';
-import { sessionAPI } from '@/api/api';
-import { getSessionModeMeta } from '@/components/organisms/SessionModeSelector';
-
-const routeByGameType = {
-  memory: '/jugar/memory',
-  quiz: '/jugar/quiz',
-  timeline: '/jugar/cronologias',
-  filling_blanks: '/jugar/completar',
-  guess_who: '/jugar/adivina',
-  shooting: '/jugar/shooter',
-};
+import { useJoinView } from '@/hooks/useJoinView';
 
 export default function JoinView() {
-  const navigate = useNavigate();
-  const [pin, setPin] = useState('');
-  const [playerName, setPlayerName] = useState(localStorage.getItem('player_name') || '');
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState('');
-
-  const handleSubmit = async (event) => {
-    event.preventDefault();
-    setError('');
-    setIsLoading(true);
-
-    const normalizedPin = pin.trim();
-    const result = await sessionAPI.joinByPin(normalizedPin);
-
-    if (!result.success) {
-      setError(result.error);
-      setIsLoading(false);
-      return;
-    }
-
-    const targetRoute = routeByGameType[result.meta.game_type_code];
-
-    if (!targetRoute) {
-      setError('La sesión existe, pero su tipo de juego aún no está conectado en el front.');
-      setIsLoading(false);
-      return;
-    }
-
-    const modeMeta = getSessionModeMeta(result.data.game_mode || 'individual');
-    const existingDeviceId = localStorage.getItem('device_id') || `web-${Math.random().toString(36).slice(2, 10)}`;
-    const resolvedPlayerName = playerName.trim() || (modeMeta.value === 'table' ? 'Mesa web' : modeMeta.value === 'shared' ? 'Puesto web' : 'Alumno web');
-    localStorage.setItem('device_id', existingDeviceId);
-    localStorage.setItem('player_name', resolvedPlayerName);
-
-    navigate(`${targetRoute}?sessionId=${result.data.id}&pin=${encodeURIComponent(normalizedPin)}`, {
-      state: {
-        session: result.data,
-        playerName: resolvedPlayerName,
-        deviceId: existingDeviceId,
-      },
-    });
-  };
+  const { pin, playerName, loading, error, handleSubmit, handlePinChange, handlePlayerNameChange } = useJoinView();
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4 bg-zinc-950 text-white">
@@ -95,9 +42,9 @@ export default function JoinView() {
               pattern="[0-9]{6}"
               maxLength={6}
               required
-              disabled={isLoading}
+              disabled={loading}
               value={pin}
-              onChange={(event) => setPin(event.target.value.replace(/\D/g, '').slice(0, 6))}
+              onChange={(event) => handlePinChange(event.target.value)}
               placeholder="000000"
               className="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-4 text-center font-['Orbitron'] text-3xl tracking-[0.4em] text-white outline-none transition focus:border-cyan-400 disabled:cursor-not-allowed disabled:opacity-50"
             />
@@ -108,9 +55,9 @@ export default function JoinView() {
             <input
               type="text"
               maxLength={50}
-              disabled={isLoading}
+              disabled={loading}
               value={playerName}
-              onChange={(event) => setPlayerName(event.target.value)}
+              onChange={(event) => handlePlayerNameChange(event.target.value)}
               placeholder="Ejemplo: Mesa 3"
               className="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-white outline-none transition focus:border-cyan-400 disabled:cursor-not-allowed disabled:opacity-50"
             />
@@ -119,10 +66,10 @@ export default function JoinView() {
 
           <button
             type="submit"
-            disabled={isLoading || pin.trim().length !== 6}
+            disabled={loading || pin.trim().length !== 6}
             className="flex w-full items-center justify-center gap-2 rounded-2xl bg-cyan-400 px-4 py-4 font-bold text-zinc-950 transition hover:bg-cyan-300 disabled:cursor-not-allowed disabled:opacity-50"
           >
-            {isLoading ? (
+            {loading ? (
               <>
                 <Loader className="h-5 w-5 animate-spin" />
                 Conectando...

@@ -35,7 +35,7 @@ export default function AdminNavbar() {
 
     const handleLogout = async () => {
         await authAPI.logout();
-        navigate('/login', { replace: true });
+        navigate('/', { replace: true });
     };
 
     return (

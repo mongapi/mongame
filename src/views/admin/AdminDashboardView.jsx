@@ -1,20 +1,6 @@
-import { useEffect, useMemo, useState } from 'react';
-import { Activity, Boxes, Database, Gauge, Radio, ShieldCheck, Users } from 'lucide-react';
-import { adminAPI } from '@/api/api';
-
-function formatDateTime(value) {
-    if (!value) {
-        return 'Sin fecha';
-    }
-
-    return new Intl.DateTimeFormat('es-ES', {
-        day: '2-digit',
-        month: 'short',
-        year: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit',
-    }).format(new Date(value));
-}
+import { Activity, Boxes, Database, Users } from 'lucide-react';
+import { useAdminDashboard } from '@/hooks/useAdminDashboard';
+import { formatDateTime } from '@/lib/formatters';
 
 function MetricCard({ icon: Icon, label, value, tone = 'cyan' }) {
     const tones = {
@@ -38,42 +24,7 @@ function MetricCard({ icon: Icon, label, value, tone = 'cyan' }) {
 }
 
 export default function AdminDashboardView() {
-    const [dashboard, setDashboard] = useState(null);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState('');
-
-    useEffect(() => {
-        let mounted = true;
-
-        async function loadDashboard() {
-            const result = await adminAPI.dashboard();
-            if (!mounted) {
-                return;
-            }
-
-            if (!result.success) {
-                setError(result.error);
-                setLoading(false);
-                return;
-            }
-
-            setDashboard(result.data);
-            setLoading(false);
-        }
-
-        loadDashboard();
-
-        return () => {
-            mounted = false;
-        };
-    }, []);
-
-    const quickActions = useMemo(() => ([
-        { title: 'Gestionar usuarios', description: 'Próximo módulo para altas, roles y bloqueos.', path: '/admin/users' },
-        { title: 'Tipos de juego', description: 'Alta y mantenimiento de mecánicas activas.', path: '/admin/game-types' },
-        { title: 'Media', description: 'Biblioteca de recursos multimedia compartidos.', path: '/admin/media' },
-        { title: 'Auditoría', description: 'Seguimiento de actividad y cambios del sistema.', path: '/admin/audit' },
-    ]), []);
+    const { dashboard, loading, error, quickActions } = useAdminDashboard();
 
     if (loading) {
         return <div className="min-h-screen flex items-center justify-center text-white font-['Orbitron']">CARGANDO DASHBOARD ADMIN...</div>;

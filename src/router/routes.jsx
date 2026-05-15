@@ -9,15 +9,17 @@ import LoginView from "@/views/LoginView";
 import RegisterView from "@/views/RegisterView";
 import JoinView from "@/views/JoinView";
 import HomeView from "@/views/HomeView";
+import AboutView from "@/views/AboutView";
 
 // Vistas profesor
 import DashboardView from "@/views/DashboardView";
+import ConfigView from "@/views/ConfigView";
 import GameChooserView from "@/views/GameChooserView";
 import GameEditorView from "@/views/GameEditorView";
 import GameLibraryView from "@/views/GameLibraryView";
 import LessonPlanEditorView from "@/views/LessonPlanEditorView";
 
-// Vistas admin (las crearemos después)
+
 import AdminDashboardView from "@/views/admin/AdminDashboardView";
 // import AdminUsersView from "@/views/admin/AdminUsersView";
 // import AdminGameTypesView from "@/views/admin/AdminGameTypesView";
@@ -32,33 +34,36 @@ import OrdenarCronologias from "@/games/OrdenarCronologias";
 import Shooter3D from "@/games/Shooter3D";
 import AdivinaQue3D from "@/games/AdivinaQue3D";
 import OrbitalOrder from "@/games/OrbitalOrder";
+import { ROUTE_PATHS } from "@/router/paths";
 
 export default function AppRoutes() {
     return (
         <Routes>
             {/* Públicas */}
-            <Route path="/" element={<HomeView />} />
-            <Route path="/login" element={<LoginView />} />
-            <Route path="/register" element={<RegisterView />} />
-            <Route path="/join" element={<JoinView />} />
+            <Route path={ROUTE_PATHS.home} element={<HomeView />} />
+            <Route path={ROUTE_PATHS.about} element={<AboutView />} />
+            <Route path={ROUTE_PATHS.login} element={<LoginView />} />
+            <Route path={ROUTE_PATHS.register} element={<RegisterView />} />
+            <Route path={ROUTE_PATHS.join} element={<JoinView />} />
 
             {/* Profesor */}
             <Route element={<TeacherLayout />}>
-                <Route path="/dashboard" element={<DashboardView />} />
-                <Route path="/dashboard/:sessionId" element={<DashboardView />} />
-                <Route path="/games" element={<GameLibraryView />} />
-                <Route path="/games/create" element={<GameChooserView />} />
-                <Route path="/games/create/:type" element={<GameEditorView />} />
-                <Route path="/games/:id/edit" element={<GameEditorView />} />
-                <Route path="/lesson-plans/create" element={<LessonPlanEditorView />} />
-                <Route path="/lesson-plans/:id/edit" element={<LessonPlanEditorView />} />
-                <Route path="/sessions/create" element={<GameChooserView />} />
-                <Route path="/sessions/create/:type" element={<GameEditorView />} />
+                <Route path={ROUTE_PATHS.dashboard} element={<DashboardView />} />
+                <Route path={ROUTE_PATHS.dashboardSession} element={<DashboardView />} />
+                <Route path={ROUTE_PATHS.config} element={<ConfigView />} />
+                <Route path={ROUTE_PATHS.games} element={<GameLibraryView />} />
+                <Route path={ROUTE_PATHS.gamesCreate} element={<GameChooserView />} />
+                <Route path={ROUTE_PATHS.gameCreateByType} element={<GameEditorView />} />
+                <Route path={ROUTE_PATHS.gameEdit} element={<GameEditorView />} />
+                <Route path={ROUTE_PATHS.lessonPlansCreate} element={<LessonPlanEditorView />} />
+                <Route path={ROUTE_PATHS.lessonPlanEdit} element={<LessonPlanEditorView />} />
+                <Route path={ROUTE_PATHS.sessionsCreate} element={<GameChooserView />} />
+                <Route path={ROUTE_PATHS.sessionCreateByType} element={<GameEditorView />} />
             </Route>
 
             {/* Admin - descomentar cuando tengamos las vistas */}
              <Route element={<AdminLayout />}>
-                <Route path="/admin/dashboard" element={<AdminDashboardView />} />
+                <Route path={ROUTE_PATHS.adminDashboard} element={<AdminDashboardView />} />
                 {/* <Route path="/admin/users" element={<AdminUsersView />} /> */}
                 {/* <Route path="/admin/game-types" element={<AdminGameTypesView />} /> */}
                 {/* <Route path="/admin/media" element={<AdminMediaView />} /> */}
@@ -66,17 +71,17 @@ export default function AppRoutes() {
 
             {/* Juegos */}
             <Route element={<GameLayout />}>
-                <Route path="/jugar/memory" element={<MemoryGame />} />
-                <Route path="/jugar/memory3d" element={<MemoryGame3D />} />
-                <Route path="/jugar/quiz" element={<FastQuiz />} />
-                <Route path="/jugar/completar" element={<CompletarEnunciado />} />
-                <Route path="/jugar/cronologias" element={<OrdenarCronologias />} />
-                <Route path="/jugar/shooter" element={<Shooter3D />} />
-                <Route path="/jugar/adivina" element={<AdivinaQue3D />} />
-                <Route path="/jugar/orbital" element={<OrbitalOrder />} />
+                <Route path={ROUTE_PATHS.playMemory} element={<MemoryGame />} />
+                <Route path={ROUTE_PATHS.playMemory3D} element={<MemoryGame3D />} />
+                <Route path={ROUTE_PATHS.playQuiz} element={<FastQuiz />} />
+                <Route path={ROUTE_PATHS.playFillingBlanks} element={<CompletarEnunciado />} />
+                <Route path={ROUTE_PATHS.playTimeline} element={<OrdenarCronologias />} />
+                <Route path={ROUTE_PATHS.playShooter} element={<Shooter3D />} />
+                <Route path={ROUTE_PATHS.playGuessWho} element={<AdivinaQue3D />} />
+                <Route path={ROUTE_PATHS.playOrbital} element={<OrbitalOrder />} />
             </Route>
 
-            <Route path="*" element={<HomeView />} />
+            <Route path={ROUTE_PATHS.fallback} element={<HomeView />} />
         </Routes>
     );
 }
