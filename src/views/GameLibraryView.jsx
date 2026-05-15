@@ -3,6 +3,7 @@ import { motion } from 'motion/react';
 import { useNavigate } from 'react-router-dom';
 import { AlertCircle, ArrowDownUp, BookOpen, Filter, Pencil, PlayCircle, PlusCircle, Rows3, Search, Shapes } from 'lucide-react';
 import { gameAPI, lessonPlanAPI, sessionAPI } from '@/api/api';
+import { SessionModeDialog } from '@/components/organisms/SessionModeSelector';
 
 const GAMES_PER_PAGE = 6;
 const LESSON_PLANS_PER_PAGE = 8;
@@ -135,6 +136,8 @@ export default function GameLibraryView() {
     const [lessonPlanSort, setLessonPlanSort] = useState('recent');
     const [gamesPage, setGamesPage] = useState(1);
     const [lessonPlansPage, setLessonPlansPage] = useState(1);
+    const [sessionMode, setSessionMode] = useState('individual');
+    const [pendingLaunch, setPendingLaunch] = useState(null);
 
     useEffect(() => {
         let mounted = true;
@@ -307,12 +310,27 @@ export default function GameLibraryView() {
     }, [lessonPlansPage, totalLessonPlanPages]);
 
     const handleStartSession = async (game) => {
+        setPendingLaunch({ type: 'game', item: game });
+    };
+
+    const handleStartLessonPlanSession = async (lessonPlan) => {
+        setPendingLaunch({ type: 'lessonPlan', item: lessonPlan });
+    };
+
+    const handleConfirmLaunch = async () => {
+        if (!pendingLaunch) {
+            return;
+        }
+
+        if (pendingLaunch.type === 'game') {
+            const game = pendingLaunch.item;
         setStartingGameId(game.id);
         setError('');
 
         const result = await sessionAPI.create({
             game_id: game.id,
             game_content: game.game_content ?? {},
+            game_mode: sessionMode,
         });
 
         setStartingGameId(null);
@@ -322,15 +340,24 @@ export default function GameLibraryView() {
             return;
         }
 
-        navigate(`/dashboard/${result.data.id}`);
-    };
+        setPendingLaunch(null);
 
-    const handleStartLessonPlanSession = async (lessonPlan) => {
+        navigate(`/dashboard/${result.data.id}`, {
+            state: {
+                justCreated: true,
+                createdSession: result.data,
+            },
+        });
+        return;
+        }
+
+        const lessonPlan = pendingLaunch.item;
         setStartingLessonPlanId(lessonPlan.id);
         setError('');
 
         const result = await sessionAPI.create({
             lesson_plan_id: lessonPlan.id,
+            game_mode: sessionMode,
         });
 
         setStartingLessonPlanId(null);
@@ -340,7 +367,14 @@ export default function GameLibraryView() {
             return;
         }
 
-        navigate(`/dashboard/${result.data.id}`);
+        setPendingLaunch(null);
+
+        navigate(`/dashboard/${result.data.id}`, {
+            state: {
+                justCreated: true,
+                createdSession: result.data,
+            },
+        });
     };
 
     if (isLoading) {
@@ -349,6 +383,15 @@ export default function GameLibraryView() {
 
     return (
         <div className="min-h-screen px-8 py-10 text-white">
+            <SessionModeDialog
+                isOpen={Boolean(pendingLaunch)}
+                value={sessionMode}
+                onChange={setSessionMode}
+                onClose={() => setPendingLaunch(null)}
+                onConfirm={handleConfirmLaunch}
+                title={pendingLaunch?.type === 'lessonPlan' ? 'Elegir modo para la sesión del lesson plan' : 'Elegir modo para la sesión del juego'}
+            />
+
             <div className="mx-auto max-w-7xl">
                 <div className="mb-8 flex flex-wrap items-end justify-between gap-6">
                     <div>

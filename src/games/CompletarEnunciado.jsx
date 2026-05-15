@@ -1,6 +1,7 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { CheckCircle2, XCircle, RotateCcw, Sparkles } from 'lucide-react';
+import { sessionAPI } from '@/api/api';
 import { GameErrorState, GameLoadingState } from '@/games/shared/GameScreenShell';
 import { useSessionGame } from '@/games/shared/useSessionGame';
 import { validateGameContent } from '@/games/shared/gameContentValidation';
@@ -120,7 +121,7 @@ function buildBlankData(gameContent) {
 }
 
 export default function CompletarEnunciado() {
-    const { content, isLoading, error } = useSessionGame({
+    const { content, sessionId, participant, isLoading, error, setError } = useSessionGame({
         resolveContent: (gameContent) => gameContent ?? {},
         validateContent: (gameContent) => validateGameContent('filling_blanks', gameContent),
     });
@@ -128,6 +129,15 @@ export default function CompletarEnunciado() {
     const levelData = useMemo(() => buildBlankData(content), [content]);
     const [filledBlanks, setFilledBlanks] = useState({});
     const [status, setStatus] = useState('playing'); // playing, error, success
+    const [startedAt, setStartedAt] = useState(() => Date.now());
+    const [isSubmitting, setIsSubmitting] = useState(false);
+
+    useEffect(() => {
+        setFilledBlanks({});
+        setStatus('playing');
+        setStartedAt(Date.now());
+        setError('');
+    }, [content, setError]);
 
     if (isLoading) {
         return <GameLoadingState title="Cargando ejercicio de completar..." />;
@@ -198,9 +208,16 @@ export default function CompletarEnunciado() {
         e.preventDefault();
     };
 
-    const handleCheck = () => {
+    const handleCheck = async () => {
         let isAllCorrect = true;
         let isComplete = true;
+
+        const submittedWords = levelData.blanks
+            .map((blank) => {
+                const optionId = filledBlanks[blank.id];
+                return levelData.options.find((option) => option.id === optionId)?.text ?? '';
+            })
+            .filter(Boolean);
 
         levelData.blanks.forEach(blank => {
             if (!filledBlanks[blank.id]) {
@@ -210,6 +227,25 @@ export default function CompletarEnunciado() {
                 isAllCorrect = false;
             }
         });
+
+        if (sessionId && !isSubmitting) {
+            setIsSubmitting(true);
+            const result = await sessionAPI.submitAnswer(sessionId, {
+                question_id: 'fill-blanks',
+                answer: submittedWords,
+                device_id: participant.deviceId,
+                player_name: participant.playerName,
+                player_number: 1,
+                elapsed_seconds: Math.max(0, Math.round((Date.now() - startedAt) / 1000)),
+                completed: isAllCorrect,
+            });
+
+            if (!result.success) {
+                setError(result.error);
+            }
+
+            setIsSubmitting(false);
+        }
 
         if (!isComplete && !isAllCorrect) {
              setStatus('error');
@@ -226,6 +262,8 @@ export default function CompletarEnunciado() {
     const handleReset = () => {
         setFilledBlanks({});
         setStatus('playing');
+        setStartedAt(Date.now());
+        setError('');
     };
 
     const getAvailableOptions = () => {

@@ -119,6 +119,36 @@ export const sessionAPI = {
         }
     },
 
+    async results(id) {
+        try {
+            const response = await api.get(`/sessions/${id}/results`);
+            return { success: true, data: response.data.data };
+        } catch (error) {
+            const message = error.response?.data?.message || 'No se pudieron cargar los resultados de la sesión';
+            return { success: false, error: message };
+        }
+    },
+
+    async exportResults(id) {
+        try {
+            const response = await api.get(`/sessions/${id}/results/export`, {
+                responseType: 'blob',
+            });
+
+            const disposition = response.headers['content-disposition'] || '';
+            const filenameMatch = disposition.match(/filename="?([^\"]+)"?/i);
+
+            return {
+                success: true,
+                data: response.data,
+                filename: filenameMatch?.[1] || `resultados-sesion-${id}.csv`,
+            };
+        } catch (error) {
+            const message = error.response?.data?.message || 'No se pudieron exportar los resultados de la sesión';
+            return { success: false, error: message };
+        }
+    },
+
     async joinByPin(pin) {
         try {
             const response = await api.get(`/sessions/join/${pin}`);
@@ -156,6 +186,26 @@ export const sessionAPI = {
             return { success: true, data: response.data.data };
         } catch (error) {
             const message = error.response?.data?.message || 'No se pudo enviar la respuesta';
+            return { success: false, error: message, details: error.response?.data?.errors ?? null };
+        }
+    },
+
+    async touchPresence(sessionId, payload) {
+        try {
+            const response = await api.post(`/sessions/${sessionId}/presence`, payload);
+            return { success: true, data: response.data.data };
+        } catch (error) {
+            const message = error.response?.data?.message || 'No se pudo actualizar la presencia de la sesión';
+            return { success: false, error: message, details: error.response?.data?.errors ?? null };
+        }
+    },
+
+    async leavePresence(sessionId, payload) {
+        try {
+            const response = await api.post(`/sessions/${sessionId}/presence/leave`, payload);
+            return { success: true, data: response.data.data };
+        } catch (error) {
+            const message = error.response?.data?.message || 'No se pudo cerrar la presencia de la sesión';
             return { success: false, error: message, details: error.response?.data?.errors ?? null };
         }
     }
@@ -253,6 +303,18 @@ export const lessonPlanAPI = {
         } catch (error) {
             const message = error.response?.data?.message || 'No se pudo actualizar el lesson plan';
             return { success: false, error: message, details: error.response?.data?.errors ?? null };
+        }
+    },
+};
+
+export const adminAPI = {
+    async dashboard() {
+        try {
+            const response = await api.get('/admin/dashboard');
+            return { success: true, data: response.data.data };
+        } catch (error) {
+            const message = error.response?.data?.message || 'No se pudo cargar el dashboard de admin';
+            return { success: false, error: message };
         }
     },
 };

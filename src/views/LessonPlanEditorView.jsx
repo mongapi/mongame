@@ -3,6 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { motion } from 'motion/react';
 import { AlertCircle, ArrowDown, ArrowUp, CheckCircle2, Loader, PlusCircle, Save, Trash2 } from 'lucide-react';
 import { gameAPI, lessonPlanAPI, sessionAPI } from '@/api/api';
+import { SessionModeCards } from '@/components/organisms/SessionModeSelector';
 
 function SelectedGameCard({ game, index, total, onMoveUp, onMoveDown, onRemove }) {
     return (
@@ -45,6 +46,7 @@ export default function LessonPlanEditorView() {
     const [isLaunching, setIsLaunching] = useState(false);
     const [error, setError] = useState('');
     const [success, setSuccess] = useState('');
+    const [sessionMode, setSessionMode] = useState('individual');
 
     useEffect(() => {
         let mounted = true;
@@ -167,7 +169,7 @@ export default function LessonPlanEditorView() {
         }
 
         setIsLaunching(true);
-        const result = await sessionAPI.create({ lesson_plan_id: savedLessonPlan.id });
+        const result = await sessionAPI.create({ lesson_plan_id: savedLessonPlan.id, game_mode: sessionMode });
         setIsLaunching(false);
 
         if (!result.success) {
@@ -175,7 +177,12 @@ export default function LessonPlanEditorView() {
             return;
         }
 
-        navigate(`/dashboard/${result.data.id}`);
+        navigate(`/dashboard/${result.data.id}`, {
+            state: {
+                justCreated: true,
+                createdSession: result.data,
+            },
+        });
     };
 
     if (isLoading) {
@@ -235,6 +242,14 @@ export default function LessonPlanEditorView() {
 
                             <div className="mt-6 rounded-2xl border border-white/10 bg-white/5 p-4 text-sm text-zinc-400">
                                 Este lesson plan tendrá {form.game_ids.length} fase{form.game_ids.length === 1 ? '' : 's'}.
+                            </div>
+
+                            <div className="mt-6 space-y-3">
+                                <div>
+                                    <h2 className="text-sm font-medium text-zinc-300">Modo de sesión</h2>
+                                    <p className="mt-1 text-xs text-zinc-500">Define si los participantes entrarán como grupo, por mesa o individualmente.</p>
+                                </div>
+                                <SessionModeCards value={sessionMode} onChange={setSessionMode} />
                             </div>
                         </div>
 

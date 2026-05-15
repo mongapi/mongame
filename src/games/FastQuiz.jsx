@@ -30,6 +30,7 @@ export default function QuizGame() {
         session,
         sessionId,
         content,
+        participant,
         isLoading,
         error,
         setError,
@@ -43,12 +44,42 @@ export default function QuizGame() {
     const [selectedOption, setSelectedOption] = useState(null);
     const [gameState, setGameState] = useState("playing"); // 'playing', 'answered', 'timeout'
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [roundStartedAt, setRoundStartedAt] = useState(() => Date.now());
 
     useEffect(() => {
         setTimeLeft(currentQuestion?.timeLimit ?? 15);
         setSelectedOption(null);
         setGameState('playing');
+        setRoundStartedAt(Date.now());
     }, [currentQuestion?.id, currentQuestion?.timeLimit]);
+
+    const submitCurrentAnswer = async (answerValue, nextState) => {
+        if (!currentQuestion || isSubmitting) return;
+
+        setError('');
+        setGameState(nextState);
+
+        if (!sessionId) {
+            return;
+        }
+
+        setIsSubmitting(true);
+        const result = await sessionAPI.submitAnswer(sessionId, {
+            question_id: currentQuestion.id,
+            answer: answerValue,
+            device_id: participant.deviceId,
+            player_name: participant.playerName,
+            player_number: 1,
+            elapsed_seconds: Math.max(0, Math.round((Date.now() - roundStartedAt) / 1000)),
+            completed: true,
+        });
+
+        if (!result.success) {
+            setError(result.error);
+        }
+
+        setIsSubmitting(false);
+    };
 
     // Lógica del Temporizador
     useEffect(() => {
@@ -56,9 +87,9 @@ export default function QuizGame() {
             const timerId = setTimeout(() => setTimeLeft(timeLeft - 1), 1000);
             return () => clearTimeout(timerId);
         } else if (timeLeft === 0 && gameState === "playing") {
-            setGameState("timeout");
+            submitCurrentAnswer('__timeout__', 'timeout');
         }
-    }, [timeLeft, gameState]);
+    }, [gameState, timeLeft]);
 
     // Manejador de selección
     const handleSelect = async (optionId) => {
@@ -67,29 +98,7 @@ export default function QuizGame() {
 
         setError('');
         setSelectedOption(optionId);
-        setGameState("answered");
-
-        if (!sessionId) {
-            return;
-        }
-
-        setIsSubmitting(true);
-        const existingDeviceId = localStorage.getItem('device_id') || `web-${Math.random().toString(36).slice(2, 10)}`;
-        localStorage.setItem('device_id', existingDeviceId);
-
-        const result = await sessionAPI.submitAnswer(sessionId, {
-            question_id: currentQuestion.id,
-            answer: optionId,
-            device_id: existingDeviceId,
-            player_name: 'Jugador web',
-            player_number: 1,
-        });
-
-        if (!result.success) {
-            setError(result.error);
-        }
-
-        setIsSubmitting(false);
+        await submitCurrentAnswer(optionId, 'answered');
     };
 
     // Función para determinar estilos de los botones según el estado

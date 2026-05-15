@@ -1,6 +1,7 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { BrainCircuit, CheckCircle2, Lightbulb, RotateCcw, Search, Sparkles, XCircle } from 'lucide-react';
+import { sessionAPI } from '@/api/api';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -20,7 +21,7 @@ function normalizeGuessContent(gameContent) {
 }
 
 export default function AdivinaQue3D() {
-  const { content, isLoading, error } = useSessionGame({
+  const { content, sessionId, participant, isLoading, error, setError } = useSessionGame({
     resolveContent: normalizeGuessContent,
     validateContent: (resolvedContent) => validateGameContent('guess_who', resolvedContent),
   });
@@ -29,11 +30,22 @@ export default function AdivinaQue3D() {
   const [guess, setGuess] = useState('');
   const [attempts, setAttempts] = useState([]);
   const [isSolved, setIsSolved] = useState(false);
+  const [startedAt, setStartedAt] = useState(() => Date.now());
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const normalizedAnswer = useMemo(() => content.answer.toLowerCase(), [content.answer]);
   const visibleClues = content.clues.slice(0, revealedCount);
 
-  const handleSubmit = (event) => {
+  useEffect(() => {
+    setRevealedCount(1);
+    setGuess('');
+    setAttempts([]);
+    setIsSolved(false);
+    setStartedAt(Date.now());
+    setError('');
+  }, [content.answer, content.clues, setError]);
+
+  const handleSubmit = async (event) => {
     event.preventDefault();
 
     const normalizedGuess = guess.trim().toLowerCase();
@@ -42,6 +54,25 @@ export default function AdivinaQue3D() {
     }
 
     const isCorrect = normalizedGuess === normalizedAnswer;
+
+    if (sessionId && !isSubmitting) {
+      setIsSubmitting(true);
+      const result = await sessionAPI.submitAnswer(sessionId, {
+        question_id: 'guess-who',
+        answer: guess.trim(),
+        device_id: participant.deviceId,
+        player_name: participant.playerName,
+        player_number: 1,
+        elapsed_seconds: Math.max(0, Math.round((Date.now() - startedAt) / 1000)),
+        completed: isCorrect,
+      });
+
+      if (!result.success) {
+        setError(result.error);
+      }
+
+      setIsSubmitting(false);
+    }
 
     setAttempts((current) => [
       {
@@ -68,6 +99,8 @@ export default function AdivinaQue3D() {
     setGuess('');
     setAttempts([]);
     setIsSolved(false);
+    setStartedAt(Date.now());
+    setError('');
   };
 
   if (isLoading) {

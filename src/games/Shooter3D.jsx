@@ -5,6 +5,7 @@ import * as THREE from 'three';
 import RoomCanvas from '../components/canvas3D/scenes/RoomCanvas';
 import { motion, AnimatePresence } from 'motion/react';
 import { Crosshair, ShieldAlert, Zap, Award, RotateCcw, AlertTriangle } from 'lucide-react';
+import { sessionAPI } from '@/api/api';
 import { GameErrorState, GameLoadingState } from '@/games/shared/GameScreenShell';
 import { useSessionGame } from '@/games/shared/useSessionGame';
 import { validateGameContent } from '@/games/shared/gameContentValidation';
@@ -12,10 +13,12 @@ import { validateGameContent } from '@/games/shared/gameContentValidation';
 function resolveShootingContent(gameContent) {
   const questions = Array.isArray(gameContent?.questions)
     ? gameContent.questions.map((question, questionIndex) => ({
+        id: question.id ?? `shooting-${questionIndex + 1}`,
         q: question.text,
         answers: (question.options ?? []).map((option, optionIndex) => ({
           text: option,
           correct: Number(question.correct) === optionIndex,
+          value: optionIndex,
           id: `${question.id ?? questionIndex}-${optionIndex}`,
         })),
       }))
@@ -132,10 +135,11 @@ const AnswerTarget = ({ answer, position, onClick, disabled }) => {
 };
 
 export default function Shooter3D() {
-  const { content, isLoading, error } = useSessionGame({
+  const { content, sessionId, participant, isLoading, error, setError } = useSessionGame({
     resolveContent: resolveShootingContent,
     validateContent: (resolvedContent) => validateGameContent('shooting', {
       questions: resolvedContent.questions.map((question) => ({
+        id: question.id,
         text: question.q,
         options: question.answers.map((answer) => answer.text),
         correct: question.answers.findIndex((answer) => answer.correct),
@@ -153,6 +157,7 @@ export default function Shooter3D() {
   const [tookDamage, setTookDamage] = useState(false);
   const [feedback, setFeedback] = useState(null); // { text, type }
   const [gameState, setGameState] = useState('playing'); // playing, won, lost
+  const [startedAt, setStartedAt] = useState(() => Date.now());
 
   useEffect(() => {
     setEnemyHealth(maxEnemyHealth);
@@ -162,12 +167,31 @@ export default function Shooter3D() {
     setFeedback(null);
     setIsComputing(false);
     setTookDamage(false);
+    setStartedAt(Date.now());
+    setError('');
   }, [maxEnemyHealth]);
 
-  const handleShoot = (answer) => {
+  const handleShoot = async (answer) => {
     if (gameState !== 'playing' || isComputing) return;
 
     setIsComputing(true);
+    setError('');
+
+    if (sessionId) {
+      const result = await sessionAPI.submitAnswer(sessionId, {
+        question_id: currentQ.id,
+        answer: answer.value,
+        device_id: participant.deviceId,
+        player_name: participant.playerName,
+        player_number: 1,
+        elapsed_seconds: Math.max(0, Math.round((Date.now() - startedAt) / 1000)),
+        completed: qIndex === questions.length - 1,
+      });
+
+      if (!result.success) {
+        setError(result.error);
+      }
+    }
 
     if (answer.correct) {
       setFeedback({ text: "¡IMPACTO CRÍTICO!", type: "success" });

@@ -4,6 +4,7 @@ import { motion } from 'motion/react';
 import { AlertCircle, CheckCircle2, Code2, Loader, Save } from 'lucide-react';
 import { gameAPI, gameTypeAPI, sessionAPI } from '@/api/api';
 import GameContentForm, { getTemplateForGameType } from '@/components/gameForms/GameContentForm';
+import { SessionModeCards } from '@/components/organisms/SessionModeSelector';
 import { validateGameContent } from '@/games/shared/gameContentValidation';
 
 export default function GameEditorView() {
@@ -20,6 +21,7 @@ export default function GameEditorView() {
     const [success, setSuccess] = useState('');
     const [showAdvancedJson, setShowAdvancedJson] = useState(false);
     const [jsonDraft, setJsonDraft] = useState('');
+    const [sessionMode, setSessionMode] = useState('individual');
     const [form, setForm] = useState({
         name: '',
         description: '',
@@ -171,6 +173,7 @@ export default function GameEditorView() {
         const sessionResult = await sessionAPI.create({
             game_id: savedGame.id,
             game_content: form.game_content,
+            game_mode: sessionMode,
         });
 
         if (!sessionResult.success) {
@@ -178,7 +181,12 @@ export default function GameEditorView() {
             return;
         }
 
-        navigate(`/dashboard/${sessionResult.data.id}`);
+        navigate(`/dashboard/${sessionResult.data.id}`, {
+            state: {
+                justCreated: true,
+                createdSession: sessionResult.data,
+            },
+        });
     };
 
     if (isLoading) {
@@ -253,26 +261,32 @@ export default function GameEditorView() {
                             />
 
                             <label className="mb-2 block text-sm font-medium text-zinc-300">Tipo de juego</label>
-                            <select
-                                required
-                                value={form.game_type_id}
-                                onChange={(event) => {
-                                    const selected = gameTypes.find((item) => String(item.id) === event.target.value);
-                                    setForm((current) => ({
-                                        ...current,
-                                        game_type_id: event.target.value,
-                                        game_content: selected ? getTemplateForGameType(selected.code) : current.game_content,
-                                    }));
-                                }}
-                                className="mb-2 w-full rounded-2xl border border-white/10 bg-zinc-950 px-4 py-3 text-white outline-none transition focus:border-cyan-400"
-                            >
-                                <option value="" className="bg-white text-zinc-950">Selecciona un tipo</option>
-                                {gameTypes.map((gameType) => (
-                                    <option key={gameType.id} value={gameType.id} className="bg-white text-zinc-950">
-                                        {gameType.name}
-                                    </option>
-                                ))}
-                            </select>
+                            {isSessionCreationFlow ? (
+                                <div className="mb-2 rounded-2xl border border-cyan-400/20 bg-cyan-400/10 px-4 py-3">
+                                    <p className="font-semibold text-cyan-100">{selectedGameTypeLabel}</p>
+                                </div>
+                            ) : (
+                                <select
+                                    required
+                                    value={form.game_type_id}
+                                    onChange={(event) => {
+                                        const selected = gameTypes.find((item) => String(item.id) === event.target.value);
+                                        setForm((current) => ({
+                                            ...current,
+                                            game_type_id: event.target.value,
+                                            game_content: selected ? getTemplateForGameType(selected.code) : current.game_content,
+                                        }));
+                                    }}
+                                    className="mb-2 w-full rounded-2xl border border-white/10 bg-zinc-950 px-4 py-3 text-white outline-none transition focus:border-cyan-400"
+                                >
+                                    <option value="" className="bg-white text-zinc-950">Selecciona un tipo</option>
+                                    {gameTypes.map((gameType) => (
+                                        <option key={gameType.id} value={gameType.id} className="bg-white text-zinc-950">
+                                            {gameType.name}
+                                        </option>
+                                    ))}
+                                </select>
+                            )}
                             <p className="mb-5 text-xs text-zinc-500">
                                 {selectedGameType?.description
                                     ? `${selectedGameTypeLabel}: ${selectedGameType.description}`
@@ -287,6 +301,16 @@ export default function GameEditorView() {
                                 className="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-white outline-none transition focus:border-cyan-400"
                                 placeholder="Describe la actividad, objetivos o reglas del juego."
                             />
+
+                            {isSessionCreationFlow ? (
+                                <div className="mt-6 space-y-3">
+                                    <div>
+                                        <h2 className="text-sm font-medium text-zinc-300">Modo de sesión</h2>
+                                        <p className="mt-1 text-xs text-zinc-500">Elige si esta sesión será compartida, por mesa o individual.</p>
+                                    </div>
+                                    <SessionModeCards value={sessionMode} onChange={setSessionMode} />
+                                </div>
+                            ) : null}
                         </div>
 
                         <div className="space-y-4 rounded-3xl border border-white/10 bg-black/30 p-6 backdrop-blur-xl">

@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { motion } from 'motion/react';
 import { AlertCircle, ArrowRight, Loader, Radio } from 'lucide-react';
 import { sessionAPI } from '@/api/api';
+import { getSessionModeMeta } from '@/components/organisms/SessionModeSelector';
 
 const routeByGameType = {
   memory: '/jugar/memory',
@@ -16,6 +17,7 @@ const routeByGameType = {
 export default function JoinView() {
   const navigate = useNavigate();
   const [pin, setPin] = useState('');
+  const [playerName, setPlayerName] = useState(localStorage.getItem('player_name') || '');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -41,8 +43,18 @@ export default function JoinView() {
       return;
     }
 
+    const modeMeta = getSessionModeMeta(result.data.game_mode || 'individual');
+    const existingDeviceId = localStorage.getItem('device_id') || `web-${Math.random().toString(36).slice(2, 10)}`;
+    const resolvedPlayerName = playerName.trim() || (modeMeta.value === 'table' ? 'Mesa web' : modeMeta.value === 'shared' ? 'Puesto web' : 'Alumno web');
+    localStorage.setItem('device_id', existingDeviceId);
+    localStorage.setItem('player_name', resolvedPlayerName);
+
     navigate(`${targetRoute}?sessionId=${result.data.id}&pin=${encodeURIComponent(normalizedPin)}`, {
-      state: { session: result.data },
+      state: {
+        session: result.data,
+        playerName: resolvedPlayerName,
+        deviceId: existingDeviceId,
+      },
     });
   };
 
@@ -89,6 +101,20 @@ export default function JoinView() {
               placeholder="000000"
               className="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-4 text-center font-['Orbitron'] text-3xl tracking-[0.4em] text-white outline-none transition focus:border-cyan-400 disabled:cursor-not-allowed disabled:opacity-50"
             />
+          </div>
+
+          <div>
+            <label className="mb-2 block text-sm font-medium text-zinc-300">Nombre o mesa</label>
+            <input
+              type="text"
+              maxLength={50}
+              disabled={isLoading}
+              value={playerName}
+              onChange={(event) => setPlayerName(event.target.value)}
+              placeholder="Ejemplo: Mesa 3"
+              className="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-white outline-none transition focus:border-cyan-400 disabled:cursor-not-allowed disabled:opacity-50"
+            />
+            <p className="mt-2 text-xs text-zinc-500">Si la sesión es por mesa, escribe la mesa. Si es individual, usa el nombre o alias del alumno.</p>
           </div>
 
           <button

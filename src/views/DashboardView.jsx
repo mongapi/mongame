@@ -1,13 +1,14 @@
-import { useState, useEffect } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useState, useEffect, useMemo } from "react";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { motion, AnimatePresence } from "motion/react";
 import {
     Users, Play, Pause, SkipForward,
     AlertTriangle, ShieldAlert, CheckCircle2,
-    WifiOff, BrainCircuit, Activity, PlusCircle
+    WifiOff, BrainCircuit, Activity, PlusCircle, Copy, X, Trophy, Medal, BarChart3, Download
 } from "lucide-react";
 import echo from "@/lib/echo";
 import { sessionAPI } from "@/api/api";
+import { getSessionModeMeta } from '@/components/organisms/SessionModeSelector';
 
 const API_URL = import.meta.env.VITE_API_URL;
 const RECENT_SESSIONS_PER_PAGE = 6;
@@ -24,6 +25,16 @@ function formatDateTime(value) {
         hour: '2-digit',
         minute: '2-digit',
     }).format(new Date(value));
+}
+
+function formatElapsed(seconds) {
+    if (seconds === null || seconds === undefined) {
+        return 'Sin tiempo';
+    }
+
+    const minutes = Math.floor(seconds / 60);
+    const remainingSeconds = seconds % 60;
+    return `${minutes}:${String(remainingSeconds).padStart(2, '0')}`;
 }
 
 const StatusBadge = ({ status }) => {
@@ -53,8 +64,8 @@ const StudentRow = ({ student, index }) => (
         </div>
         <div className="flex items-center justify-end gap-6 w-1/3">
             <div className="flex flex-col items-end">
-                <span className="text-xs text-zinc-500 font-bold tracking-wider">COMBO</span>
-                <span className="text-cyan-400 font-black font-['Orbitron']">x{student.combo ?? 0}</span>
+                <span className="text-xs text-zinc-500 font-bold tracking-wider">TIEMPO</span>
+                <span className="text-cyan-400 font-black font-['Orbitron']">{student.timeLabel ?? 'Sin tiempo'}</span>
             </div>
             <div className="flex flex-col items-end w-20">
                 <span className="text-xs text-zinc-500 font-bold tracking-wider">PUNTOS</span>
@@ -66,16 +77,42 @@ const StudentRow = ({ student, index }) => (
 
 export default function TeacherDashboard() {
     const { sessionId } = useParams();
+    const location = useLocation();
     const navigate = useNavigate();
     const token = localStorage.getItem("token");
     const headers = { "Content-Type": "application/json", "Accept": "application/json", "Authorization": `Bearer ${token}` };
+    const createdSession = location.state?.createdSession ?? null;
+    const justCreated = Boolean(location.state?.justCreated);
 
-    const [session, setSession] = useState(null);
+    const [session, setSession] = useState(() => {
+        if (!sessionId || !createdSession || String(createdSession.id) !== String(sessionId)) {
+            return null;
+        }
+
+        return createdSession;
+    });
     const [alerts, setAlerts]   = useState([]);
-    const [loading, setLoading] = useState(true);
+    const [loading, setLoading] = useState(Boolean(sessionId) && !createdSession);
     const [recentSessions, setRecentSessions] = useState([]);
     const [emptyStateError, setEmptyStateError] = useState('');
     const [recentSessionsPage, setRecentSessionsPage] = useState(1);
+    const [showPinModal, setShowPinModal] = useState(justCreated && Boolean(createdSession?.pin));
+    const [activeParticipants, setActiveParticipants] = useState(createdSession?.active_participants ?? []);
+    const [isExportingResults, setIsExportingResults] = useState(false);
+    const [resultsData, setResultsData] = useState(createdSession ? {
+        session_id: createdSession.id,
+        session_status: createdSession.status,
+        game_mode: createdSession.game_mode,
+        session_label: createdSession.lesson_plan?.name || createdSession.game?.name || `Sesión #${createdSession.id}`,
+        results_summary: createdSession.results_summary ?? [],
+        stats: {
+            participants_with_results: createdSession.results_summary?.length ?? 0,
+            completed_count: (createdSession.results_summary ?? []).filter((entry) => entry.completed).length,
+            total_score: (createdSession.results_summary ?? []).reduce((total, entry) => total + (entry.score ?? 0), 0),
+            average_score: 0,
+        },
+        best_result: (createdSession.results_summary ?? [])[0] ?? null,
+    } : null);
 
     useEffect(() => {
         if (!sessionId) {
@@ -97,9 +134,13 @@ export default function TeacherDashboard() {
 
         fetch(`${API_URL}/api/sessions/${sessionId}`, { headers })
             .then(r => r.json())
-            .then(({ data }) => { setSession(data); setLoading(false); })
+            .then(({ data }) => {
+                setSession(data);
+                setActiveParticipants(data?.active_participants ?? []);
+                setLoading(false);
+            })
             .catch(() => setLoading(false));
-    }, [sessionId]);
+    }, [createdSession, headers, sessionId]);
 
     const totalRecentSessionsPages = Math.max(1, Math.ceil(recentSessions.length / RECENT_SESSIONS_PER_PAGE));
     const paginatedRecentSessions = recentSessions.slice(
@@ -118,13 +159,126 @@ export default function TeacherDashboard() {
         const channel = echo.channel(`session.${session.id}`);
         channel.listen(".session.state", ({ state }) => {
             setSession(prev => prev ? ({ ...prev, status: state }) : prev);
+            refreshResults(session.id);
             setAlerts(prev => [{ id: Date.now(), type: "info", message: state === 'phase_changed' ? 'Fase actualizada' : `Sesión ${state}`, time: new Date().toLocaleTimeString() }, ...prev]);
         });
+        channel.listen(".session.presence", (data) => {
+            setActiveParticipants(data.participants ?? []);
+        });
         channel.listen(".player.answered", (data) => {
-            setAlerts(prev => [{ id: Date.now(), type: data.is_correct ? "success" : "warning", message: `Mesa ${data.device_id}: ${data.is_correct ? "✓ Correcto" : "✗ Incorrecto"} — ${data.score} pts`, time: new Date().toLocaleTimeString() }, ...prev.slice(0, 9)]);
+            refreshSession();
+            setAlerts(prev => [{ id: Date.now(), type: data.is_correct ? "success" : "warning", message: `${data.player_name || data.device_id}: ${data.is_correct ? "✓ Correcto" : "✗ Incorrecto"} — ${data.score} pts`, time: new Date().toLocaleTimeString() }, ...prev.slice(0, 9)]);
         });
         return () => echo.leaveChannel(`session.${session.id}`);
     }, [session?.id]);
+
+    const sessionLabel = useMemo(() => {
+        if (!session) {
+            return '';
+        }
+
+        return session.lesson_plan?.name || session.game?.name || `Sesión #${session.id}`;
+    }, [session]);
+
+    const sessionModeMeta = useMemo(() => getSessionModeMeta(session?.game_mode || 'individual'), [session?.game_mode]);
+    const refreshResults = async (targetSessionId = session?.id) => {
+        if (!targetSessionId) {
+            return;
+        }
+
+        const result = await sessionAPI.results(targetSessionId);
+        if (!result.success) {
+            return;
+        }
+
+        setResultsData(result.data);
+    };
+
+    const scoreRows = useMemo(() => {
+        const activeKeys = new Set((activeParticipants ?? []).map((participant) => participant.participant_key || participant.device_id));
+        const sourceResults = resultsData?.results_summary ?? session?.results_summary ?? [];
+        const scoredRows = sourceResults.map((entry) => ({
+            key: entry.participant_key,
+            name: entry.label,
+            status: activeKeys.has(entry.participant_key) ? 'active' : 'waiting',
+            score: entry.score,
+            timeLabel: formatElapsed(entry.time_seconds),
+        }));
+
+        const missingActiveRows = (activeParticipants ?? [])
+            .filter((participant) => !scoredRows.some((entry) => entry.key === (participant.participant_key || participant.device_id)))
+            .map((participant) => ({
+                key: participant.participant_key || participant.device_id,
+                name: participant.player_name || participant.device_id,
+                status: 'active',
+                score: 0,
+                timeLabel: 'Sin tiempo',
+            }));
+
+        return [...scoredRows, ...missingActiveRows];
+    }, [activeParticipants, resultsData?.results_summary, session?.results_summary]);
+
+    const refreshSession = async () => {
+        if (!session?.id) {
+            return;
+        }
+
+        const result = await sessionAPI.get(session.id);
+        if (!result.success) {
+            return;
+        }
+
+        setSession(result.data);
+        setActiveParticipants(result.data?.active_participants ?? []);
+        refreshResults(result.data.id);
+    };
+
+    useEffect(() => {
+        if (!session?.id) {
+            return;
+        }
+
+        refreshResults(session.id);
+    }, [session?.id]);
+
+    const handleCopyPin = async () => {
+        if (!session?.pin) {
+            return;
+        }
+
+        try {
+            await navigator.clipboard.writeText(String(session.pin));
+            setAlerts((prev) => [{ id: Date.now(), type: 'info', message: `PIN ${session.pin} copiado`, time: new Date().toLocaleTimeString() }, ...prev.slice(0, 9)]);
+        } catch {
+            setAlerts((prev) => [{ id: Date.now(), type: 'warning', message: 'No se pudo copiar el PIN automáticamente.', time: new Date().toLocaleTimeString() }, ...prev.slice(0, 9)]);
+        }
+    };
+
+    const handleExportResults = async () => {
+        if (!session?.id || isExportingResults) {
+            return;
+        }
+
+        setIsExportingResults(true);
+        const result = await sessionAPI.exportResults(session.id);
+        setIsExportingResults(false);
+
+        if (!result.success) {
+            setAlerts((prev) => [{ id: Date.now(), type: 'error', message: result.error, time: new Date().toLocaleTimeString() }, ...prev.slice(0, 9)]);
+            return;
+        }
+
+        const blobUrl = window.URL.createObjectURL(result.data);
+        const anchor = document.createElement('a');
+        anchor.href = blobUrl;
+        anchor.download = result.filename;
+        document.body.appendChild(anchor);
+        anchor.click();
+        anchor.remove();
+        window.URL.revokeObjectURL(blobUrl);
+
+        setAlerts((prev) => [{ id: Date.now(), type: 'info', message: `Resultados exportados: ${result.filename}`, time: new Date().toLocaleTimeString() }, ...prev.slice(0, 9)]);
+    };
 
     const action = async (endpoint) => {
         const res = await fetch(`${API_URL}/api/sessions/${sessionId}/${endpoint}`, { method: "POST", headers });
@@ -214,6 +368,7 @@ export default function TeacherDashboard() {
                                 <div className="text-right text-sm text-zinc-400">
                                     <p className="font-semibold text-white">PIN {recentSession.pin}</p>
                                     <p>Fase {Number(recentSession.current_phase_index ?? 0) + 1}/{recentSession.total_phases ?? 1}</p>
+                                    <p>{getSessionModeMeta(recentSession.game_mode || 'individual').shortLabel}</p>
                                 </div>
                             </button>
                         );})}
@@ -262,9 +417,66 @@ export default function TeacherDashboard() {
     );
 
     const isPaused = session.status === "paused";
+    const isFinished = session.status === 'finished';
 
     return (
         <div className="min-h-screen pl-24 pr-8 py-8 relative flex flex-col gap-6">
+            <AnimatePresence>
+                {showPinModal && session?.pin ? (
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-6 backdrop-blur-sm"
+                    >
+                        <motion.div
+                            initial={{ opacity: 0, y: 20, scale: 0.96 }}
+                            animate={{ opacity: 1, y: 0, scale: 1 }}
+                            exit={{ opacity: 0, y: 12, scale: 0.98 }}
+                            className="w-full max-w-xl rounded-3xl border border-cyan-400/20 bg-zinc-950/95 p-8 text-white shadow-[0_20px_90px_rgba(0,0,0,0.45)]"
+                        >
+                            <div className="mb-6 flex items-start justify-between gap-4">
+                                <div>
+                                    <p className="text-xs font-bold uppercase tracking-[0.24em] text-cyan-300">Sesión creada</p>
+                                    <h2 className="mt-2 text-3xl font-black font-['Orbitron'] text-white">Comparte este PIN</h2>
+                                    <p className="mt-3 text-sm leading-6 text-zinc-400">Tu sesión ya está lista. El alumnado tiene que entrar con este PIN antes de empezar: {sessionLabel}.</p>
+                                </div>
+                                <button
+                                    type="button"
+                                    onClick={() => setShowPinModal(false)}
+                                    className="rounded-2xl border border-white/10 bg-white/5 p-3 text-zinc-300 transition hover:bg-white/10"
+                                >
+                                    <X className="h-5 w-5" />
+                                </button>
+                            </div>
+
+                            <div className="rounded-3xl border border-cyan-400/20 bg-cyan-400/10 p-6 text-center">
+                                <p className="text-xs font-bold uppercase tracking-[0.2em] text-cyan-200/80">PIN de acceso</p>
+                                <p className="mt-3 font-['Orbitron'] text-5xl font-black tracking-[0.28em] text-cyan-200">{session.pin}</p>
+                            </div>
+
+                            <div className="mt-6 flex flex-wrap justify-end gap-3">
+                                <button
+                                    type="button"
+                                    onClick={handleCopyPin}
+                                    className="inline-flex items-center gap-2 rounded-2xl border border-white/10 bg-white/5 px-5 py-3 font-bold text-white transition hover:bg-white/10"
+                                >
+                                    <Copy className="h-4 w-4" />
+                                    Copiar PIN
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => setShowPinModal(false)}
+                                    className="rounded-2xl border border-cyan-400/30 bg-cyan-400/15 px-5 py-3 font-bold text-cyan-200 transition hover:bg-cyan-400/25"
+                                >
+                                    Ir al dashboard
+                                </button>
+                            </div>
+                        </motion.div>
+                    </motion.div>
+                ) : null}
+            </AnimatePresence>
+
             <div className="fixed inset-0 overflow-hidden -z-10 pointer-events-none">
                 <motion.div animate={{ x: [0, 50, 0], y: [0, -30, 0] }} transition={{ duration: 15, repeat: Infinity }} className="absolute top-[10%] left-[20%] h-150 w-150 rounded-full bg-purple-600/10 blur-[120px]" />
                 <motion.div animate={{ x: [0, -50, 0], y: [0, 30, 0] }} transition={{ duration: 12, repeat: Infinity }} className="absolute bottom-[10%] right-[10%] h-125 w-125 rounded-full bg-cyan-600/10 blur-[100px]" />
@@ -275,6 +487,8 @@ export default function TeacherDashboard() {
                     <h1 className="text-3xl font-black font-['Orbitron'] text-transparent bg-clip-text bg-linear-to-r from-purple-400 to-cyan-400 mb-2">CONTROL DE SESIÓN</h1>
                     <div className="flex items-center gap-4 text-sm text-zinc-400 font-bold tracking-wider">
                         <span className="flex items-center gap-2"><Activity className="w-4 h-4 text-green-400" /> ID: {session.id}</span>
+                        <span className="text-white/20">|</span>
+                        <span>{sessionModeMeta.label}</span>
                         <span className="text-white/20">|</span>
                         <span>FASE {Number(session.current_phase_index ?? 0) + 1}/{session.total_phases ?? 1}</span>
                         <span className="text-white/20">|</span>
@@ -294,36 +508,153 @@ export default function TeacherDashboard() {
                             <span className="text-zinc-400 text-xs font-bold tracking-wider mb-2">ESTADO</span>
                             <div className={`text-2xl font-['Orbitron'] font-black uppercase ${session.status === 'playing' ? 'text-green-400' : 'text-yellow-400'}`}>{session.status}</div>
                         </div>
-                        <div className="col-span-2 bg-white/5 border border-white/10 rounded-2xl p-4 backdrop-blur-md flex items-center justify-end gap-2">
+                        <div className="bg-white/5 border border-white/10 rounded-2xl p-6 backdrop-blur-md flex flex-col justify-center items-center">
+                            <span className="text-zinc-400 text-xs font-bold tracking-wider mb-2">PIN ACTIVO</span>
+                            <button type="button" onClick={handleCopyPin} className="font-['Orbitron'] text-2xl font-black tracking-[0.18em] text-cyan-300 transition hover:text-cyan-200">
+                                {session.pin}
+                            </button>
+                        </div>
+                        <div className="bg-white/5 border border-white/10 rounded-2xl p-6 backdrop-blur-md flex flex-col justify-center items-center">
+                            <span className="text-zinc-400 text-xs font-bold tracking-wider mb-2">{sessionModeMeta.value === 'table' ? 'MESAS CONECTADAS' : sessionModeMeta.value === 'shared' ? 'PUESTOS CONECTADOS' : 'ALUMNOS CONECTADOS'}</span>
+                            <div className="text-2xl font-['Orbitron'] font-black text-white">{activeParticipants.length}</div>
+                        </div>
+                    </div>
+                    <div className="bg-white/5 border border-white/10 rounded-2xl p-4 backdrop-blur-md flex items-center justify-end gap-2">
                             <button onClick={() => action(isPaused ? "resume" : "pause")}
+                                disabled={isFinished}
                                 className={`p-3 rounded-xl transition-all ${isPaused ? 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/50' : 'bg-white/5 hover:bg-white/10 text-white border border-transparent'}`}>
                                 {isPaused ? <Play className="w-5 h-5" /> : <Pause className="w-5 h-5" />}
                             </button>
                             <button onClick={() => action("finish")}
+                                disabled={isFinished}
                                 className="p-3 rounded-xl bg-purple-500/20 hover:bg-purple-500/40 text-purple-300 border border-purple-500/50 transition-all flex items-center gap-2 font-bold text-sm">
                                 FINALIZAR <SkipForward className="w-4 h-4" />
                             </button>
                             <button onClick={nextPhase}
-                                disabled={(session.total_phases ?? 1) <= Number(session.current_phase_index ?? 0) + 1}
+                                disabled={isFinished || (session.total_phases ?? 1) <= Number(session.current_phase_index ?? 0) + 1}
                                 className="p-3 rounded-xl bg-cyan-500/20 hover:bg-cyan-500/40 disabled:opacity-40 disabled:cursor-not-allowed text-cyan-300 border border-cyan-500/50 transition-all flex items-center gap-2 font-bold text-sm">
                                 SIGUIENTE FASE <SkipForward className="w-4 h-4" />
                             </button>
-                        </div>
                     </div>
 
                     <div className="bg-zinc-950/50 backdrop-blur-xl border border-white/10 rounded-2xl p-6 flex-1 flex flex-col">
                         <div className="flex items-center justify-between mb-4 border-b border-white/5 pb-4">
                             <h2 className="text-lg font-bold font-['Orbitron'] tracking-wider flex items-center gap-2">
-                                <Users className="w-5 h-5 text-purple-400" />MAPA DE ALUMNOS
+                                <Users className="w-5 h-5 text-purple-400" />MAPA DE {sessionModeMeta.value === 'table' ? 'MESAS' : sessionModeMeta.value === 'shared' ? 'PUESTOS' : 'ALUMNOS'}
                             </h2>
                         </div>
-                        <div className="text-center text-zinc-500 font-bold text-sm py-10">
-                            Los alumnos aparecerán aquí cuando se conecten.
-                        </div>
+                        {scoreRows.length > 0 ? (
+                            <div className="space-y-3">
+                                {scoreRows.map((participant, index) => (
+                                    <StudentRow
+                                        key={participant.key}
+                                        index={index}
+                                        student={participant}
+                                    />
+                                ))}
+                            </div>
+                        ) : (
+                            <div className="text-center text-zinc-500 font-bold text-sm py-10">
+                                {sessionModeMeta.value === 'table'
+                                    ? 'Las mesas aparecerán aquí cuando se conecten a la sesión por PIN.'
+                                    : sessionModeMeta.value === 'shared'
+                                        ? 'Los puestos conectados aparecerán aquí cuando entren por PIN.'
+                                        : 'Los alumnos aparecerán aquí cuando se conecten a la sesión por PIN.'}
+                            </div>
+                        )}
                     </div>
                 </div>
 
                 <div className="lg:col-span-4 flex flex-col gap-6">
+                    <div className="bg-zinc-950/50 backdrop-blur-xl border border-white/10 rounded-2xl p-6 flex flex-col gap-5">
+                        <div className="flex items-center justify-between gap-4 border-b border-white/5 pb-4">
+                            <div>
+                                <h2 className="text-lg font-bold font-['Orbitron'] tracking-wider flex items-center gap-2 text-amber-300">
+                                    <Trophy className="w-5 h-5" />RESULTADOS GUARDADOS
+                                </h2>
+                                <p className="mt-2 text-sm text-zinc-400">Se actualizan en vivo mientras juegan y siguen accesibles cuando la sesión termina.</p>
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <button
+                                    type="button"
+                                    onClick={() => refreshResults()}
+                                    className="rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-xs font-bold uppercase tracking-[0.16em] text-zinc-200 transition hover:bg-white/10"
+                                >
+                                    Recargar
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={handleExportResults}
+                                    disabled={isExportingResults}
+                                    className="inline-flex items-center gap-2 rounded-xl border border-amber-400/20 bg-amber-400/10 px-3 py-2 text-xs font-bold uppercase tracking-[0.16em] text-amber-100 transition hover:bg-amber-400/20 disabled:cursor-not-allowed disabled:opacity-50"
+                                >
+                                    <Download className="h-4 w-4" />
+                                    {isExportingResults ? 'Exportando' : 'Exportar CSV'}
+                                </button>
+                            </div>
+                        </div>
+
+                        <div className="grid grid-cols-3 gap-3">
+                            <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
+                                <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-500">Con resultados</p>
+                                <p className="mt-2 font-['Orbitron'] text-2xl font-black text-white">{resultsData?.stats?.participants_with_results ?? 0}</p>
+                            </div>
+                            <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
+                                <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-500">Completados</p>
+                                <p className="mt-2 font-['Orbitron'] text-2xl font-black text-emerald-300">{resultsData?.stats?.completed_count ?? 0}</p>
+                            </div>
+                            <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
+                                <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-500">Media</p>
+                                <p className="mt-2 font-['Orbitron'] text-2xl font-black text-cyan-300">{resultsData?.stats?.average_score ?? 0}</p>
+                            </div>
+                        </div>
+
+                        {resultsData?.best_result ? (
+                            <div className="rounded-2xl border border-amber-400/20 bg-amber-400/10 p-4">
+                                <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-amber-200/80">Mejor resultado guardado</p>
+                                <div className="mt-3 flex items-start justify-between gap-3">
+                                    <div>
+                                        <p className="text-lg font-bold text-white">{resultsData.best_result.label}</p>
+                                        <p className="mt-1 text-sm text-amber-100/80">{formatElapsed(resultsData.best_result.time_seconds)} · {resultsData.best_result.answers_count} respuestas</p>
+                                    </div>
+                                    <div className="rounded-2xl bg-black/20 px-4 py-3 text-right">
+                                        <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-500">Puntos</p>
+                                        <p className="font-['Orbitron'] text-2xl font-black text-amber-200">{resultsData.best_result.score}</p>
+                                    </div>
+                                </div>
+                            </div>
+                        ) : (
+                            <div className="rounded-2xl border border-dashed border-white/10 bg-white/5 p-4 text-sm text-zinc-500">
+                                Todavía no hay resultados guardados en esta sesión.
+                            </div>
+                        )}
+
+                        <div className="space-y-3">
+                            {(resultsData?.results_summary ?? []).slice(0, 5).map((entry, index) => (
+                                <div key={entry.participant_key} className="flex items-center justify-between gap-4 rounded-2xl border border-white/10 bg-white/5 px-4 py-3">
+                                    <div className="flex items-center gap-3 min-w-0">
+                                        <div className={`flex h-10 w-10 items-center justify-center rounded-2xl border ${index === 0 ? 'border-amber-400/30 bg-amber-400/10 text-amber-200' : 'border-white/10 bg-black/20 text-zinc-300'}`}>
+                                            {index === 0 ? <Trophy className="h-4 w-4" /> : <Medal className="h-4 w-4" />}
+                                        </div>
+                                        <div className="min-w-0">
+                                            <p className="truncate font-semibold text-white">{entry.label}</p>
+                                            <p className="text-xs text-zinc-500">{formatElapsed(entry.time_seconds)} · {entry.completed ? 'Completado' : 'En curso'}</p>
+                                        </div>
+                                    </div>
+                                    <div className="text-right">
+                                        <p className="font-['Orbitron'] text-xl font-black text-cyan-200">{entry.score}</p>
+                                        <p className="text-xs text-zinc-500">{entry.correct_answers}/{entry.answers_count} aciertos</p>
+                                    </div>
+                                </div>
+                            ))}
+                            {(resultsData?.results_summary ?? []).length === 0 ? null : (
+                                <div className="flex items-center gap-2 text-xs uppercase tracking-[0.18em] text-zinc-500">
+                                    <BarChart3 className="h-4 w-4" />Persistido y disponible para reabrir esta sesión más tarde.
+                                </div>
+                            )}
+                        </div>
+                    </div>
+
                     <div className="bg-zinc-950/50 backdrop-blur-xl border border-white/10 rounded-2xl p-6 flex-1 flex flex-col">
                         <h2 className="text-lg font-bold font-['Orbitron'] tracking-wider flex items-center gap-2 mb-4 text-red-400">
                             <ShieldAlert className="w-5 h-5" />NOTIFICACIONES EN VIVO

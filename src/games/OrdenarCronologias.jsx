@@ -261,6 +261,7 @@ export default function OrdenarCronologias() {
         session,
         sessionId,
         content,
+        participant,
         isLoading,
         error,
         setError,
@@ -275,6 +276,7 @@ export default function OrdenarCronologias() {
     const [isFail, setIsFail] = useState(false);
     const [movementZ, setMovementZ] = useState(80); // Start position
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [timelineStartedAt, setTimelineStartedAt] = useState(() => Date.now());
 
     const timeline = useMemo(() => ({
         id: session?.game_id ?? 'timeline-session',
@@ -290,6 +292,7 @@ export default function OrdenarCronologias() {
         setMovementZ(80);
         setIsFail(false);
         setError('');
+        setTimelineStartedAt(Date.now());
     }, [setError, timeline.id]);
 
     const handleAnswer = async (optionIdx) => {
@@ -303,15 +306,14 @@ export default function OrdenarCronologias() {
 
         if (sessionId) {
             setIsSubmitting(true);
-            const existingDeviceId = localStorage.getItem('device_id') || `web-${Math.random().toString(36).slice(2, 10)}`;
-            localStorage.setItem('device_id', existingDeviceId);
-
             const result = await sessionAPI.submitAnswer(sessionId, {
                 question_id: currentHitoData.id,
                 answer: optionIdx,
-                device_id: existingDeviceId,
-                player_name: 'Jugador web',
+                device_id: participant.deviceId,
+                player_name: participant.playerName,
                 player_number: 1,
+                elapsed_seconds: Math.max(0, Math.round((Date.now() - timelineStartedAt) / 1000)),
+                completed: optionIdx === currentHitoData.correct && solvedHitos.length + 1 === timeline.items.length,
             });
 
             if (!result.success) {

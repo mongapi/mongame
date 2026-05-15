@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { Cpu, Zap, ShieldCheck } from "lucide-react";
+import { sessionAPI } from '@/api/api';
 import { GameErrorState, GameLoadingState } from "@/games/shared/GameScreenShell";
 import { useSessionGame } from "@/games/shared/useSessionGame";
 import { validateGameContent } from "@/games/shared/gameContentValidation";
@@ -16,7 +17,7 @@ function resolveMemoryContent(gameContent) {
 }
 
 export default function MemoryGame() {
-    const { content, isLoading, error } = useSessionGame({
+    const { content, sessionId, participant, isLoading, error, setError } = useSessionGame({
         resolveContent: resolveMemoryContent,
         validateContent: (resolvedContent) => validateGameContent('memory', resolvedContent),
     });
@@ -27,6 +28,8 @@ export default function MemoryGame() {
     const [moves, setMoves] = useState(0);
     const [isLocked, setIsLocked] = useState(false);
     const [gameWon, setGameWon] = useState(false);
+    const [startedAt, setStartedAt] = useState(() => Date.now());
+    const [isSubmitting, setIsSubmitting] = useState(false);
 
     const totalPairs = useMemo(() => {
         const pairIds = new Set((content.pairs ?? []).map((card) => card.pairId));
@@ -45,7 +48,32 @@ export default function MemoryGame() {
         setMoves(0);
         setIsLocked(false);
         setGameWon(false);
+        setStartedAt(Date.now());
+        setError('');
     }, [content.pairs]);
+
+    const submitCompletedGame = async (resolvedPairs) => {
+        if (!sessionId || isSubmitting) {
+            return;
+        }
+
+        setIsSubmitting(true);
+        const result = await sessionAPI.submitAnswer(sessionId, {
+            question_id: 'memory-complete',
+            answer: resolvedPairs,
+            device_id: participant.deviceId,
+            player_name: participant.playerName,
+            player_number: 1,
+            elapsed_seconds: Math.max(0, Math.round((Date.now() - startedAt) / 1000)),
+            completed: true,
+        });
+
+        if (!result.success) {
+            setError(result.error);
+        }
+
+        setIsSubmitting(false);
+    };
 
     // Lógica de emparejamiento
     const handleCardClick = (index) => {
@@ -70,6 +98,7 @@ export default function MemoryGame() {
 
                 // Comprobar si ganó
                 if (matchedPairs.length + 1 === totalPairs) {
+                    void submitCompletedGame([...matchedPairs, card1.pairId]);
                     setTimeout(() => setGameWon(true), 500);
                 }
             } else {
