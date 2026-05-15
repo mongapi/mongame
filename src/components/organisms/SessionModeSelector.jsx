@@ -70,7 +70,7 @@ export function SessionModeCards({ value, onChange, compact = false }) {
     );
 }
 
-export function SessionModeDialog({ isOpen, value, onChange, onClose, onConfirm, title = 'Elegir modo de sesión' }) {
+export function SessionModeDialog({ isOpen, value, onChange, onClose, onConfirm, isConfirming = false, title = 'Elegir modo de sesión' }) {
     return (
         <AnimatePresence>
             {isOpen ? (
@@ -97,7 +97,8 @@ export function SessionModeDialog({ isOpen, value, onChange, onClose, onConfirm,
                             <button
                                 type="button"
                                 onClick={onClose}
-                                className="rounded-2xl border border-white/10 bg-white/5 p-3 text-zinc-300 transition hover:bg-white/10"
+                                disabled={isConfirming}
+                                className="rounded-2xl border border-white/10 bg-white/5 p-3 text-zinc-300 transition hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-40"
                             >
                                 <X className="h-5 w-5" />
                             </button>
@@ -109,16 +110,18 @@ export function SessionModeDialog({ isOpen, value, onChange, onClose, onConfirm,
                             <button
                                 type="button"
                                 onClick={onClose}
-                                className="rounded-2xl border border-white/10 bg-white/5 px-5 py-3 font-bold text-zinc-200 transition hover:bg-white/10"
+                                disabled={isConfirming}
+                                className="rounded-2xl border border-white/10 bg-white/5 px-5 py-3 font-bold text-zinc-200 transition hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-40"
                             >
                                 Cancelar
                             </button>
                             <button
                                 type="button"
                                 onClick={onConfirm}
-                                className="rounded-2xl border border-cyan-400/30 bg-cyan-400/15 px-5 py-3 font-bold text-cyan-200 transition hover:bg-cyan-400/25"
+                                disabled={isConfirming}
+                                className="rounded-2xl border border-cyan-400/30 bg-cyan-400/15 px-5 py-3 font-bold text-cyan-200 transition hover:bg-cyan-400/25 disabled:cursor-not-allowed disabled:opacity-40"
                             >
-                                Crear sesión
+                                {isConfirming ? 'Creando...' : 'Crear sesión'}
                             </button>
                         </div>
                     </motion.div>

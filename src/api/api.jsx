@@ -1,5 +1,13 @@
 import axios from 'axios';
 
+function readSessionPin() {
+    if (typeof window === 'undefined') {
+        return '';
+    }
+
+    return new URLSearchParams(window.location.search).get('pin') || '';
+}
+
 // 1. CONFIGURACIÓN BASE DE AXIOS
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 
@@ -111,7 +119,10 @@ export const sessionAPI = {
 
     async get(id) {
         try {
-            const response = await api.get(`/sessions/${id}`);
+            const pin = readSessionPin();
+            const response = await api.get(`/sessions/${id}`, {
+                params: pin ? { pin } : undefined,
+            });
             return { success: true, data: response.data.data };
         } catch (error) {
             const message = error.response?.data?.message || 'No se pudo cargar la sesión';
@@ -182,7 +193,10 @@ export const sessionAPI = {
 
     async submitAnswer(sessionId, payload) {
         try {
-            const response = await api.post(`/sessions/${sessionId}/answers`, payload);
+            const response = await api.post(`/sessions/${sessionId}/answers`, {
+                pin: payload?.pin || readSessionPin(),
+                ...payload,
+            });
             return { success: true, data: response.data.data };
         } catch (error) {
             const message = error.response?.data?.message || 'No se pudo enviar la respuesta';

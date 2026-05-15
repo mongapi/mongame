@@ -1,5 +1,6 @@
 import { motion } from 'motion/react';
 import { AlertCircle, ArrowDownUp, BookOpen, CopyPlus, Eye, Filter, Pencil, PlayCircle, PlusCircle, Rows3, Search, Shapes, Users } from 'lucide-react';
+import { GameTypePreview, getGameTypeVisualMeta } from '@/components/gameTypes/GameTypeVisual';
 import { useGameLibraryView } from '@/hooks/useGameLibraryView';
 import { SessionModeDialog } from '@/components/organisms/SessionModeSelector';
 import { formatDate } from '@/lib/formatters';
@@ -103,6 +104,33 @@ function LessonPlanPhaseFilterChip({ label, isActive, onClick }) {
         </button>
     );
 }
+
+function LessonPlanPhasePreviewStrip({ games }) {
+    if (!games.length) {
+        return (
+            <div className="rounded-2xl border border-dashed border-white/10 bg-black/15 px-4 py-3 text-sm text-zinc-500">
+                Los juegos de este lesson plan no están cargados en la biblioteca actual.
+            </div>
+        );
+    }
+
+    return (
+        <div className="mb-4 grid grid-cols-2 gap-2 xl:grid-cols-3">
+            {games.slice(0, 6).map((game) => (
+                <div key={game.id} className="overflow-hidden rounded-2xl border border-white/10 bg-black/20 p-2">
+                    <GameTypePreview type={getGameTypeVisualMeta(game?.game_type?.code).previewType} />
+                    <p className="mt-2 truncate px-1 text-xs font-semibold text-zinc-300">{game.name}</p>
+                </div>
+            ))}
+            {games.length > 6 ? (
+                <div className="flex min-h-32 items-center justify-center rounded-2xl border border-white/10 bg-white/5 px-3 text-center text-xs font-bold uppercase tracking-[0.18em] text-zinc-400">
+                    +{games.length - 6} más
+                </div>
+            ) : null}
+        </div>
+    );
+}
+
     function ScopeTab({ icon: Icon, label, isActive, onClick, count }) {
         return (
             <button
@@ -140,6 +168,7 @@ export default function GameLibraryView() {
         lessonPlansPage,
         sessionMode,
         pendingLaunch,
+        isConfirmingLaunch,
         gameTypeFilters,
         gamesById,
         filteredGames,
@@ -185,6 +214,7 @@ export default function GameLibraryView() {
                 onChange={setSessionMode}
                 onClose={closeLaunchDialog}
                 onConfirm={handleConfirmLaunch}
+                isConfirming={isConfirmingLaunch}
                 title={pendingLaunch?.type === 'lessonPlan' ? 'Elegir modo para la sesión del lesson plan' : 'Elegir modo para la sesión del juego'}
             />
 
@@ -376,6 +406,10 @@ export default function GameLibraryView() {
                                 transition={{ delay: index * 0.04 }}
                                 className="rounded-3xl border border-white/10 bg-black/30 p-6 backdrop-blur-xl"
                             >
+                                <div className="mb-5 overflow-hidden rounded-2xl border border-white/10 bg-black/25 p-3">
+                                    <GameTypePreview type={getGameTypeVisualMeta(game?.game_type?.code).previewType} />
+                                </div>
+
                                 <div className="flex items-start justify-between gap-4">
                                     <div>
                                         <h2 className="text-2xl font-black text-white">{game.name}</h2>
@@ -479,6 +513,9 @@ export default function GameLibraryView() {
                                         <div>
                                             <h2 className="truncate text-lg font-black text-white">{lessonPlan.name}</h2>
                                             <p className="mt-2 text-sm text-zinc-400">{lessonPlan.description || 'Sin descripción todavía.'}</p>
+                                        </div>
+                                        <div className="mt-4">
+                                            <LessonPlanPhasePreviewStrip games={gamesInPlan} />
                                         </div>
                                         <div className="mt-3 flex flex-wrap gap-2">
                                             {gamesInPlan.length > 0 ? gamesInPlan.map((game) => (

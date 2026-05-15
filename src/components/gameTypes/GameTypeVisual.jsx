@@ -8,9 +8,9 @@ const GAME_TYPE_META_BY_CODE = {
     shooting: { icon: Target, color: 'text-red-400', previewType: 'shooter' },
     guess_who: { icon: Box, color: 'text-cyan-400', previewType: 'guess' },
     memory3d: { icon: Layers, color: 'text-blue-300', previewType: 'memory3d' },
-    orbital: { icon: Shuffle, color: 'text-orange-400', previewType: 'sorting3d' },
-    orbital_order: { icon: Shuffle, color: 'text-orange-400', previewType: 'sorting3d' },
-    hangman: { icon: Sparkles, color: 'text-lime-400', previewType: 'blank' },
+    orbital: { icon: Shuffle, color: 'text-orange-400', previewType: 'orbital' },
+    orbital_order: { icon: Shuffle, color: 'text-orange-400', previewType: 'orbital' },
+    hangman: { icon: Sparkles, color: 'text-lime-400', previewType: 'hangman' },
 };
 
 export function getGameTypeVisualMeta(typeCode) {
@@ -154,6 +154,82 @@ export function GameTypePreview({ type }) {
                         }`}
                     />
                 ))}
+            </div>
+        );
+    }
+
+    if (type === 'orbital') {
+        return (
+            <div className={`${base} bg-orange-950/40 border-orange-700/40 p-3`}>
+                <div className="relative flex h-full items-center justify-center overflow-hidden rounded-md border border-orange-500/15 bg-radial-[circle_at_center] from-orange-200/10 via-orange-500/5 to-transparent">
+                    <div className="absolute h-10 w-10 rounded-full bg-amber-300/70 shadow-[0_0_20px_rgba(252,211,77,0.7)]" />
+                    {[36, 58, 80].map((size, index) => (
+                        <div
+                            key={size}
+                            className="absolute rounded-full border border-orange-300/35"
+                            style={{
+                                width: `${size}%`,
+                                height: `${size}%`,
+                                transform: `rotate(${index * 18}deg)`,
+                            }}
+                        />
+                    ))}
+                    {[
+                        { top: '28%', left: '63%', color: 'bg-emerald-300' },
+                        { top: '56%', left: '24%', color: 'bg-sky-300' },
+                        { top: '70%', left: '60%', color: 'bg-fuchsia-300' },
+                    ].map((planet, index) => (
+                        <div
+                            key={index}
+                            className={`absolute h-3.5 w-3.5 rounded-full ${planet.color} shadow-[0_0_12px_rgba(255,255,255,0.3)]`}
+                            style={{ top: planet.top, left: planet.left }}
+                        />
+                    ))}
+                    <div className="absolute bottom-2 right-2 rounded-full border border-orange-400/20 bg-black/25 px-2 py-1 text-[9px] font-bold uppercase tracking-[0.22em] text-orange-200/75">
+                        Orbitas
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
+    if (type === 'hangman') {
+        return (
+            <div className={`${base} bg-lime-950/40 border-lime-700/40 p-3`}>
+                <div className="relative flex h-full items-center justify-between rounded-md border border-lime-500/20 bg-linear-to-br from-lime-300/8 via-transparent to-emerald-300/8 px-4">
+                    <div className="relative h-20 w-20 shrink-0">
+                        <div className="absolute bottom-0 left-2 h-1 w-12 rounded-full bg-lime-200/40" />
+                        <div className="absolute bottom-0 left-6 h-16 w-1 rounded-full bg-lime-200/50" />
+                        <div className="absolute left-6 top-1 h-1 w-9 rounded-full bg-lime-200/50" />
+                        <div className="absolute left-14 top-1 h-4 w-0.5 rounded-full bg-lime-200/50" />
+                        <div className="absolute left-[3.15rem] top-5 h-4 w-4 rounded-full border-2 border-lime-200/70" />
+                        <div className="absolute left-[3.58rem] top-9 h-5 w-0.5 rounded-full bg-lime-200/70" />
+                        <div className="absolute left-[3.2rem] top-10 h-0.5 w-3 -rotate-30 rounded-full bg-lime-200/70" />
+                        <div className="absolute left-[3.55rem] top-10 h-0.5 w-3 rotate-30 rounded-full bg-lime-200/70" />
+                        <div className="absolute left-[3.2rem] top-[3.55rem] h-3 w-0.5 -rotate-25 rounded-full bg-lime-200/70" />
+                        <div className="absolute left-[3.55rem] top-[3.55rem] h-3 w-0.5 rotate-25 rounded-full bg-lime-200/70" />
+                    </div>
+                    <div className="flex flex-1 flex-col items-end gap-3">
+                        <div className="rounded-full border border-lime-400/20 bg-black/20 px-2 py-1 text-[9px] font-bold uppercase tracking-[0.22em] text-lime-200/75">
+                            Pista
+                        </div>
+                        <div className="flex gap-1.5">
+                            {['C', '_', 'D', '_', 'G', 'O'].map((character, index) => (
+                                <div key={index} className="flex flex-col items-center gap-1">
+                                    <span className={`text-xs font-black ${character === '_' ? 'text-lime-300' : 'text-white/70'}`}>{character === '_' ? '?' : character}</span>
+                                    <div className={`h-0.5 w-4 rounded ${character === '_' ? 'bg-lime-300' : 'bg-white/25'}`} />
+                                </div>
+                            ))}
+                        </div>
+                        <div className="flex gap-1">
+                            {['A', 'E', 'I', 'O'].map((letter) => (
+                                <div key={letter} className="flex h-5 w-5 items-center justify-center rounded-md border border-lime-500/25 bg-lime-500/10 text-[9px] font-bold text-lime-200/80">
+                                    {letter}
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                </div>
             </div>
         );
     }

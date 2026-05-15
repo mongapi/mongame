@@ -15,6 +15,7 @@ export function useGameEditor() {
     const [gameTypes, setGameTypes] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
     const [isSaving, setIsSaving] = useState(false);
+    const [isLaunching, setIsLaunching] = useState(false);
     const [error, setError] = useState('');
     const [success, setSuccess] = useState('');
     const [showAdvancedJson, setShowAdvancedJson] = useState(false);
@@ -135,6 +136,10 @@ export function useGameEditor() {
     };
 
     const saveGame = async ({ createSessionFlow = false } = {}) => {
+        if (isSaving) {
+            return null;
+        }
+
         setError('');
         setSuccess('');
 
@@ -189,8 +194,14 @@ export function useGameEditor() {
     };
 
     const handleCreateSession = async () => {
+        if (isLaunching) {
+            return;
+        }
+
+        setIsLaunching(true);
         const savedGame = await saveGame({ createSessionFlow: true });
         if (!savedGame) {
+            setIsLaunching(false);
             return;
         }
 
@@ -199,6 +210,8 @@ export function useGameEditor() {
             game_content: form.game_content,
             game_mode: sessionMode,
         });
+
+        setIsLaunching(false);
 
         if (!sessionResult.success) {
             setError(sessionResult.error);
@@ -250,6 +263,7 @@ export function useGameEditor() {
         gameTypes,
         isLoading,
         isSaving,
+        isLaunching,
         error,
         success,
         showAdvancedJson,

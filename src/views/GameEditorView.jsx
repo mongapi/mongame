@@ -12,6 +12,7 @@ export default function GameEditorView() {
         gameTypes,
         isLoading,
         isSaving,
+        isLaunching,
         error,
         success,
         showAdvancedJson,
@@ -204,15 +205,15 @@ export default function GameEditorView() {
                         <button
                             type="button"
                             onClick={handleCreateSession}
-                            disabled={isSaving}
+                            disabled={isSaving || isLaunching}
                             className="rounded-2xl border border-emerald-400/30 bg-emerald-400/15 px-5 py-3 font-bold text-emerald-200 transition hover:bg-emerald-400/25 disabled:cursor-not-allowed disabled:opacity-50"
                         >
-                            {isEditing ? 'Crear sesión con este juego' : 'Guardar y crear sesión'}
+                            {isLaunching ? 'Creando sesión...' : isEditing ? 'Crear sesión con este juego' : 'Guardar y crear sesión'}
                         </button>
                         {isEditing ? (
                             <button
                                 type="submit"
-                                disabled={isSaving}
+                                disabled={isSaving || isLaunching}
                                 className="flex items-center gap-2 rounded-2xl bg-cyan-400 px-5 py-3 font-bold text-zinc-950 transition hover:bg-cyan-300 disabled:cursor-not-allowed disabled:opacity-50"
                             >
                                 {isSaving ? <Loader className="h-5 w-5 animate-spin" /> : <Save className="h-5 w-5" />}

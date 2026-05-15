@@ -27,6 +27,7 @@ export function useGameLibraryView() {
     const [lessonPlansPage, setLessonPlansPage] = useState(1);
     const [sessionMode, setSessionMode] = useState('individual');
     const [pendingLaunch, setPendingLaunch] = useState(null);
+    const [isConfirmingLaunch, setIsConfirmingLaunch] = useState(false);
 
     const loadLibrary = useCallback(async () => {
         setIsLoading(true);
@@ -223,9 +224,11 @@ export function useGameLibraryView() {
     }, [lessonPlansPage, totalLessonPlanPages]);
 
     const handleConfirmLaunch = async () => {
-        if (!pendingLaunch) {
+        if (!pendingLaunch || isConfirmingLaunch) {
             return;
         }
+
+        setIsConfirmingLaunch(true);
 
         if (pendingLaunch.type === 'game') {
             const game = pendingLaunch.item;
@@ -239,6 +242,7 @@ export function useGameLibraryView() {
             });
 
             setStartingGameId(null);
+            setIsConfirmingLaunch(false);
 
             if (!result.success) {
                 setError(result.error);
@@ -265,6 +269,7 @@ export function useGameLibraryView() {
         });
 
         setStartingLessonPlanId(null);
+        setIsConfirmingLaunch(false);
 
         if (!result.success) {
             setError(result.error);
@@ -372,6 +377,7 @@ export function useGameLibraryView() {
         lessonPlansPage,
         sessionMode,
         pendingLaunch,
+        isConfirmingLaunch,
         gameTypeFilters,
         gamesById,
         filteredGames,

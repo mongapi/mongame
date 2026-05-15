@@ -122,6 +122,10 @@ export function useLessonPlanEditor() {
     };
 
     const saveLessonPlan = async () => {
+        if (isSaving) {
+            return null;
+        }
+
         setError('');
         setSuccess('');
 
@@ -168,6 +172,10 @@ export function useLessonPlanEditor() {
     };
 
     const handleLaunchSession = async () => {
+        if (isLaunching) {
+            return;
+        }
+
         const savedLessonPlan = await saveLessonPlan();
         if (!savedLessonPlan) {
             return;
