@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { CheckCircle2, XCircle, RotateCcw, Sparkles } from 'lucide-react';
 import { sessionAPI } from '@/api/api';
 import { GameErrorState, GameLoadingState } from '@/games/shared/GameScreenShell';
+import { GameExitButton, GameSessionFinishedOverlay, useGameSessionUi } from '@/games/shared/GameSessionActions';
 import { useSessionGame } from '@/hooks/useSessionGame';
 import { validateGameContent } from '@/games/shared/gameContentValidation';
 
@@ -121,7 +122,7 @@ function buildBlankData(gameContent) {
 }
 
 export default function CompletarEnunciado() {
-    const { content, sessionId, participant, isLoading, error, setError } = useSessionGame({
+    const { session, content, sessionId, participant, isLoading, error, setError } = useSessionGame({
         resolveContent: (gameContent) => gameContent ?? {},
         validateContent: (gameContent) => validateGameContent('filling_blanks', gameContent),
     });
@@ -131,6 +132,7 @@ export default function CompletarEnunciado() {
     const [status, setStatus] = useState('playing'); // playing, error, success
     const [startedAt, setStartedAt] = useState(() => Date.now());
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const { sessionFinished, handleExit, exitLabel, finishActionLabel } = useGameSessionUi({ session, sessionId, isPreview: false });
 
     useEffect(() => {
         setFilledBlanks({});
@@ -149,6 +151,7 @@ export default function CompletarEnunciado() {
 
     const handleDragStart = (e, optionId, sourceBlankId = null) => {
         e.dataTransfer.setData("optionId", optionId);
+        if (sessionFinished) return;
         if (sourceBlankId) {
             e.dataTransfer.setData("sourceBlankId", sourceBlankId);
         }
@@ -163,6 +166,7 @@ export default function CompletarEnunciado() {
 
     const handleDropOnBlank = (e, blankId) => {
         e.preventDefault();
+        if (sessionFinished) return;
         if (status === 'success') return;
         
         const optionId = e.dataTransfer.getData("optionId");
@@ -186,6 +190,7 @@ export default function CompletarEnunciado() {
 
     const handleDropOnPool = (e) => {
         e.preventDefault();
+        if (sessionFinished) return;
         if (status === 'success') return;
 
         const optionId = e.dataTransfer.getData("optionId");
@@ -209,6 +214,10 @@ export default function CompletarEnunciado() {
     };
 
     const handleCheck = async () => {
+        if (sessionFinished) {
+            return;
+        }
+
         let isAllCorrect = true;
         let isComplete = true;
 
@@ -273,6 +282,8 @@ export default function CompletarEnunciado() {
 
     return (
         <div className="flex min-h-[calc(100vh-80px)] items-center justify-center p-4 font-sans text-stone-100 selection:bg-indigo-500/30">
+            <GameExitButton onExit={handleExit} label={exitLabel} />
+            <GameSessionFinishedOverlay visible={sessionFinished} onExit={handleExit} actionLabel={finishActionLabel} />
             {/* Background elements */}
             <div className="fixed inset-0 overflow-hidden pointer-events-none -z-10 bg-zinc-950">
                 <div className="absolute -top-[20%] -left-[10%] w-[50%] h-[50%] rounded-full bg-indigo-900/10 blur-[120px]" />
@@ -358,7 +369,7 @@ export default function CompletarEnunciado() {
                                 animate={{ opacity: 1, y: 0 }}
                                 exit={{ opacity: 0, y: -20 }}
                                 onClick={handleCheck}
-                                disabled={Object.keys(filledBlanks).length === 0}
+                                disabled={Object.keys(filledBlanks).length === 0 || sessionFinished}
                                 className="group relative inline-flex items-center justify-center gap-3 overflow-hidden rounded-2xl bg-indigo-600 px-10 py-5 font-bold text-white transition-all hover:bg-indigo-500 hover:scale-[1.02] active:scale-95 disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:scale-100 shadow-[0_0_40px_rgba(79,70,229,0.3)]"
                             >
                                 <span className="relative z-10 flex items-center gap-3 text-lg">
@@ -379,7 +390,8 @@ export default function CompletarEnunciado() {
                                 </div>
                                 <button
                                     onClick={handleReset}
-                                    className="group flex items-center gap-2 text-zinc-400 font-medium hover:text-white transition-colors"
+                                    disabled={sessionFinished}
+                                    className="group flex items-center gap-2 text-zinc-400 font-medium hover:text-white transition-colors disabled:cursor-not-allowed disabled:opacity-40"
                                 >
                                     <RotateCcw className="w-5 h-5 transition-transform group-hover:-rotate-180 duration-500" /> 
                                     <span className="underline underline-offset-4 decoration-zinc-700 group-hover:decoration-white/50">Volver a jugar</span>

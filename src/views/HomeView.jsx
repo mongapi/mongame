@@ -197,7 +197,7 @@ export default function HomePage() {
                         display: 'flex', flexDirection: 'column',
                         backdropFilter: 'blur(12px)',
                         boxShadow: '0 8px 32px rgba(0,0,0,.35)',
-                        ...px(0.004),
+                        ...getParallaxStyle(0.004),
                     }}>
                         <div style={{
                             width: 52, height: 52, borderRadius: 14,
@@ -254,7 +254,7 @@ export default function HomePage() {
                         display: 'flex', flexDirection: 'column',
                         backdropFilter: 'blur(12px)',
                         boxShadow: '0 8px 32px rgba(0,0,0,.35)',
-                        ...px(0.007),
+                        ...getParallaxStyle(0.007),
                     }}>
                         <div style={{
                             width: 52, height: 52, borderRadius: 14,

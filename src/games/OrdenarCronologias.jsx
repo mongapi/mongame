@@ -3,9 +3,10 @@ import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { Text, Float } from '@react-three/drei';
 import * as THREE from 'three';
 import { motion, AnimatePresence } from 'motion/react';
-import { CheckCircle2, AlertTriangle, Play, ShieldAlert } from 'lucide-react';
+import { CheckCircle2, AlertTriangle, ArrowDown, ArrowLeft, ArrowRight, ArrowUp, Play, ShieldAlert } from 'lucide-react';
 import { sessionAPI } from '@/api/api';
 import { GameErrorState, GameLoadingState } from '@/games/shared/GameScreenShell';
+import { GameExitButton, GameSessionFinishedOverlay, useGameSessionUi } from '@/games/shared/GameSessionActions';
 import { useSessionGame } from '@/hooks/useSessionGame';
 import { validateGameContent } from '@/games/shared/gameContentValidation';
 
@@ -48,7 +49,7 @@ function Particles({ speedMulti }) {
     });
 
     return (
-        <points ref={meshRef}>
+        <points ref={meshRef} frustumCulled={false}>
             <bufferGeometry>
                 <bufferAttribute attach="attributes-position" count={count} array={particles.positions} itemSize={3} />
             </bufferGeometry>
@@ -157,7 +158,7 @@ function Hito({ data, idx, isCurrent, isSolved, onSelect }) {
     );
 }
 
-const MainScene = ({ gameState, setGameState, isFail, timeline, solvedHitos, currentHito, movementZ, setMovementZ, handleSelectNode }) => {
+const MainScene = ({ gameState, setGameState, isFail, timeline, solvedHitos, currentHito, movementZ, setMovementZ, handleSelectNode, touchControls }) => {
     const { camera } = useThree();
 
     // Ref to hold keyboard state
@@ -194,23 +195,28 @@ const MainScene = ({ gameState, setGameState, isFail, timeline, solvedHitos, cur
 
     useFrame((state, delta) => {
         const dt = Math.min(delta, 0.1);
+        const controls = {
+            forward: keys.current.forward || touchControls.forward,
+            backward: keys.current.backward || touchControls.backward,
+            left: keys.current.left || touchControls.left,
+            right: keys.current.right || touchControls.right,
+        };
 
         // Si estamos explorando, usamos los controles de movimiento
         if (gameState === 'EXPLORING') {
             const speed = 80; // Velocidad de movimiento normal
-            const sideSpeed = 50;
 
-            if (keys.current.forward) {
+            if (controls.forward) {
                 setMovementZ(prev => prev - speed * dt);
             }
-            if (keys.current.backward) {
+            if (controls.backward) {
                 setMovementZ(prev => Math.min(prev + speed * dt, 80)); // Limit backwards movement
             }
             
             // Side movement
-            if (keys.current.left) {
+            if (controls.left) {
                 camera.position.x = THREE.MathUtils.lerp(camera.position.x, -8, dt * 5);
-            } else if (keys.current.right) {
+            } else if (controls.right) {
                 camera.position.x = THREE.MathUtils.lerp(camera.position.x, 8, dt * 5);
             } else {
                 camera.position.x = THREE.MathUtils.lerp(camera.position.x, 0, dt * 5);
@@ -226,7 +232,7 @@ const MainScene = ({ gameState, setGameState, isFail, timeline, solvedHitos, cur
             camera.position.y = THREE.MathUtils.lerp(camera.position.y, (Math.random() - 0.5) * 2.0, 0.2);
             camera.fov = THREE.MathUtils.lerp(camera.fov, 110, 0.05);
         } else {
-            camera.position.x = THREE.MathUtils.lerp(camera.position.x, Math.sin(state.clock.elapsedTime * 2.5) * 0.8 + (keys.current.left ? -8 : keys.current.right ? 8 : 0), 0.1);
+            camera.position.x = THREE.MathUtils.lerp(camera.position.x, Math.sin(state.clock.elapsedTime * 2.5) * 0.8 + (controls.left ? -8 : controls.right ? 8 : 0), 0.1);
             camera.position.y = THREE.MathUtils.lerp(camera.position.y, Math.cos(state.clock.elapsedTime * 1.8) * 0.8, 0.1);
             camera.fov = THREE.MathUtils.lerp(camera.fov, 65, 0.1);
         }
@@ -256,6 +262,22 @@ const MainScene = ({ gameState, setGameState, isFail, timeline, solvedHitos, cur
     );
 }
 
+function TouchControlButton({ icon: Icon, label, onPressStart, onPressEnd, className }) {
+    return (
+        <button
+            type="button"
+            aria-label={label}
+            onPointerDown={onPressStart}
+            onPointerUp={onPressEnd}
+            onPointerCancel={onPressEnd}
+            onPointerLeave={onPressEnd}
+            className={`flex h-16 w-16 items-center justify-center rounded-2xl border border-white/10 bg-black/65 text-white shadow-[0_10px_30px_rgba(0,0,0,0.35)] backdrop-blur-xl transition active:scale-95 active:bg-indigo-500/50 ${className}`}
+        >
+            <Icon className="h-7 w-7" />
+        </button>
+    );
+}
+
 export default function OrdenarCronologias() {
     const {
         session,
@@ -269,6 +291,7 @@ export default function OrdenarCronologias() {
         resolveContent: resolveTimelineContent,
         validateContent: (resolvedContent) => validateGameContent('timeline', resolvedContent),
     });
+    const { sessionFinished, handleExit, exitLabel, finishActionLabel } = useGameSessionUi({ session, sessionId, isPreview: false });
     // START, EXPLORING, QUESTION, END
     const [gameState, setGameState] = useState('START'); 
     const [currentHito, setCurrentHito] = useState(null);
@@ -277,6 +300,7 @@ export default function OrdenarCronologias() {
     const [movementZ, setMovementZ] = useState(80); // Start position
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [timelineStartedAt, setTimelineStartedAt] = useState(() => Date.now());
+    const [touchControls, setTouchControls] = useState({ forward: false, backward: false, left: false, right: false });
 
     const timeline = useMemo(() => ({
         id: session?.game_id ?? 'timeline-session',
@@ -293,9 +317,30 @@ export default function OrdenarCronologias() {
         setIsFail(false);
         setError('');
         setTimelineStartedAt(Date.now());
+        setTouchControls({ forward: false, backward: false, left: false, right: false });
     }, [setError, timeline.id]);
 
+    useEffect(() => {
+        if (gameState !== 'EXPLORING') {
+            setTouchControls({ forward: false, backward: false, left: false, right: false });
+        }
+    }, [gameState]);
+
+    const setTouchDirection = (direction, isActive) => {
+        setTouchControls((current) => {
+            if (current[direction] === isActive) {
+                return current;
+            }
+
+            return {
+                ...current,
+                [direction]: isActive,
+            };
+        });
+    };
+
     const handleAnswer = async (optionIdx) => {
+        if (sessionFinished) return;
         if (!currentHitoData) return;
 
         setError('');
@@ -344,7 +389,7 @@ export default function OrdenarCronologias() {
 
     const handleSelectNode = (idx) => {
         // Only allow selecting if we are exploring and it's not already solved
-        if (gameState === 'EXPLORING' && !solvedHitos.includes(timeline.items[idx].id)) {
+        if (!sessionFinished && gameState === 'EXPLORING' && !solvedHitos.includes(timeline.items[idx].id)) {
             setCurrentHito(idx);
             setGameState('QUESTION');
         }
@@ -369,6 +414,8 @@ export default function OrdenarCronologias() {
 
     return (
         <div className="w-full h-screen relative bg-zinc-950 font-sans overflow-hidden fade-in select-none">
+            <GameExitButton onExit={handleExit} label={exitLabel} />
+            <GameSessionFinishedOverlay visible={sessionFinished} onExit={handleExit} actionLabel={finishActionLabel} />
             {/* Lienzo WebGL / Three.js */}
             <Canvas camera={{ position: [0, 0, 80], fov: 65 }} className="absolute inset-0">
                 <color attach="background" args={['#09090b']} />
@@ -382,6 +429,7 @@ export default function OrdenarCronologias() {
                     movementZ={movementZ}
                     setMovementZ={setMovementZ}
                     handleSelectNode={handleSelectNode}
+                    touchControls={touchControls}
                 />
             </Canvas>
 
@@ -395,6 +443,44 @@ export default function OrdenarCronologias() {
                         <h1 className="text-xl font-bold text-white tracking-tight">{timeline.title}</h1>
                     </div>
                 </div>
+
+                {gameState === 'EXPLORING' && !sessionFinished ? (
+                    <div className="absolute inset-x-0 bottom-6 z-20 flex justify-center px-4 pointer-events-none">
+                        <div className="pointer-events-auto rounded-[2rem] border border-white/10 bg-black/45 p-4 backdrop-blur-xl shadow-[0_20px_50px_rgba(0,0,0,0.35)]">
+                            <p className="mb-3 text-center text-xs font-bold uppercase tracking-[0.28em] text-indigo-200/80">
+                                Control táctil
+                            </p>
+                            <div className="grid grid-cols-3 gap-3">
+                                <div />
+                                <TouchControlButton
+                                    icon={ArrowUp}
+                                    label="Avanzar"
+                                    onPressStart={() => setTouchDirection('forward', true)}
+                                    onPressEnd={() => setTouchDirection('forward', false)}
+                                />
+                                <div />
+                                <TouchControlButton
+                                    icon={ArrowLeft}
+                                    label="Mover a la izquierda"
+                                    onPressStart={() => setTouchDirection('left', true)}
+                                    onPressEnd={() => setTouchDirection('left', false)}
+                                />
+                                <TouchControlButton
+                                    icon={ArrowDown}
+                                    label="Retroceder"
+                                    onPressStart={() => setTouchDirection('backward', true)}
+                                    onPressEnd={() => setTouchDirection('backward', false)}
+                                />
+                                <TouchControlButton
+                                    icon={ArrowRight}
+                                    label="Mover a la derecha"
+                                    onPressStart={() => setTouchDirection('right', true)}
+                                    onPressEnd={() => setTouchDirection('right', false)}
+                                />
+                            </div>
+                        </div>
+                    </div>
+                ) : null}
 
                 <AnimatePresence mode="wait">
                     {/* Pantalla Inicial */}
@@ -411,10 +497,11 @@ export default function OrdenarCronologias() {
                                 Anomalía Temporal
                             </h1>
                             <p className="text-lg md:text-xl text-zinc-300 mb-10 leading-relaxed font-medium">
-                                Usando las teclas <strong>W/S</strong> o las <strong>Flechas Arriba/Abajo</strong> y navega por el túnel cuántico. Haz clic en los hitos flotantes que encuentres a los lados y responde correctamente a los desafíos para estabilizar el flujo de <strong>{timeline.title}</strong>.
+                                Usa las teclas <strong>W/S</strong>, las <strong>Flechas Arriba/Abajo</strong> o el <strong>panel táctil</strong> en pantalla para navegar por el túnel cuántico. Haz clic en los hitos flotantes que encuentres a los lados y responde correctamente a los desafíos para estabilizar el flujo de <strong>{timeline.title}</strong>.
                             </p>
                             <button
                                 onClick={() => setGameState('EXPLORING')}
+                                disabled={sessionFinished}
                                 className="group flex items-center justify-center gap-3 mx-auto bg-indigo-600 hover:bg-indigo-500 text-white px-10 py-5 rounded-full font-extrabold text-xl md:text-2xl transition-all duration-300 hover:scale-105 hover:shadow-[0_0_40px_rgba(99,102,241,0.6)] cursor-pointer"
                             >
                                 <Play className="fill-current w-7 h-7 group-hover:translate-x-1 transition-transform" /> Iniciar Salto
@@ -472,7 +559,7 @@ export default function OrdenarCronologias() {
                                             <button
                                                 key={i}
                                                 onClick={() => handleAnswer(i)}
-                                                disabled={isSubmitting}
+                                                disabled={isSubmitting || sessionFinished}
                                                 className={`w-full text-left p-5 rounded-2xl font-bold text-lg md:text-xl transition-all duration-200 outline-none
                                                    bg-zinc-800/80 hover:bg-indigo-600 text-zinc-100 hover:text-white
                                                    border border-white/5 hover:border-indigo-400 focus:ring-4 focus:ring-indigo-500/50 hover:-translate-y-1 hover:shadow-xl disabled:cursor-not-allowed disabled:opacity-50
@@ -519,6 +606,7 @@ export default function OrdenarCronologias() {
                             </p>
                             <button
                                 onClick={resetGame}
+                                disabled={sessionFinished}
                                 className="group flex items-center gap-4 px-12 py-6 bg-linear-to-r from-emerald-500 to-cyan-600 text-2xl font-black rounded-full transition-all duration-300 hover:scale-105 text-white shadow-[0_0_60px_rgba(16,185,129,0.5)] hover:shadow-[0_0_80px_rgba(16,185,129,0.8)] cursor-pointer"
                             >
                                 Reiniciar cronología <Play className="w-8 h-8 group-hover:translate-x-2 transition-transform" />

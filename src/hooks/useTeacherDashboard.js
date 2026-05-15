@@ -124,7 +124,10 @@ export function useTeacherDashboard() {
     const paginatedRecentSessions = useMemo(() => recentSessions.slice(
         (recentSessionsPage - 1) * RECENT_SESSIONS_PER_PAGE,
         recentSessionsPage * RECENT_SESSIONS_PER_PAGE,
-    ), [recentSessions, recentSessionsPage]);
+    ).map((recentSession) => ({
+        ...recentSession,
+        sessionModeShortLabel: getSessionModeMeta(recentSession.game_mode || 'individual').shortLabel,
+    })), [recentSessions, recentSessionsPage]);
 
     useEffect(() => {
         if (recentSessionsPage > totalRecentSessionsPages) {

@@ -150,7 +150,7 @@ export default function TeacherDashboard() {
                                 <div className="text-right text-sm text-zinc-400">
                                     <p className="font-semibold text-white">PIN {recentSession.pin}</p>
                                     <p>Fase {Number(recentSession.current_phase_index ?? 0) + 1}/{recentSession.total_phases ?? 1}</p>
-                                    <p>{getSessionModeMeta(recentSession.game_mode || 'individual').shortLabel}</p>
+                                    <p>{recentSession.sessionModeShortLabel}</p>
                                 </div>
                             </button>
                         );})}

@@ -60,6 +60,34 @@ export const templatesByCode = {
         word: 'codigo',
         clue: 'Pista del ahorcado',
     },
+    orbital: {
+        title: 'Sistema Solar de la Nutricion',
+        core: 'Nutrientes esenciales',
+        orbits: [
+            { id: 0, name: 'Macronutrientes', radius: 4.5, color: '#4ade80', speed: 0.5 },
+            { id: 1, name: 'Micronutrientes', radius: 7.5, color: '#60a5fa', speed: 0.3 },
+            { id: 2, name: 'Hidratacion', radius: 10.5, color: '#c084fc', speed: 0.2 },
+        ],
+        items: [
+            { id: 'i1', text: 'Proteinas', correctOrbit: 0 },
+            { id: 'i2', text: 'Vitaminas', correctOrbit: 1 },
+            { id: 'i3', text: 'Agua', correctOrbit: 2 },
+        ],
+    },
+    orbital_order: {
+        title: 'Sistema Solar de la Nutricion',
+        core: 'Nutrientes esenciales',
+        orbits: [
+            { id: 0, name: 'Macronutrientes', radius: 4.5, color: '#4ade80', speed: 0.5 },
+            { id: 1, name: 'Micronutrientes', radius: 7.5, color: '#60a5fa', speed: 0.3 },
+            { id: 2, name: 'Hidratacion', radius: 10.5, color: '#c084fc', speed: 0.2 },
+        ],
+        items: [
+            { id: 'i1', text: 'Proteinas', correctOrbit: 0 },
+            { id: 'i2', text: 'Vitaminas', correctOrbit: 1 },
+            { id: 'i3', text: 'Agua', correctOrbit: 2 },
+        ],
+    },
 };
 
 function cloneTemplate(template) {
@@ -681,6 +709,185 @@ function HangmanForm({ value, onChange }) {
     );
 }
 
+function OrbitalOrderForm({ value, onChange }) {
+    const orbits = value.orbits ?? [];
+    const items = value.items ?? [];
+
+    const updateOrbit = (orbitIndex, updater) => {
+        const nextOrbits = [...orbits];
+        nextOrbits[orbitIndex] = updater(nextOrbits[orbitIndex]);
+        onChange({ ...value, orbits: nextOrbits });
+    };
+
+    const updateItem = (itemIndex, updater) => {
+        const nextItems = [...items];
+        nextItems[itemIndex] = updater(nextItems[itemIndex]);
+        onChange({ ...value, items: nextItems });
+    };
+
+    return (
+        <div className="space-y-5">
+            <Panel title="Configuracion del sistema" description="Define el nombre del sistema, el nucleo central y las orbitas disponibles.">
+                <div className="grid gap-4 md:grid-cols-2">
+                    <Field label="Titulo del juego">
+                        <input
+                            type="text"
+                            value={value.title ?? ''}
+                            onChange={(event) => onChange({ ...value, title: event.target.value })}
+                            className={textInputClassName()}
+                        />
+                    </Field>
+                    <Field label="Nucleo central">
+                        <input
+                            type="text"
+                            value={value.core ?? ''}
+                            onChange={(event) => onChange({ ...value, core: event.target.value })}
+                            className={textInputClassName()}
+                        />
+                    </Field>
+                </div>
+            </Panel>
+
+            <Panel title="Orbitas" description="Cada orbita representa una categoria a la que se asignan los conceptos.">
+                <div className="space-y-4">
+                    {orbits.map((orbit, orbitIndex) => (
+                        <QuestionCard
+                            key={orbit.id ?? `orbit-${orbitIndex}`}
+                            title={`Orbita ${orbitIndex + 1}`}
+                            onRemove={() => onChange({ ...value, orbits: orbits.filter((_, index) => index !== orbitIndex) })}
+                        >
+                            <div className="grid gap-4 md:grid-cols-2">
+                                <Field label="ID de orbita">
+                                    <input
+                                        type="number"
+                                        value={orbit.id ?? orbitIndex}
+                                        onChange={(event) => updateOrbit(orbitIndex, (current) => ({ ...current, id: Number(event.target.value) }))}
+                                        className={textInputClassName()}
+                                    />
+                                </Field>
+                                <Field label="Nombre">
+                                    <input
+                                        type="text"
+                                        value={orbit.name ?? ''}
+                                        onChange={(event) => updateOrbit(orbitIndex, (current) => ({ ...current, name: event.target.value }))}
+                                        className={textInputClassName()}
+                                    />
+                                </Field>
+                            </div>
+                            <div className="grid gap-4 md:grid-cols-3">
+                                <Field label="Radio">
+                                    <input
+                                        type="number"
+                                        min="1"
+                                        step="0.1"
+                                        value={orbit.radius ?? 4.5}
+                                        onChange={(event) => updateOrbit(orbitIndex, (current) => ({ ...current, radius: Number(event.target.value) || 4.5 }))}
+                                        className={textInputClassName()}
+                                    />
+                                </Field>
+                                <Field label="Velocidad">
+                                    <input
+                                        type="number"
+                                        min="0.1"
+                                        step="0.1"
+                                        value={orbit.speed ?? 0.3}
+                                        onChange={(event) => updateOrbit(orbitIndex, (current) => ({ ...current, speed: Number(event.target.value) || 0.3 }))}
+                                        className={textInputClassName()}
+                                    />
+                                </Field>
+                                <Field label="Color">
+                                    <input
+                                        type="text"
+                                        value={orbit.color ?? '#60a5fa'}
+                                        onChange={(event) => updateOrbit(orbitIndex, (current) => ({ ...current, color: event.target.value }))}
+                                        className={textInputClassName()}
+                                        placeholder="#60a5fa"
+                                    />
+                                </Field>
+                            </div>
+                        </QuestionCard>
+                    ))}
+                </div>
+
+                <button
+                    type="button"
+                    onClick={() => onChange({
+                        ...value,
+                        orbits: [
+                            ...orbits,
+                            {
+                                id: orbits.length,
+                                name: `Orbita ${orbits.length + 1}`,
+                                radius: 4.5 + orbits.length * 3,
+                                color: '#60a5fa',
+                                speed: 0.3,
+                            },
+                        ],
+                    })}
+                    className="inline-flex items-center gap-2 rounded-2xl border border-cyan-400/20 bg-cyan-400/10 px-4 py-3 text-sm font-semibold text-cyan-200 transition hover:bg-cyan-400/20"
+                >
+                    <Plus className="h-4 w-4" />
+                    Anadir orbita
+                </button>
+            </Panel>
+
+            <Panel title="Conceptos flotantes" description="Asigna cada concepto a la orbita correcta usando su ID.">
+                <div className="space-y-4">
+                    {items.map((item, itemIndex) => (
+                        <QuestionCard
+                            key={item.id ?? `orbital-item-${itemIndex}`}
+                            title={`Concepto ${itemIndex + 1}`}
+                            onRemove={() => onChange({ ...value, items: items.filter((_, index) => index !== itemIndex) })}
+                        >
+                            <div className="grid gap-4 md:grid-cols-3">
+                                <Field label="ID del concepto">
+                                    <input
+                                        type="text"
+                                        value={item.id ?? ''}
+                                        onChange={(event) => updateItem(itemIndex, (current) => ({ ...current, id: event.target.value }))}
+                                        className={textInputClassName()}
+                                    />
+                                </Field>
+                                <Field label="Texto">
+                                    <input
+                                        type="text"
+                                        value={item.text ?? ''}
+                                        onChange={(event) => updateItem(itemIndex, (current) => ({ ...current, text: event.target.value }))}
+                                        className={textInputClassName()}
+                                    />
+                                </Field>
+                                <Field label="ID de orbita correcta">
+                                    <input
+                                        type="number"
+                                        value={item.correctOrbit ?? 0}
+                                        onChange={(event) => updateItem(itemIndex, (current) => ({ ...current, correctOrbit: Number(event.target.value) }))}
+                                        className={textInputClassName()}
+                                    />
+                                </Field>
+                            </div>
+                        </QuestionCard>
+                    ))}
+                </div>
+
+                <button
+                    type="button"
+                    onClick={() => onChange({
+                        ...value,
+                        items: [
+                            ...items,
+                            { id: `i${items.length + 1}`, text: `Concepto ${items.length + 1}`, correctOrbit: orbits[0]?.id ?? 0 },
+                        ],
+                    })}
+                    className="inline-flex items-center gap-2 rounded-2xl border border-cyan-400/20 bg-cyan-400/10 px-4 py-3 text-sm font-semibold text-cyan-200 transition hover:bg-cyan-400/20"
+                >
+                    <Plus className="h-4 w-4" />
+                    Anadir concepto
+                </button>
+            </Panel>
+        </div>
+    );
+}
+
 function UnsupportedForm({ value, onChange }) {
     return (
         <Panel title="Contenido estructurado" description="Este tipo todavía no tiene un formulario específico. Puedes seguir ajustándolo con JSON avanzado.">
@@ -727,6 +934,10 @@ export default function GameContentForm({ typeCode, value, onChange }) {
 
     if (typeCode === 'hangman') {
         return <HangmanForm value={value} onChange={onChange} />;
+    }
+
+    if (typeCode === 'orbital' || typeCode === 'orbital_order') {
+        return <OrbitalOrderForm value={value} onChange={onChange} />;
     }
 
     return <UnsupportedForm value={value} onChange={onChange} />;

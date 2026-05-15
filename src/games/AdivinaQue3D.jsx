@@ -8,6 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { Separator } from '@/components/ui/separator';
 import { GameErrorState, GameLoadingState } from '@/games/shared/GameScreenShell';
+import { GameExitButton, GameSessionFinishedOverlay, useGameSessionUi } from '@/games/shared/GameSessionActions';
 import { useSessionGame } from '@/hooks/useSessionGame';
 import { validateGameContent } from '@/games/shared/gameContentValidation';
 
@@ -21,7 +22,7 @@ function normalizeGuessContent(gameContent) {
 }
 
 export default function AdivinaQue3D() {
-  const { content, sessionId, participant, isLoading, error, setError } = useSessionGame({
+  const { session, content, sessionId, participant, isLoading, error, setError } = useSessionGame({
     resolveContent: normalizeGuessContent,
     validateContent: (resolvedContent) => validateGameContent('guess_who', resolvedContent),
   });
@@ -32,6 +33,7 @@ export default function AdivinaQue3D() {
   const [isSolved, setIsSolved] = useState(false);
   const [startedAt, setStartedAt] = useState(() => Date.now());
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const { sessionFinished, handleExit, exitLabel, finishActionLabel } = useGameSessionUi({ session, sessionId, isPreview: false });
 
   const normalizedAnswer = useMemo(() => content.answer.toLowerCase(), [content.answer]);
   const visibleClues = content.clues.slice(0, revealedCount);
@@ -49,7 +51,7 @@ export default function AdivinaQue3D() {
     event.preventDefault();
 
     const normalizedGuess = guess.trim().toLowerCase();
-    if (!normalizedGuess || isSolved) {
+    if (!normalizedGuess || isSolved || sessionFinished) {
       return;
     }
 
@@ -104,7 +106,7 @@ export default function AdivinaQue3D() {
   };
 
   if (isLoading) {
-    return <GameLoadingState title="Cargando adivina qué..." />;
+    return <GameLoadingState title="Cargando quién es quién..." />;
   }
 
   if (error) {
@@ -113,6 +115,8 @@ export default function AdivinaQue3D() {
 
   return (
     <div className="min-h-screen px-6 py-10 text-white">
+      <GameExitButton onExit={handleExit} label={exitLabel} />
+      <GameSessionFinishedOverlay visible={sessionFinished} onExit={handleExit} actionLabel={finishActionLabel} />
       <div className="mx-auto grid max-w-6xl gap-6 lg:grid-cols-[1.2fr_0.8fr]">
         <Card className="border-white/10 bg-black/35 text-white shadow-[0_30px_90px_rgba(0,0,0,0.35)] backdrop-blur-xl">
           <CardHeader className="space-y-4">
@@ -122,7 +126,7 @@ export default function AdivinaQue3D() {
                   <BrainCircuit className="h-6 w-6" />
                 </div>
                 <div>
-                  <CardTitle className="text-3xl font-black tracking-tight">Adivina Qué</CardTitle>
+                  <CardTitle className="text-3xl font-black tracking-tight">Quién es quién</CardTitle>
                   <CardDescription className="text-zinc-400">
                     Lee las pistas y deduce el concepto oculto antes de agotar toda la secuencia.
                   </CardDescription>
@@ -161,11 +165,11 @@ export default function AdivinaQue3D() {
                   <Input
                     value={guess}
                     onChange={(event) => setGuess(event.target.value)}
-                    disabled={isSolved}
+                    disabled={isSolved || sessionFinished}
                     placeholder="Escribe tu deducción"
                     className="h-12 border-white/10 bg-white/5 text-white placeholder:text-zinc-500"
                   />
-                  <Button type="submit" disabled={!guess.trim() || isSolved} className="h-12 bg-cyan-400 text-zinc-950 hover:bg-cyan-300">
+                  <Button type="submit" disabled={!guess.trim() || isSolved || sessionFinished} className="h-12 bg-cyan-400 text-zinc-950 hover:bg-cyan-300">
                     <Search className="h-4 w-4" />
                     Comprobar
                   </Button>
@@ -213,7 +217,7 @@ export default function AdivinaQue3D() {
                 <p className="text-xs font-semibold uppercase tracking-[0.18em] text-zinc-400">Pistas pendientes</p>
                 <p className="mt-2 text-3xl font-black text-cyan-200">{Math.max(content.clues.length - revealedCount, 0)}</p>
               </div>
-              <Button type="button" variant="outline" onClick={handleReset} className="w-full border-white/10 bg-white/5 text-white hover:bg-white/10 hover:text-white">
+              <Button type="button" variant="outline" onClick={handleReset} disabled={sessionFinished} className="w-full border-white/10 bg-white/5 text-white hover:bg-white/10 hover:text-white disabled:cursor-not-allowed disabled:opacity-40">
                 <RotateCcw className="h-4 w-4" />
                 Reiniciar reto
               </Button>

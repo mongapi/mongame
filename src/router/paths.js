@@ -23,18 +23,27 @@ export const ROUTE_PATHS = {
     playTimeline: '/jugar/cronologias',
     playShooter: '/jugar/shooter',
     playGuessWho: '/jugar/adivina',
+    playHangman: '/jugar/ahorcado',
     playOrbital: '/jugar/orbital',
     fallback: '*',
 };
 
 export const PLAY_ROUTE_BY_GAME_TYPE = {
     memory: ROUTE_PATHS.playMemory,
+    memory3d: ROUTE_PATHS.playMemory3D,
     quiz: ROUTE_PATHS.playQuiz,
     timeline: ROUTE_PATHS.playTimeline,
     filling_blanks: ROUTE_PATHS.playFillingBlanks,
     guess_who: ROUTE_PATHS.playGuessWho,
     shooting: ROUTE_PATHS.playShooter,
+    hangman: ROUTE_PATHS.playHangman,
+    orbital: ROUTE_PATHS.playOrbital,
+    orbital_order: ROUTE_PATHS.playOrbital,
 };
+
+export function resolvePlayRouteByGameType(typeCode) {
+    return PLAY_ROUTE_BY_GAME_TYPE[typeCode] ?? null;
+}
 
 export function buildDashboardSessionPath(sessionId) {
     return `${ROUTE_PATHS.dashboard}/${sessionId}`;

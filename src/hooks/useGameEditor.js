@@ -3,7 +3,7 @@ import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { gameAPI, gameTypeAPI, sessionAPI } from '@/api/api';
 import GameContentForm, { getTemplateForGameType } from '@/components/gameForms/GameContentForm';
 import { validateGameContent } from '@/games/shared/gameContentValidation';
-import { ROUTE_PATHS, buildDashboardSessionPath, buildGameEditPath } from '@/router/paths';
+import { ROUTE_PATHS, buildDashboardSessionPath, buildGameEditPath, resolvePlayRouteByGameType } from '@/router/paths';
 
 export function useGameEditor() {
     const navigate = useNavigate();
@@ -213,6 +213,36 @@ export function useGameEditor() {
         });
     };
 
+    const handlePreview = () => {
+        setError('');
+
+        const validationMessage = validateGameContent(selectedGameTypeCode, form.game_content);
+        if (validationMessage) {
+            setError(validationMessage);
+            return;
+        }
+
+        const route = resolvePlayRouteByGameType(selectedGameTypeCode);
+        if (!route) {
+            setError('Este tipo de juego todavía no tiene runtime de preview disponible.');
+            return;
+        }
+
+        navigate(route, {
+            state: {
+                preview: {
+                    title: form.name.trim() || selectedGameTypeLabel,
+                    gameContent: form.game_content,
+                    game: {
+                        id: id ? Number(id) : null,
+                        name: form.name.trim() || selectedGameTypeLabel,
+                        gameType: selectedGameType ?? null,
+                    },
+                },
+            },
+        });
+    };
+
     return {
         GameContentForm,
         isEditing,
@@ -238,6 +268,7 @@ export function useGameEditor() {
         updateJson,
         handleSubmit,
         handleCreateSession,
+        handlePreview,
         goBack: () => navigate(isEditing ? ROUTE_PATHS.games : ROUTE_PATHS.sessionsCreate),
     };
 }

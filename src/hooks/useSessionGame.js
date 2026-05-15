@@ -19,8 +19,19 @@ export function useSessionGame({ resolveContent, validateContent }) {
     const [searchParams] = useSearchParams();
     const sessionId = searchParams.get('sessionId');
     const pin = searchParams.get('pin') || location.state?.session?.pin || null;
+    const preview = !sessionId && location.state?.preview ? location.state.preview : null;
+    const initialSession = location.state?.session ?? (preview
+        ? {
+            id: null,
+            pin: null,
+            game_mode: 'preview',
+            game_content: preview.gameContent ?? {},
+            game: preview.game ?? null,
+            lesson_plan: preview.lessonPlan ?? null,
+        }
+        : null);
 
-    const [session, setSession] = useState(location.state?.session ?? null);
+    const [session, setSession] = useState(initialSession);
     const [isLoading, setIsLoading] = useState(Boolean(sessionId) && !location.state?.session);
     const [error, setError] = useState('');
 
@@ -29,11 +40,16 @@ export function useSessionGame({ resolveContent, validateContent }) {
         localStorage.setItem('device_id', deviceId);
 
         const storedPlayerName = location.state?.playerName || localStorage.getItem('player_name');
-        const playerName = storedPlayerName || getDefaultParticipantName(session?.game_mode);
-        localStorage.setItem('player_name', playerName);
+        const playerName = preview
+            ? 'Vista previa docente'
+            : storedPlayerName || getDefaultParticipantName(session?.game_mode);
+
+        if (!preview) {
+            localStorage.setItem('player_name', playerName);
+        }
 
         return { deviceId, playerName };
-    }, [location.state?.playerName, session?.game_mode]);
+    }, [location.state?.playerName, preview, session?.game_mode]);
 
     useEffect(() => {
         if (!sessionId || session) {
@@ -65,6 +81,38 @@ export function useSessionGame({ resolveContent, validateContent }) {
             cancelled = true;
         };
     }, [session, sessionId]);
+
+    useEffect(() => {
+        if (!sessionId) {
+            return;
+        }
+
+        let cancelled = false;
+
+        const refreshSession = async () => {
+            const result = await sessionAPI.get(sessionId);
+            if (cancelled || !result.success) {
+                return;
+            }
+
+            setSession((current) => {
+                if (!current) {
+                    return result.data;
+                }
+
+                return current.updated_at === result.data.updated_at && current.status === result.data.status
+                    ? current
+                    : result.data;
+            });
+        };
+
+        const intervalId = window.setInterval(refreshSession, 10000);
+
+        return () => {
+            cancelled = true;
+            window.clearInterval(intervalId);
+        };
+    }, [sessionId]);
 
     useEffect(() => {
         if (!sessionId || !pin) {
@@ -105,7 +153,7 @@ export function useSessionGame({ resolveContent, validateContent }) {
         };
     }, [participant.deviceId, participant.playerName, pin, sessionId]);
 
-    const content = useMemo(() => resolveContent(session?.game_content ?? null), [resolveContent, session?.game_content]);
+    const content = useMemo(() => resolveContent((preview?.gameContent ?? session?.game_content) ?? null), [preview?.gameContent, resolveContent, session?.game_content]);
     const validationError = useMemo(() => validateContent(content), [content, validateContent]);
 
     return {
@@ -113,6 +161,8 @@ export function useSessionGame({ resolveContent, validateContent }) {
         sessionId,
         content,
         participant,
+        isPreview: Boolean(preview),
+        previewTitle: preview?.title ?? session?.game?.name ?? session?.lesson_plan?.name ?? 'Vista previa',
         isLoading,
         error: error || validationError,
         setError,

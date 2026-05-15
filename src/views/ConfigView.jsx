@@ -1,7 +1,13 @@
 import { motion } from "motion/react";
-import { AlertCircle, ArrowRight, Clock3, Mail, MonitorPlay, Settings2, ShieldCheck, UserRound } from "lucide-react";
+import { AlertCircle, ArrowRight, Clock3, Mail, Settings2, ShieldCheck, UserRound } from "lucide-react";
 import { useConfigView } from "@/hooks/useConfigView";
 import { SessionModeCards } from "@/components/organisms/SessionModeSelector";
+
+const fadeUp = (delay = 0) => ({
+    initial: { opacity: 0, y: 14 },
+    animate: { opacity: 1, y: 0 },
+    transition: { delay, ease: "easeOut", duration: 0.4 },
+});
 
 export default function ConfigView() {
     const {
@@ -25,220 +31,208 @@ export default function ConfigView() {
         goToFavoriteSection,
     } = useConfigView();
 
-    if (isLoading) {
-        return (
-            <div className="flex min-h-screen items-center justify-center px-8 text-center font-['Orbitron'] text-xl text-white">
-                CARGANDO TU CONFIGURACIÓN...
+    if (isLoading) return (
+        <div className="min-h-screen px-8 py-10 lg:px-10">
+            <div className="mx-auto max-w-7xl space-y-4">
+                <div className="h-48 animate-pulse rounded-[2rem] bg-white/4" />
+                <div className="grid gap-4 xl:grid-cols-[1.15fr_0.85fr]">
+                    <div className="h-96 animate-pulse rounded-[2rem] bg-white/4" />
+                    <div className="space-y-4">
+                        <div className="h-44 animate-pulse rounded-[2rem] bg-white/4" />
+                        <div className="h-44 animate-pulse rounded-[2rem] bg-white/4" />
+                    </div>
+                </div>
             </div>
-        );
-    }
+        </div>
+    );
 
     return (
         <div className="min-h-screen px-8 py-10 text-white lg:px-10">
-            <div className="mx-auto max-w-7xl space-y-8">
-                <section className="relative overflow-hidden rounded-[2rem] border border-white/10 bg-zinc-950/70 p-8 shadow-[0_25px_100px_rgba(0,0,0,0.35)] backdrop-blur-xl lg:p-10">
-                    <div className="absolute -left-16 top-8 h-44 w-44 rounded-full bg-cyan-300/10 blur-[80px]" />
-                    <div className="absolute right-0 top-0 h-52 w-52 rounded-full bg-amber-300/10 blur-[90px]" />
+            <div className="mx-auto max-w-7xl space-y-6">
 
-                    <div className="relative z-10 grid gap-8 lg:grid-cols-[1.1fr_0.9fr] lg:items-end">
+                {/* ── Error ── */}
+                {error && (
+                    <div className="flex items-center gap-3 rounded-2xl border border-red-500/25 bg-red-500/8 px-4 py-3 text-sm text-red-200">
+                        <AlertCircle className="h-4 w-4 shrink-0" />
+                        {error}
+                    </div>
+                )}
+
+                {/* ── Hero ── */}
+                <motion.section
+                    {...fadeUp(0)}
+                    className="relative overflow-hidden rounded-[2rem] border border-white/10 bg-zinc-950/70 p-7 shadow-[0_20px_80px_rgba(0,0,0,0.3)] backdrop-blur-xl lg:p-8"
+                >
+                    <div className="pointer-events-none absolute -left-12 top-6 h-36 w-36 rounded-full bg-cyan-300/10 blur-[70px]" />
+                    <div className="pointer-events-none absolute right-0 top-0 h-44 w-44 rounded-full bg-amber-300/8 blur-[80px]" />
+
+                    <div className="relative z-10 grid gap-6 lg:grid-cols-[1fr_auto] lg:items-center">
+                        {/* Left */}
                         <div>
-                            <div className="mb-5 inline-flex items-center gap-3 rounded-full border border-cyan-300/20 bg-cyan-300/10 px-4 py-2 text-[11px] font-bold uppercase tracking-[0.22em] text-cyan-100">
-                                <Settings2 className="h-4 w-4" />
-                                Tu configuración
+                            <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-cyan-300/20 bg-cyan-300/10 px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.22em] text-cyan-100">
+                                <Settings2 className="h-3.5 w-3.5" />
+                                Configuración
                             </div>
-                            <h1 className="font-['Orbitron'] text-4xl font-black text-white md:text-5xl">
-                                Ajusta tu espacio para trabajar como te resulte más cómodo.
+                            <h1 className="font-['Orbitron'] text-3xl font-black text-white md:text-4xl">
+                                {currentUser?.name ? `Hola, ${currentUser.name.split(' ')[0]}` : 'Tu espacio'}
                             </h1>
-                            <p className="mt-5 max-w-2xl text-sm leading-7 text-zinc-300 md:text-base">
-                                {currentUser?.name ? `${currentUser.name}, ` : ""}esta vista está pensada para ti: tu cuenta, tus preferencias y los accesos que más sentido tienen en tu día a día.
-                            </p>
-
-                            <div className="mt-8 flex flex-wrap gap-3">
+                            <div className="mt-5 flex flex-wrap gap-2">
                                 <button
                                     type="button"
                                     onClick={goToQuickSession}
-                                    className="rounded-2xl bg-cyan-300 px-5 py-3 font-bold text-zinc-950 transition hover:bg-cyan-200"
+                                    className="rounded-xl bg-cyan-300 px-4 py-2.5 text-sm font-bold text-zinc-950 transition hover:bg-cyan-200"
                                 >
                                     Crear sesión rápida
                                 </button>
                                 <button
                                     type="button"
                                     onClick={goToFavoriteSection}
-                                    className="rounded-2xl border border-white/15 bg-white/5 px-5 py-3 font-bold text-white transition hover:bg-white/10"
+                                    className="rounded-xl border border-white/12 bg-white/5 px-4 py-2.5 text-sm font-bold text-white transition hover:bg-white/10"
                                 >
-                                    Ir a mi acceso favorito
+                                    Acceso favorito
                                 </button>
                             </div>
                         </div>
 
-                        <div className="grid gap-4 sm:grid-cols-2">
-                            <div className="rounded-3xl border border-white/10 bg-white/4 p-5">
-                                <p className="text-xs font-bold uppercase tracking-[0.22em] text-zinc-500">Cuenta</p>
-                                <p className="mt-3 text-xl font-black text-white">{currentUser?.name || 'Docente'}</p>
-                                <p className="mt-2 text-sm text-zinc-400">Tu espacio personal dentro de la plataforma.</p>
-                            </div>
-                            <div className="rounded-3xl border border-white/10 bg-white/4 p-5">
-                                <p className="text-xs font-bold uppercase tracking-[0.22em] text-zinc-500">Modo habitual</p>
-                                <p className="mt-3 text-xl font-black text-white">{preferredModeMeta.label}</p>
-                                <p className="mt-2 text-sm text-zinc-400">La referencia que prefieres al abrir sesiones.</p>
-                            </div>
-                            <div className="rounded-3xl border border-white/10 bg-white/4 p-5">
-                                <p className="text-xs font-bold uppercase tracking-[0.22em] text-zinc-500">Tu biblioteca</p>
-                                <p className="mt-3 text-4xl font-black text-white">{games.length}</p>
-                                <p className="mt-2 text-sm text-zinc-400">Juegos preparados para reutilizar.</p>
-                            </div>
-                            <div className="rounded-3xl border border-white/10 bg-white/4 p-5">
-                                <p className="text-xs font-bold uppercase tracking-[0.22em] text-zinc-500">Sesiones activas</p>
-                                <p className="mt-3 text-4xl font-black text-white">{activeSessions.length}</p>
-                                <p className="mt-2 text-sm text-zinc-400">Lo que tienes en marcha ahora mismo.</p>
-                            </div>
+                        {/* Stats */}
+                        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-2 xl:grid-cols-4">
+                            {[
+                                { label: 'Modo habitual',   value: preferredModeMeta.label },
+                                { label: 'Juegos',          value: games.length },
+                                { label: 'Lesson plans',    value: lessonPlans.length },
+                                { label: 'Activas ahora',   value: activeSessions.length },
+                            ].map(({ label, value }) => (
+                                <div key={label} className="rounded-2xl border border-white/8 bg-white/4 px-4 py-3">
+                                    <p className="text-[9px] font-bold uppercase tracking-[0.2em] text-zinc-500">{label}</p>
+                                    <p className="mt-1.5 text-xl font-black text-white">{value}</p>
+                                </div>
+                            ))}
                         </div>
                     </div>
-                </section>
+                </motion.section>
 
-                {error ? (
-                    <div className="flex items-center gap-3 rounded-3xl border border-red-500/30 bg-red-500/10 p-4 text-red-200">
-                        <AlertCircle className="h-5 w-5 shrink-0" />
-                        <span className="text-sm">{error}</span>
-                    </div>
-                ) : null}
+                {/* ── Cuerpo ── */}
+                <div className="grid gap-5 xl:grid-cols-[1.15fr_0.85fr]">
 
-                <section className="grid gap-6 xl:grid-cols-[1.15fr_0.85fr]">
-                    <div className="rounded-[2rem] border border-white/10 bg-zinc-950/55 p-7 backdrop-blur-xl">
-                        <div className="mb-6 flex items-start justify-between gap-4">
-                            <div>
-                                <p className="text-xs font-bold uppercase tracking-[0.22em] text-cyan-200">Preferencias personales</p>
-                                <h2 className="mt-3 font-['Orbitron'] text-3xl font-black text-white">Haz que MonGame se adapte a tu forma de trabajar</h2>
-                            </div>
-                            <div className="rounded-2xl border border-cyan-300/20 bg-cyan-300/10 p-3 text-cyan-100">
-                                <UserRound className="h-5 w-5" />
+                    {/* ── Preferencias ── */}
+                    <motion.div {...fadeUp(0.06)} className="rounded-[2rem] border border-white/10 bg-zinc-950/55 p-7 backdrop-blur-xl">
+                        <div className="mb-5 flex items-center justify-between gap-3">
+                            <h2 className="font-['Orbitron'] text-xl font-black text-white">Preferencias</h2>
+                            <div className="rounded-xl border border-cyan-300/15 bg-cyan-300/8 p-2 text-cyan-200">
+                                <UserRound className="h-4 w-4" />
                             </div>
                         </div>
 
-                        <div className="space-y-6">
-                            <div className="rounded-3xl border border-white/10 bg-white/4 p-5">
-                                <p className="text-xs font-bold uppercase tracking-[0.18em] text-zinc-500">Sección de inicio favorita</p>
-                                <div className="mt-4 grid gap-3 md:grid-cols-3">
+                        <div className="space-y-4">
+                            {/* Sección de inicio */}
+                            <div className="rounded-2xl border border-white/8 bg-white/4 p-4">
+                                <p className="mb-3 text-[10px] font-bold uppercase tracking-[0.18em] text-zinc-500">
+                                    Sección de inicio
+                                </p>
+                                <div className="grid grid-cols-3 gap-2">
                                     {[
                                         { value: 'dashboard', label: 'Dashboard' },
-                                        { value: 'library', label: 'Biblioteca' },
-                                        { value: 'create', label: 'Crear sesión' },
-                                    ].map((option) => (
+                                        { value: 'library',   label: 'Biblioteca' },
+                                        { value: 'create',    label: 'Crear sesión' },
+                                    ].map((opt) => (
                                         <button
-                                            key={option.value}
+                                            key={opt.value}
                                             type="button"
-                                            onClick={() => setDefaultStartSection(option.value)}
-                                            className={`rounded-2xl border px-4 py-3 text-sm font-bold transition ${defaultStartSection === option.value ? 'border-cyan-300/30 bg-cyan-300/15 text-cyan-100' : 'border-white/10 bg-white/5 text-zinc-300 hover:bg-white/10'}`}
+                                            onClick={() => setDefaultStartSection(opt.value)}
+                                            className={`rounded-xl border px-3 py-2.5 text-sm font-bold transition ${
+                                                defaultStartSection === opt.value
+                                                    ? 'border-cyan-300/30 bg-cyan-300/15 text-cyan-100'
+                                                    : 'border-white/8 bg-white/4 text-zinc-400 hover:bg-white/8 hover:text-white'
+                                            }`}
                                         >
-                                            {option.label}
+                                            {opt.label}
                                         </button>
                                     ))}
                                 </div>
                             </div>
 
-                            <div className="rounded-3xl border border-white/10 bg-white/4 p-5">
-                                <p className="text-xs font-bold uppercase tracking-[0.18em] text-zinc-500">Modo de sesión que sueles usar</p>
-                                <div className="mt-4">
-                                    <SessionModeCards value={defaultSessionMode} onChange={setDefaultSessionMode} compact />
-                                </div>
+                            {/* Modo de sesión */}
+                            <div className="rounded-2xl border border-white/8 bg-white/4 p-4">
+                                <p className="mb-3 text-[10px] font-bold uppercase tracking-[0.18em] text-zinc-500">
+                                    Modo de sesión habitual
+                                </p>
+                                <SessionModeCards
+                                    value={defaultSessionMode}
+                                    onChange={setDefaultSessionMode}
+                                    compact
+                                />
                             </div>
 
-                            <div className="rounded-3xl border border-white/10 bg-white/4 p-5">
-                                <p className="text-xs font-bold uppercase tracking-[0.18em] text-zinc-500">Nombre sugerido para entrar desde navegador</p>
+                            {/* Nombre de acceso */}
+                            <div className="rounded-2xl border border-white/8 bg-white/4 p-4">
+                                <p className="mb-3 text-[10px] font-bold uppercase tracking-[0.18em] text-zinc-500">
+                                    Nombre al entrar desde navegador
+                                </p>
                                 <input
                                     type="text"
                                     maxLength={50}
                                     value={joinNamePreference}
-                                    onChange={(event) => setJoinNamePreference(event.target.value)}
-                                    placeholder="Ejemplo: Mesa 3 o Aula A"
-                                    className="mt-4 w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-white outline-none transition focus:border-cyan-300"
+                                    onChange={(e) => setJoinNamePreference(e.target.value)}
+                                    placeholder="Ej. Mesa 3 · Aula A"
+                                    className="w-full rounded-xl border border-white/8 bg-white/5 px-4 py-2.5 text-sm text-white outline-none transition placeholder:text-zinc-600 focus:border-cyan-300/50"
                                 />
-                                <p className="mt-2 text-sm leading-6 text-zinc-400">
-                                    Si alguna vez entras tú mismo desde otro navegador, tendrás un nombre base ya guardado.
-                                </p>
                             </div>
                         </div>
+                    </motion.div>
 
-                        <div className="mt-6 rounded-3xl border border-amber-300/20 bg-amber-300/10 p-5">
-                            <div className="flex items-start gap-3">
-                                <ShieldCheck className="mt-1 h-5 w-5 shrink-0 text-amber-200" />
-                                <div>
-                                    <p className="font-semibold text-white">Aquí no estás configurando el sistema entero.</p>
-                                    <p className="mt-2 text-sm leading-6 text-zinc-300">
-                                        Estás ajustando tu experiencia personal para que cada vez que vuelvas a la plataforma te resulte más natural empezar.
-                                    </p>
-                                </div>
+                    {/* ── Columna derecha ── */}
+                    <div className="space-y-5">
+
+                        {/* Accesos rápidos */}
+                        <motion.div {...fadeUp(0.1)} className="rounded-[2rem] border border-white/10 bg-zinc-950/55 p-6 backdrop-blur-xl">
+                            <div className="mb-4 flex items-center justify-between">
+                                <h2 className="font-['Orbitron'] text-lg font-black text-white">Accesos rápidos</h2>
+                                <Clock3 className="h-4 w-4 text-zinc-600" />
                             </div>
-                        </div>
-                    </div>
-
-                    <div className="space-y-6">
-                        <div className="rounded-[2rem] border border-white/10 bg-zinc-950/55 p-7 backdrop-blur-xl">
-                            <div className="mb-5 flex items-center justify-between gap-4">
-                                <div>
-                                    <p className="text-xs font-bold uppercase tracking-[0.22em] text-zinc-500">Accesos rápidos</p>
-                                    <h2 className="mt-2 font-['Orbitron'] text-2xl font-black text-white">Entra a lo que más usas</h2>
-                                </div>
-                                <Clock3 className="h-5 w-5 text-zinc-500" />
-                            </div>
-
-                            <div className="space-y-3">
+                            <div className="space-y-2">
                                 {quickActions.map((item) => (
                                     <button
                                         key={item.label}
                                         type="button"
                                         onClick={item.action}
-                                        className="w-full rounded-3xl border border-white/10 bg-white/3 p-4 text-left transition hover:bg-white/6"
+                                        className="group flex w-full items-center justify-between gap-3 rounded-xl border border-white/8 bg-white/3 px-4 py-3 text-left transition hover:border-white/14 hover:bg-white/7"
                                     >
-                                        <div className="flex items-center justify-between gap-3">
-                                            <div>
-                                                <p className="font-semibold text-white">{item.label}</p>
-                                                <p className="mt-1 text-sm text-zinc-400">{item.helper}</p>
-                                            </div>
-                                            <ArrowRight className="h-4 w-4 text-cyan-200" />
-                                        </div>
+                                        <span className="text-sm font-semibold text-white">{item.label}</span>
+                                        <ArrowRight className="h-3.5 w-3.5 text-zinc-600 transition group-hover:translate-x-0.5 group-hover:text-cyan-300" />
                                     </button>
                                 ))}
                             </div>
-                        </div>
+                        </motion.div>
 
-                        <div className="rounded-[2rem] border border-white/10 bg-zinc-950/55 p-7 backdrop-blur-xl">
-                            <div className="mb-5 flex items-center justify-between gap-4">
-                                <div>
-                                    <p className="text-xs font-bold uppercase tracking-[0.22em] text-zinc-500">Resumen personal</p>
-                                    <h2 className="mt-2 font-['Orbitron'] text-2xl font-black text-white">Tu cuenta y tu contexto</h2>
-                                </div>
-                                <Mail className="h-5 w-5 text-zinc-500" />
+                        {/* Cuenta */}
+                        <motion.div {...fadeUp(0.14)} className="rounded-[2rem] border border-white/10 bg-zinc-950/55 p-6 backdrop-blur-xl">
+                            <div className="mb-4 flex items-center justify-between">
+                                <h2 className="font-['Orbitron'] text-lg font-black text-white">Cuenta</h2>
+                                <Mail className="h-4 w-4 text-zinc-600" />
                             </div>
-
-                            <div className="space-y-4">
-                                <div className="rounded-3xl border border-white/10 bg-white/3 p-4">
-                                    <p className="text-xs font-bold uppercase tracking-[0.18em] text-zinc-500">Correo de acceso</p>
-                                    <p className="mt-2 font-semibold text-white">{currentUser?.email || 'Sin correo disponible'}</p>
-                                    <p className="mt-2 text-sm leading-6 text-zinc-400">
-                                        Este es el correo con el que estás utilizando ahora mismo la plataforma.
-                                    </p>
-                                </div>
-
-                                <div className="rounded-3xl border border-white/10 bg-white/3 p-4">
-                                    <p className="text-xs font-bold uppercase tracking-[0.18em] text-zinc-500">Actividad reciente</p>
-                                    <p className="mt-2 font-semibold text-white">{recentSessions.length > 0 ? `${recentSessions.length} sesiones recientes` : 'Todavía sin historial'}</p>
-                                    <p className="mt-2 text-sm leading-6 text-zinc-400">
-                                        {lastActivityLabel}
-                                    </p>
-                                </div>
-
-                                <div className="rounded-3xl border border-white/10 bg-white/3 p-4">
-                                    <p className="text-xs font-bold uppercase tracking-[0.18em] text-zinc-500">Material guardado</p>
-                                    <p className="mt-2 font-semibold text-white">{games.length} juegos y {lessonPlans.length} lesson plans</p>
-                                    <p className="mt-2 text-sm leading-6 text-zinc-400">
-                                        Tu configuración personal también debería ayudarte a recordar lo que ya tienes preparado para clase.
-                                    </p>
-                                </div>
+                            <div className="space-y-2">
+                                {[
+                                    { label: 'Correo',    value: currentUser?.email || '—' },
+                                    { label: 'Actividad', value: lastActivityLabel },
+                                    { label: 'Material',  value: `${games.length} juegos · ${lessonPlans.length} lesson plans` },
+                                    {
+                                        label: 'Sesiones',
+                                        value: recentSessions.length > 0
+                                            ? `${recentSessions.length} recientes`
+                                            : 'Sin historial aún',
+                                    },
+                                ].map(({ label, value }) => (
+                                    <div key={label} className="flex items-baseline justify-between gap-4 rounded-xl border border-white/6 bg-white/3 px-4 py-3">
+                                        <span className="shrink-0 text-[10px] font-bold uppercase tracking-[0.18em] text-zinc-500">{label}</span>
+                                        <span className="truncate text-right text-sm font-semibold text-white">{value}</span>
+                                    </div>
+                                ))}
                             </div>
-                        </div>
+                        </motion.div>
+
                     </div>
-                </section>
+                </div>
+
             </div>
         </div>
     );

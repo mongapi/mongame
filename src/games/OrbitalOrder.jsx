@@ -1,11 +1,15 @@
-import React, { useState, useRef, useMemo, Suspense } from 'react';
+import React, { useEffect, useState, useRef, useMemo, Suspense } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { OrbitControls, Text, Html, Stars, Float, Sphere, Torus, Trail, Sparkles } from '@react-three/drei';
 import * as THREE from 'three';
 import { motion, AnimatePresence } from 'motion/react';
 import { CheckCircle2, RotateCcw, XCircle, AlertCircle, Info } from 'lucide-react';
+import { sessionAPI } from '@/api/api';
+import { GameErrorState, GameLoadingState } from '@/games/shared/GameScreenShell';
+import { GameExitButton, GameSessionFinishedOverlay, useGameSessionUi } from '@/games/shared/GameSessionActions';
+import { useSessionGame } from '@/hooks/useSessionGame';
 
-const LEVEL_DATA = {
+const DEFAULT_LEVEL_DATA = {
     title: "Sistema Solar de la Nutrición",
     core: "Nutrientes Esenciales",
     orbits: [
@@ -22,6 +26,63 @@ const LEVEL_DATA = {
         { id: "i6", text: "Agua", correctOrbit: 2 }
     ]
 };
+
+function resolveOrbitalContent(gameContent) {
+    const fallbackOrbits = DEFAULT_LEVEL_DATA.orbits;
+    const fallbackItems = DEFAULT_LEVEL_DATA.items;
+
+    const orbits = Array.isArray(gameContent?.orbits) && gameContent.orbits.length > 0
+        ? gameContent.orbits.map((orbit, index) => ({
+            id: Number.isFinite(Number(orbit?.id)) ? Number(orbit.id) : index,
+            name: String(orbit?.name ?? `Órbita ${index + 1}`).trim() || `Órbita ${index + 1}`,
+            radius: Number(orbit?.radius) > 0 ? Number(orbit.radius) : fallbackOrbits[index]?.radius ?? 4.5 + index * 3,
+            color: String(orbit?.color ?? fallbackOrbits[index]?.color ?? '#60a5fa'),
+            speed: Number(orbit?.speed) > 0 ? Number(orbit.speed) : fallbackOrbits[index]?.speed ?? 0.25,
+        }))
+        : fallbackOrbits;
+
+    const items = Array.isArray(gameContent?.items) && gameContent.items.length > 0
+        ? gameContent.items.map((item, index) => ({
+            id: String(item?.id ?? `item-${index + 1}`),
+            text: String(item?.text ?? item?.name ?? `Concepto ${index + 1}`).trim() || `Concepto ${index + 1}`,
+            correctOrbit: Number.isFinite(Number(item?.correctOrbit))
+                ? Number(item.correctOrbit)
+                : Number.isFinite(Number(item?.correct_orbit))
+                    ? Number(item.correct_orbit)
+                    : 0,
+        }))
+        : fallbackItems;
+
+    return {
+        title: String(gameContent?.title ?? DEFAULT_LEVEL_DATA.title),
+        core: String(gameContent?.core ?? DEFAULT_LEVEL_DATA.core),
+        orbits,
+        items,
+    };
+}
+
+function validateOrbitalContent(content) {
+    if (!Array.isArray(content?.orbits) || content.orbits.length === 0) {
+        return 'Orbital Order necesita al menos una órbita.';
+    }
+
+    if (!Array.isArray(content?.items) || content.items.length === 0) {
+        return 'Orbital Order necesita al menos un concepto para ordenar.';
+    }
+
+    const invalidOrbit = content.orbits.find((orbit) => !orbit?.name || !Number.isFinite(Number(orbit?.radius)));
+    if (invalidOrbit) {
+        return 'Cada órbita debe tener nombre y radio válido.';
+    }
+
+    const validOrbitIds = new Set(content.orbits.map((orbit) => Number(orbit.id)));
+    const invalidItem = content.items.find((item) => !item?.text || !validOrbitIds.has(Number(item.correctOrbit)));
+    if (invalidItem) {
+        return 'Cada concepto debe tener texto y apuntar a una órbita existente.';
+    }
+
+    return '';
+}
 
 // Item Component
 function ConceptNode({ item, status, targetOrbit, isSelected, onClick, onEjected }) {
@@ -99,7 +160,7 @@ function ConceptNode({ item, status, targetOrbit, isSelected, onClick, onEjected
                     const dir = new THREE.Vector3(pos.x, 0, pos.z).normalize();
                     velocity.current.copy(dir.multiplyScalar(0.8)); // explosive force outwards
                     velocity.current.y = 0.5 + Math.random() * 0.5; // fly upwards too
-                    onEjected(item.id, false, null); // fail
+                    onEjected(item.id, false, targetOrbit); // fail
                 }
             }
             
@@ -270,9 +331,22 @@ function OrbitRing({ orbit, isTargeted, isHovered, onSelect }) {
 
 
 export default function OrbitalOrder() {
+    const {
+        session,
+        sessionId,
+        content,
+        participant,
+        isLoading,
+        error,
+        setError,
+    } = useSessionGame({
+        resolveContent: resolveOrbitalContent,
+        validateContent: validateOrbitalContent,
+    });
+    const { sessionFinished, handleExit, exitLabel, finishActionLabel } = useGameSessionUi({ session, sessionId, isPreview: false });
     const [gameState, setGameState] = useState('playing'); // playing, won
     const [itemsState, setItemsState] = useState(
-        LEVEL_DATA.items.map(item => ({
+        content.items.map(item => ({
             ...item,
             status: 'chaotic', // chaotic, testing, rejected, orbiting
             targetOrbit: null
@@ -281,9 +355,35 @@ export default function OrbitalOrder() {
     const [selectedItemId, setSelectedItemId] = useState(null);
     const [score, setScore] = useState(0);
     const [errors, setErrors] = useState(0);
+    const [startedAt, setStartedAt] = useState(() => Date.now());
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const resolvingItemsRef = useRef(new Set());
+
+    useEffect(() => {
+        setItemsState(content.items.map((item) => ({
+            ...item,
+            status: 'chaotic',
+            targetOrbit: null,
+        })));
+        setSelectedItemId(null);
+        setScore(0);
+        setErrors(0);
+        setGameState('playing');
+        setStartedAt(Date.now());
+        setError('');
+        resolvingItemsRef.current.clear();
+    }, [content, setError]);
+
+    if (isLoading) {
+        return <GameLoadingState title="Cargando Orbital Order..." />;
+    }
+
+    if (error) {
+        return <GameErrorState title="No se pudo cargar Orbital Order" message={error} />;
+    }
 
     const handleItemClick = (id) => {
-        if (gameState !== 'playing') return;
+        if (sessionFinished || gameState !== 'playing') return;
         // Select an item to stage for orbit assignment
         if (selectedItemId === id) {
             setSelectedItemId(null); // deselect
@@ -293,7 +393,9 @@ export default function OrbitalOrder() {
     };
 
     const handleOrbitSelect = (orbit) => {
+        if (sessionFinished) return;
         if (!selectedItemId) return;
+        setError('');
 
         // Send item to test the orbit
         setItemsState(prev => prev.map(item => {
@@ -305,13 +407,44 @@ export default function OrbitalOrder() {
         setSelectedItemId(null);
     };
 
-    const handleItemPhysicsResult = (itemId, success, orbitObj) => {
+    const handleItemPhysicsResult = async (itemId, success, orbitObj) => {
+        if (resolvingItemsRef.current.has(itemId)) {
+            return;
+        }
+
         if (success === 'reset') {
             // Ejection animation finished
             setItemsState(prev => prev.map(item => 
                 item.id === itemId ? { ...item, status: 'chaotic', targetOrbit: null } : item
             ));
+            resolvingItemsRef.current.delete(itemId);
             return;
+        }
+
+        resolvingItemsRef.current.add(itemId);
+
+        const targetItem = itemsState.find((item) => item.id === itemId);
+        const nextSolvedCount = success
+            ? itemsState.filter((item) => item.status === 'orbiting').length + 1
+            : itemsState.filter((item) => item.status === 'orbiting').length;
+
+        if (sessionId && targetItem) {
+            setIsSubmitting(true);
+            const result = await sessionAPI.submitAnswer(sessionId, {
+                question_id: targetItem.id,
+                answer: orbitObj?.id ?? null,
+                device_id: participant.deviceId,
+                player_name: participant.playerName,
+                player_number: 1,
+                elapsed_seconds: Math.max(0, Math.round((Date.now() - startedAt) / 1000)),
+                completed: success && nextSolvedCount === content.items.length,
+            });
+
+            setIsSubmitting(false);
+
+            if (!result.success) {
+                setError(result.error);
+            }
         }
 
         if (success) {
@@ -326,6 +459,7 @@ export default function OrbitalOrder() {
                 }
                 return newState;
             });
+            resolvingItemsRef.current.delete(itemId);
         } else {
             setErrors(e => e + 1);
             setItemsState(prev => prev.map(item => 
@@ -335,7 +469,7 @@ export default function OrbitalOrder() {
     };
 
     const handleReset = () => {
-        setItemsState(LEVEL_DATA.items.map(item => ({
+        setItemsState(content.items.map(item => ({
             ...item,
             status: 'chaotic',
             targetOrbit: null
@@ -344,10 +478,15 @@ export default function OrbitalOrder() {
         setScore(0);
         setErrors(0);
         setGameState('playing');
+        setStartedAt(Date.now());
+        setError('');
+        resolvingItemsRef.current.clear();
     };
 
     return (
         <div className="w-full h-screen relative bg-zinc-950 overflow-hidden font-sans">
+            <GameExitButton onExit={handleExit} label={exitLabel} />
+            <GameSessionFinishedOverlay visible={sessionFinished} onExit={handleExit} actionLabel={finishActionLabel} />
             
             {/* Main 3D Canvas */}
             <div className="absolute inset-0 z-0 cursor-default">
@@ -379,13 +518,13 @@ export default function OrbitalOrder() {
                             <Sparkles count={50} scale={4} size={4} speed={0.4} color="#fde68a" />
                             <Html position={[0, 3, 0]} center>
                                 <div className="px-5 py-2 rounded-2xl bg-black/50 backdrop-blur-md border border-yellow-500/50 text-yellow-300 font-extrabold text-lg whitespace-nowrap shadow-[0_0_20px_rgba(251,191,36,0.3)]">
-                                    {LEVEL_DATA.core}
+                                    {content.core}
                                 </div>
                             </Html>
                         </Float>
 
                         {/* RINGS */}
-                        {LEVEL_DATA.orbits.map(orbit => (
+                        {content.orbits.map(orbit => (
                             <OrbitRing 
                                 key={orbit.id} 
                                 orbit={orbit} 
@@ -415,11 +554,11 @@ export default function OrbitalOrder() {
             {/* 2D UI Overlay */}
             <div className="absolute top-0 left-0 w-full p-8 p-pointer-events-none z-10 flex justify-between items-start pointer-events-none">
                 <div className="pointer-events-auto bg-black/40 backdrop-blur-xl border border-white/10 p-6 rounded-3xl max-w-sm">
-                    <h1 className="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-cyan-400 mb-2">
+                    <h1 className="text-3xl font-black text-transparent bg-clip-text bg-linear-to-r from-emerald-400 to-cyan-400 mb-2">
                         Orbital Order
                     </h1>
                     <p className="text-zinc-300 text-sm mb-4 leading-relaxed font-medium">
-                        {LEVEL_DATA.title}
+                        {content.title}
                     </p>
                     <div className="flex gap-4">
                         <div className="bg-emerald-500/20 border border-emerald-500/30 rounded-xl p-3 flex-1 text-center">
@@ -431,14 +570,22 @@ export default function OrbitalOrder() {
                             <p className="text-xl font-bold text-red-300">{errors}</p>
                         </div>
                     </div>
+
+                    {error ? (
+                        <div className="mt-4 rounded-2xl border border-red-500/30 bg-red-500/10 p-3 text-sm text-red-200">
+                            {error}
+                        </div>
+                    ) : null}
                 </div>
 
                 <div className="pointer-events-auto bg-indigo-900/40 backdrop-blur-xl border border-indigo-500/30 p-4 rounded-2xl flex items-center gap-3">
                     <Info className="w-6 h-6 text-indigo-400" />
-                    <p className="text-sm text-indigo-200 font-medium max-w-[200px]">
-                        {!selectedItemId 
-                            ? "Haz clic en un concepto flotante para seleccionarlo." 
-                            : "Ahora haz clic en la órbita donde crees que pertenece."}
+                    <p className="text-sm text-indigo-200 font-medium max-w-50">
+                        {isSubmitting
+                            ? 'Guardando resultado en la sesion...'
+                            : !selectedItemId
+                                ? 'Haz clic en un concepto flotante para seleccionarlo.'
+                                : 'Ahora haz clic en la orbita donde crees que pertenece.'}
                     </p>
                 </div>
             </div>
@@ -459,6 +606,7 @@ export default function OrbitalOrder() {
                             <p className="text-zinc-400 mb-8 font-medium">Has ordenado correctamente todos los conceptos en sus jerarquías. El núcleo funciona perfectamente.</p>
                             <button
                                 onClick={handleReset}
+                                disabled={sessionFinished}
                                 className="w-full py-4 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl font-bold text-lg transition-colors flex items-center justify-center gap-2"
                             >
                                 <RotateCcw className="w-5 h-5" /> Restaurar Sistema

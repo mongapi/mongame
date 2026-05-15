@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from "motion/react";
 import { Cpu, Zap, ShieldCheck } from "lucide-react";
 import { sessionAPI } from '@/api/api';
 import { GameErrorState, GameLoadingState } from "@/games/shared/GameScreenShell";
+import { GameExitButton, GameSessionFinishedOverlay, useGameSessionUi } from '@/games/shared/GameSessionActions';
 import { useSessionGame } from "@/hooks/useSessionGame";
 import { validateGameContent } from "@/games/shared/gameContentValidation";
 
@@ -17,7 +18,7 @@ function resolveMemoryContent(gameContent) {
 }
 
 export default function MemoryGame() {
-    const { content, sessionId, participant, isLoading, error, setError } = useSessionGame({
+    const { session, content, sessionId, participant, isLoading, error, setError } = useSessionGame({
         resolveContent: resolveMemoryContent,
         validateContent: (resolvedContent) => validateGameContent('memory', resolvedContent),
     });
@@ -30,6 +31,7 @@ export default function MemoryGame() {
     const [gameWon, setGameWon] = useState(false);
     const [startedAt, setStartedAt] = useState(() => Date.now());
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const { sessionFinished, handleExit, exitLabel, finishActionLabel } = useGameSessionUi({ session, sessionId, isPreview: false });
 
     const totalPairs = useMemo(() => {
         const pairIds = new Set((content.pairs ?? []).map((card) => card.pairId));
@@ -78,7 +80,7 @@ export default function MemoryGame() {
     // Lógica de emparejamiento
     const handleCardClick = (index) => {
         // Evitar clics si está bloqueado, si ya está volteada o si ya está emparejada
-        if (isLocked || flippedIndexes.includes(index) || matchedPairs.includes(cards[index].pairId)) return;
+        if (sessionFinished || isLocked || flippedIndexes.includes(index) || matchedPairs.includes(cards[index].pairId)) return;
 
         const newFlipped = [...flippedIndexes, index];
         setFlippedIndexes(newFlipped);
@@ -121,6 +123,8 @@ export default function MemoryGame() {
 
     return (
         <div className="min-h-screen flex flex-col items-center justify-center p-8 relative overflow-hidden">
+            <GameExitButton onExit={handleExit} label={exitLabel} />
+            <GameSessionFinishedOverlay visible={sessionFinished} onExit={handleExit} actionLabel={finishActionLabel} />
             {/* Fondo Aurora Cyberpunk */}
             <div className="absolute inset-0 -z-10 pointer-events-none">
                 <div className="absolute inset-0 bg-[linear-gradient(to_right,#8080800a_1px,transparent_1px),linear-gradient(to_bottom,#8080800a_1px,transparent_1px)] bg-[size:24px_24px]" />

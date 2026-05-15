@@ -3,6 +3,7 @@ import { motion } from "motion/react";
 import { AlertCircle, CheckCircle2, Loader, Timer, XCircle, Zap } from "lucide-react";
 import { sessionAPI } from "@/api/api";
 import { GameErrorState, GameLoadingState } from "@/games/shared/GameScreenShell";
+import { GameExitButton, GameSessionFinishedOverlay, useGameSessionUi } from '@/games/shared/GameSessionActions';
 import { useSessionGame } from "@/hooks/useSessionGame";
 
 function resolveQuizContent(gameContent) {
@@ -45,6 +46,7 @@ export default function QuizGame() {
     const [gameState, setGameState] = useState("playing"); // 'playing', 'answered', 'timeout'
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [roundStartedAt, setRoundStartedAt] = useState(() => Date.now());
+    const { sessionFinished, handleExit, exitLabel, finishActionLabel } = useGameSessionUi({ session, sessionId, isPreview: false });
 
     useEffect(() => {
         setTimeLeft(currentQuestion?.timeLimit ?? 15);
@@ -83,18 +85,22 @@ export default function QuizGame() {
 
     // Lógica del Temporizador
     useEffect(() => {
+        if (sessionFinished) {
+            return;
+        }
+
         if (timeLeft > 0 && gameState === "playing") {
             const timerId = setTimeout(() => setTimeLeft(timeLeft - 1), 1000);
             return () => clearTimeout(timerId);
         } else if (timeLeft === 0 && gameState === "playing") {
             submitCurrentAnswer('__timeout__', 'timeout');
         }
-    }, [gameState, timeLeft]);
+    }, [gameState, sessionFinished, timeLeft]);
 
     // Manejador de selección
     const handleSelect = async (optionId) => {
         if (!currentQuestion) return;
-        if (gameState !== "playing" || isSubmitting) return;
+        if (gameState !== "playing" || sessionFinished || isSubmitting) return;
 
         setError('');
         setSelectedOption(optionId);
@@ -133,6 +139,8 @@ export default function QuizGame() {
 
     return (
         <div className="min-h-screen flex flex-col items-center justify-center p-8 relative">
+            <GameExitButton onExit={handleExit} label={exitLabel} />
+            <GameSessionFinishedOverlay visible={sessionFinished} onExit={handleExit} actionLabel={finishActionLabel} />
             {/* Fondo Aurora para el juego */}
             <div className="absolute inset-0 overflow-hidden -z-10 pointer-events-none">
                 <motion.div
@@ -189,7 +197,7 @@ export default function QuizGame() {
                             animate={{ opacity: 1, x: 0 }}
                             transition={{ duration: 0.5, delay: index * 0.1 }}
                             onClick={() => handleSelect(option.id)}
-                            disabled={gameState !== "playing"}
+                            disabled={gameState !== "playing" || sessionFinished}
                             className={getOptionStyles(option.id)}
                         >
                             <span className="text-xl font-medium z-10">{option.text}</span>

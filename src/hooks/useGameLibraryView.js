@@ -1,20 +1,23 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { gameAPI, lessonPlanAPI, sessionAPI } from '@/api/api';
-import { ROUTE_PATHS, buildDashboardSessionPath, buildGameEditPath, buildLessonPlanEditPath } from '@/router/paths';
+import { authAPI, gameAPI, lessonPlanAPI, sessionAPI } from '@/api/api';
+import { ROUTE_PATHS, buildDashboardSessionPath, buildGameEditPath, buildLessonPlanEditPath, resolvePlayRouteByGameType } from '@/router/paths';
 
 const GAMES_PER_PAGE = 6;
 const LESSON_PLANS_PER_PAGE = 8;
 
 export function useGameLibraryView() {
     const navigate = useNavigate();
+    const currentUser = authAPI.getCurrentUser();
     const [games, setGames] = useState([]);
     const [lessonPlans, setLessonPlans] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState('');
+    const [success, setSuccess] = useState('');
     const [startingGameId, setStartingGameId] = useState(null);
     const [startingLessonPlanId, setStartingLessonPlanId] = useState(null);
     const [activeCategory, setActiveCategory] = useState('games');
+    const [activeScope, setActiveScope] = useState('mine');
     const [activeGameTypeFilter, setActiveGameTypeFilter] = useState('all');
     const [searchQuery, setSearchQuery] = useState('');
     const [gameSort, setGameSort] = useState('recent');
@@ -25,48 +28,73 @@ export function useGameLibraryView() {
     const [sessionMode, setSessionMode] = useState('individual');
     const [pendingLaunch, setPendingLaunch] = useState(null);
 
+    const loadLibrary = useCallback(async () => {
+        setIsLoading(true);
+        setError('');
+
+        const [gamesResult, lessonPlansResult] = await Promise.all([
+            gameAPI.list(),
+            lessonPlanAPI.list(),
+        ]);
+
+        if (!gamesResult.success) {
+            setError(gamesResult.error);
+            setIsLoading(false);
+            return;
+        }
+
+        if (!lessonPlansResult.success) {
+            setError(lessonPlansResult.error);
+            setIsLoading(false);
+            return;
+        }
+
+        setGames(gamesResult.data);
+        setLessonPlans(lessonPlansResult.data);
+        setIsLoading(false);
+    }, []);
+
     useEffect(() => {
         let mounted = true;
 
-        async function loadLibrary() {
-            setIsLoading(true);
-            setError('');
-
-            const [gamesResult, lessonPlansResult] = await Promise.all([
-                gameAPI.list(),
-                lessonPlanAPI.list(),
-            ]);
-
-            if (!mounted) {
-                return;
-            }
-
-            if (!gamesResult.success) {
-                setError(gamesResult.error);
-                setIsLoading(false);
-                return;
-            }
-
-            if (!lessonPlansResult.success) {
-                setError(lessonPlansResult.error);
-                setIsLoading(false);
-                return;
-            }
-
-            setGames(gamesResult.data);
-            setLessonPlans(lessonPlansResult.data);
-            setIsLoading(false);
+        async function loadLibraryData() {
+            await loadLibrary();
         }
 
-        loadLibrary();
+        if (mounted) {
+            loadLibraryData();
+        }
 
         return () => {
             mounted = false;
         };
-    }, []);
+    }, [loadLibrary]);
+
+    const ownGames = useMemo(
+        () => games.filter((game) => (currentUser?.id ? game.user_id === currentUser.id : true)),
+        [currentUser?.id, games],
+    );
+
+    const sharedGames = useMemo(
+        () => games.filter((game) => (currentUser?.id ? game.user_id !== currentUser.id : false)),
+        [currentUser?.id, games],
+    );
+
+    const ownLessonPlans = useMemo(
+        () => lessonPlans.filter((lessonPlan) => (currentUser?.id ? lessonPlan.user_id === currentUser.id : true)),
+        [currentUser?.id, lessonPlans],
+    );
+
+    const sharedLessonPlans = useMemo(
+        () => lessonPlans.filter((lessonPlan) => (currentUser?.id ? lessonPlan.user_id !== currentUser.id : false)),
+        [currentUser?.id, lessonPlans],
+    );
+
+    const visibleGames = activeScope === 'shared' ? sharedGames : ownGames;
+    const visibleLessonPlans = activeScope === 'shared' ? sharedLessonPlans : ownLessonPlans;
 
     const gameTypeFilters = useMemo(() => {
-        const types = games
+        const types = visibleGames
             .map((game) => ({
                 code: game?.game_type?.code ?? 'unknown',
                 label: game?.game_type?.name ?? 'Sin tipo',
@@ -75,7 +103,7 @@ export function useGameLibraryView() {
             .sort((left, right) => left.label.localeCompare(right.label));
 
         return [{ code: 'all', label: 'Todos' }, ...types];
-    }, [games]);
+    }, [visibleGames]);
 
     const gamesById = useMemo(() => {
         return games.reduce((accumulator, game) => {
@@ -87,12 +115,12 @@ export function useGameLibraryView() {
     const filteredGames = useMemo(() => {
         const normalizedQuery = searchQuery.trim().toLowerCase();
         const byType = activeGameTypeFilter === 'all'
-            ? games
-            : games.filter((game) => game?.game_type?.code === activeGameTypeFilter);
+            ? visibleGames
+            : visibleGames.filter((game) => game?.game_type?.code === activeGameTypeFilter);
 
         const searchedGames = !normalizedQuery
             ? byType
-            : byType.filter((game) => [game.name, game.description, game?.game_type?.name]
+            : byType.filter((game) => [game.name, game.description, game?.game_type?.name, game?.user?.name]
                 .filter(Boolean)
                 .some((value) => String(value).toLowerCase().includes(normalizedQuery)));
 
@@ -111,15 +139,15 @@ export function useGameLibraryView() {
 
             return new Date(right.created_at ?? 0).getTime() - new Date(left.created_at ?? 0).getTime();
         });
-    }, [activeGameTypeFilter, gameSort, games, searchQuery]);
+    }, [activeGameTypeFilter, gameSort, searchQuery, visibleGames]);
 
     const filteredLessonPlans = useMemo(() => {
         const normalizedQuery = searchQuery.trim().toLowerCase();
         const searchedLessonPlans = normalizedQuery
-            ? lessonPlans.filter((lessonPlan) => [lessonPlan.name, lessonPlan.description]
+            ? visibleLessonPlans.filter((lessonPlan) => [lessonPlan.name, lessonPlan.description, lessonPlan?.user?.name]
                 .filter(Boolean)
                 .some((value) => String(value).toLowerCase().includes(normalizedQuery)))
-            : lessonPlans;
+            : visibleLessonPlans;
 
         const phaseFilteredLessonPlans = searchedLessonPlans.filter((lessonPlan) => {
             const totalPhases = Array.isArray(lessonPlan.game_ids) ? lessonPlan.game_ids.length : 0;
@@ -154,7 +182,7 @@ export function useGameLibraryView() {
 
             return new Date(right.created_at ?? 0).getTime() - new Date(left.created_at ?? 0).getTime();
         });
-    }, [lessonPlanPhaseFilter, lessonPlanSort, lessonPlans, searchQuery]);
+    }, [lessonPlanPhaseFilter, lessonPlanSort, searchQuery, visibleLessonPlans]);
 
     const totalGamesPages = Math.max(1, Math.ceil(filteredGames.length / GAMES_PER_PAGE));
     const totalLessonPlanPages = Math.max(1, Math.ceil(filteredLessonPlans.length / LESSON_PLANS_PER_PAGE));
@@ -171,11 +199,16 @@ export function useGameLibraryView() {
 
     useEffect(() => {
         setGamesPage(1);
-    }, [activeGameTypeFilter, gameSort, searchQuery]);
+    }, [activeGameTypeFilter, activeScope, gameSort, searchQuery]);
 
     useEffect(() => {
         setLessonPlansPage(1);
-    }, [lessonPlanPhaseFilter, lessonPlanSort, searchQuery]);
+    }, [activeScope, lessonPlanPhaseFilter, lessonPlanSort, searchQuery]);
+
+    useEffect(() => {
+        setError('');
+        setSuccess('');
+    }, [activeCategory, activeScope]);
 
     useEffect(() => {
         if (gamesPage > totalGamesPages) {
@@ -247,14 +280,89 @@ export function useGameLibraryView() {
         });
     };
 
+    const duplicateGame = async (game) => {
+        setError('');
+        setSuccess('');
+        setStartingGameId(game.id);
+
+        const result = await gameAPI.create({
+            name: `${game.name} (copia)`,
+            description: game.description ?? '',
+            game_type_id: game.game_type_id,
+            game_content: game.game_content ?? {},
+            is_active: game.is_active ?? true,
+        });
+
+        setStartingGameId(null);
+
+        if (!result.success) {
+            setError(result.error);
+            return;
+        }
+
+        setSuccess(`Has guardado una copia de ${game.name} en tu biblioteca.`);
+        setActiveScope('mine');
+        await loadLibrary();
+    };
+
+    const duplicateLessonPlan = async (lessonPlan) => {
+        setError('');
+        setSuccess('');
+        setStartingLessonPlanId(lessonPlan.id);
+
+        const result = await lessonPlanAPI.create({
+            name: `${lessonPlan.name} (copia)`,
+            description: lessonPlan.description ?? '',
+            game_ids: Array.isArray(lessonPlan.game_ids) ? lessonPlan.game_ids : [],
+            is_active: lessonPlan.is_active ?? true,
+        });
+
+        setStartingLessonPlanId(null);
+
+        if (!result.success) {
+            setError(result.error);
+            return;
+        }
+
+        setSuccess(`Has guardado una copia de ${lessonPlan.name} en tu biblioteca.`);
+        setActiveScope('mine');
+        await loadLibrary();
+    };
+
+    const previewGame = (game) => {
+        const route = resolvePlayRouteByGameType(game?.game_type?.code);
+
+        if (!route) {
+            setError('Este tipo de juego todavía no tiene runtime de preview disponible.');
+            return;
+        }
+
+        navigate(route, {
+            state: {
+                preview: {
+                    title: game.name,
+                    gameContent: game.game_content ?? {},
+                    game: {
+                        id: game.id,
+                        name: game.name,
+                        gameType: game.game_type ?? null,
+                    },
+                },
+            },
+        });
+    };
+
     return {
+        currentUser,
         games,
         lessonPlans,
         isLoading,
         error,
+        success,
         startingGameId,
         startingLessonPlanId,
         activeCategory,
+        activeScope,
         activeGameTypeFilter,
         searchQuery,
         gameSort,
@@ -272,7 +380,12 @@ export function useGameLibraryView() {
         totalLessonPlanPages,
         paginatedGames,
         paginatedLessonPlans,
+        ownGames,
+        sharedGames,
+        ownLessonPlans,
+        sharedLessonPlans,
         setActiveCategory,
+        setActiveScope,
         setActiveGameTypeFilter,
         setSearchQuery,
         setGameSort,
@@ -289,5 +402,8 @@ export function useGameLibraryView() {
         goToCreateLessonPlan: () => navigate(ROUTE_PATHS.lessonPlansCreate),
         editGame: (gameId) => navigate(buildGameEditPath(gameId)),
         editLessonPlan: (lessonPlanId) => navigate(buildLessonPlanEditPath(lessonPlanId)),
+        duplicateGame,
+        duplicateLessonPlan,
+        previewGame,
     };
 }

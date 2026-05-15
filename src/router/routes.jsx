@@ -33,6 +33,7 @@ import CompletarEnunciado from "@/games/CompletarEnunciado";
 import OrdenarCronologias from "@/games/OrdenarCronologias";
 import Shooter3D from "@/games/Shooter3D";
 import AdivinaQue3D from "@/games/AdivinaQue3D";
+import Hangman3D from "@/games/Hangman3D";
 import OrbitalOrder from "@/games/OrbitalOrder";
 import { ROUTE_PATHS } from "@/router/paths";
 
@@ -78,6 +79,7 @@ export default function AppRoutes() {
                 <Route path={ROUTE_PATHS.playTimeline} element={<OrdenarCronologias />} />
                 <Route path={ROUTE_PATHS.playShooter} element={<Shooter3D />} />
                 <Route path={ROUTE_PATHS.playGuessWho} element={<AdivinaQue3D />} />
+                <Route path={ROUTE_PATHS.playHangman} element={<Hangman3D />} />
                 <Route path={ROUTE_PATHS.playOrbital} element={<OrbitalOrder />} />
             </Route>
 

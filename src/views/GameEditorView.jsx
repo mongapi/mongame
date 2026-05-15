@@ -1,5 +1,5 @@
 import { motion } from 'motion/react';
-import { AlertCircle, CheckCircle2, Code2, Loader, Save } from 'lucide-react';
+import { AlertCircle, CheckCircle2, Code2, Eye, Loader, Save } from 'lucide-react';
 import { SessionModeCards } from '@/components/organisms/SessionModeSelector';
 import { validateGameContent } from '@/games/shared/gameContentValidation';
 import { useGameEditor } from '@/hooks/useGameEditor';
@@ -30,6 +30,7 @@ export default function GameEditorView() {
         updateJson,
         handleSubmit,
         handleCreateSession,
+        handlePreview,
         goBack,
     } = useGameEditor();
 
@@ -192,6 +193,14 @@ export default function GameEditorView() {
                     </div>
 
                     <div className="flex items-center justify-end gap-3">
+                        <button
+                            type="button"
+                            onClick={handlePreview}
+                            className="inline-flex items-center gap-2 rounded-2xl border border-sky-400/30 bg-sky-400/15 px-5 py-3 font-bold text-sky-200 transition hover:bg-sky-400/25"
+                        >
+                            <Eye className="h-5 w-5" />
+                            Ver preview
+                        </button>
                         <button
                             type="button"
                             onClick={handleCreateSession}

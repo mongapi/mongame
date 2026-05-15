@@ -1,51 +1,119 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import Card3D from '../components/canvas3D/meshes/Card3D';
 import RoomCanvas from '../components/canvas3D/scenes/RoomCanvas';
 import { Text } from '@react-three/drei';
-import { RefreshCcw } from 'lucide-react';
+import { Eye, RefreshCcw } from 'lucide-react';
+import { sessionAPI } from '@/api/api';
+import { GameErrorState, GameLoadingState } from '@/games/shared/GameScreenShell';
+import { GameExitButton, GameSessionFinishedOverlay, useGameSessionUi } from '@/games/shared/GameSessionActions';
+import { useSessionGame } from '@/hooks/useSessionGame';
+import { validateGameContent } from '@/games/shared/gameContentValidation';
 
-// Seis cartas: 3 columnas x 2 filas = 3 pares de letras.
-const LETTERS = ['A', 'B', 'C'];
+const FALLBACK_PAIRS = [
+    { id: 'mem3d-a-1', pairId: 'A', text: 'CPU' },
+    { id: 'mem3d-a-2', pairId: 'A', text: 'Procesador' },
+    { id: 'mem3d-b-1', pairId: 'B', text: 'RAM' },
+    { id: 'mem3d-b-2', pairId: 'B', text: 'Memoria temporal' },
+    { id: 'mem3d-c-1', pairId: 'C', text: 'Router' },
+    { id: 'mem3d-c-2', pairId: 'C', text: 'Enruta paquetes' },
+];
 
-function generateDeck() {
-    let deck = [];
-    LETTERS.forEach((letter, i) => {
-        deck.push({ id: `a_${i}`, type: letter, content: letter, matched: false });
-        deck.push({ id: `b_${i}`, type: letter, content: letter, matched: false });
-    });
+function resolveMemory3DContent(gameContent) {
+    const pairs = Array.isArray(gameContent?.pairs) && gameContent.pairs.length > 0
+        ? gameContent.pairs
+        : FALLBACK_PAIRS;
 
-    // Barajamos aleatoriamente
-    deck.sort(() => Math.random() - 0.5);
+    return {
+        pairs,
+    };
+}
 
-    // Asignamos coordenadas físicas para un layout 3x2
+function buildDeck(pairs) {
+    const deck = [...pairs].sort(() => Math.random() - 0.5);
+    const columns = Math.min(4, Math.max(2, Math.ceil(Math.sqrt(deck.length))));
+    const horizontalSpacing = deck.length <= 6 ? 3 : 2.6;
+    const verticalSpacing = deck.length <= 6 ? 4.2 : 3.8;
+
     return deck.map((card, index) => {
-        const col = index % 3; // 0, 1, 2
-        const row = Math.floor(index / 3); // 0, 1
+        const col = index % columns;
+        const row = Math.floor(index / columns);
+        const rowCount = Math.ceil(deck.length / columns);
+
         return {
             ...card,
-            // X: -3.0 (izq), 0 (centro), 3.0 (der)
-            // Y: 2.25 (fila superior), -2.25 (fila inferior) para separarlas un buen trecho
-            position: [(col - 1) * 3.0, (0.5 - row) * 4.5, 0]
+            position: [
+                (col - (columns - 1) / 2) * horizontalSpacing,
+                (((rowCount - 1) / 2) - row) * verticalSpacing,
+                0,
+            ],
         };
     });
 }
 
 export default function MemoryGame3D() {
+    const { session, content, sessionId, participant, isLoading, error, setError, isPreview, previewTitle } = useSessionGame({
+        resolveContent: resolveMemory3DContent,
+        validateContent: (resolvedContent) => validateGameContent('memory', resolvedContent),
+    });
+
     const [cards, setCards] = useState([]);
     const [flippedIndices, setFlippedIndices] = useState([]);
     const [isChecking, setIsChecking] = useState(false);
+    const [startedAt, setStartedAt] = useState(() => Date.now());
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const { sessionFinished, handleExit, exitLabel, finishActionLabel } = useGameSessionUi({ session, sessionId, isPreview });
+
+    const totalPairs = useMemo(() => new Set((content.pairs ?? []).map((card) => card.pairId)).size, [content.pairs]);
 
     useEffect(() => {
-        setCards(generateDeck());
-    }, []);
+        setCards(buildDeck(content.pairs ?? []));
+        setFlippedIndices([]);
+        setIsChecking(false);
+        setStartedAt(Date.now());
+        setError('');
+    }, [content.pairs, setError]);
+
+    const hasWon = cards.length > 0 && cards.every((card) => card.matched);
+
+    useEffect(() => {
+        if (hasWon) {
+            void submitCompletedGame();
+        }
+    }, [hasWon]);
+
+    const submitCompletedGame = async () => {
+        if (!sessionId || isSubmitting) {
+            return;
+        }
+
+        setIsSubmitting(true);
+        const result = await sessionAPI.submitAnswer(sessionId, {
+            question_id: 'memory-3d-complete',
+            answer: cards.map((card) => card.pairId),
+            device_id: participant.deviceId,
+            player_name: participant.playerName,
+            player_number: 1,
+            elapsed_seconds: Math.max(0, Math.round((Date.now() - startedAt) / 1000)),
+            completed: true,
+        });
+
+        if (!result.success) {
+            setError(result.error);
+        }
+
+        setIsSubmitting(false);
+    };
 
     const resetGame = () => {
         setFlippedIndices([]);
         setIsChecking(false);
-        setTimeout(() => setCards(generateDeck()), 300);
+        setStartedAt(Date.now());
+        setError('');
+        setTimeout(() => setCards(buildDeck(content.pairs ?? [])), 300);
     };
 
     const handleCardClick = (cardIndex) => {
+        if (sessionFinished) return;
         if (isChecking) return;
         const clickedCard = cards[cardIndex];
 
@@ -59,9 +127,9 @@ export default function MemoryGame3D() {
             const firstCard = cards[newFlipped[0]];
             const secondCard = cards[newFlipped[1]];
 
-            if (firstCard.type === secondCard.type) {
+            if (firstCard.pairId === secondCard.pairId) {
                 setTimeout(() => {
-                    setCards(prev => prev.map((c, i) => newFlipped.includes(i) ? { ...c, matched: true } : c));
+                    setCards((prev) => prev.map((card, index) => newFlipped.includes(index) ? { ...card, matched: true } : card));
                     setFlippedIndices([]);
                     setIsChecking(false);
                 }, 500);
@@ -74,13 +142,27 @@ export default function MemoryGame3D() {
         }
     };
 
-    const hasWon = cards.length > 0 && cards.every(c => c.matched);
+    if (isLoading) {
+        return <GameLoadingState title="Cargando memory 3D..." />;
+    }
+
+    if (error) {
+        return <GameErrorState message={error} />;
+    }
 
     return (
         <div className="flex h-screen flex-col bg-zinc-950 text-white">
+            <GameExitButton onExit={handleExit} label={exitLabel} />
+            <GameSessionFinishedOverlay visible={sessionFinished} onExit={handleExit} actionLabel={finishActionLabel} />
             <header className="p-6 text-center z-10 absolute w-full top-0 pointer-events-none flex flex-col items-center">
-                <h1 className="text-4xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-green-500">
-                    Memory 3D
+                {isPreview ? (
+                    <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-sky-400/30 bg-sky-400/15 px-3 py-2 text-xs font-bold uppercase tracking-[0.18em] text-sky-200 pointer-events-auto">
+                        <Eye className="w-4 h-4" />
+                        Vista previa docente
+                    </div>
+                ) : null}
+                <h1 className="text-4xl font-bold bg-clip-text text-transparent bg-linear-to-r from-blue-400 to-green-500">
+                    {isPreview ? previewTitle : 'Memory 3D'}
                 </h1>
 
                 {hasWon ? (
@@ -95,7 +177,7 @@ export default function MemoryGame3D() {
                     </div>
                 ) : (
                     <p className="opacity-70 mt-2 bg-black/50 px-4 py-1 rounded-full backdrop-blur-sm">
-                        Encuentra las parejas de Letras
+                        Encuentra las parejas 3D y enlaza {totalPairs} conjuntos.
                     </p>
                 )}
             </header>
@@ -129,7 +211,7 @@ export default function MemoryGame3D() {
                                             anchorX="center"
                                             anchorY="middle"
                                         >
-                                            {card.content}
+                                            {card.text}
                                         </Text>
                                     </group>
                                 }

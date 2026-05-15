@@ -127,5 +127,47 @@ export function validateGameContent(typeCode, gameContent) {
         return '';
     }
 
+    if (typeCode === 'orbital' || typeCode === 'orbital_order') {
+        if (!gameContent?.title || !gameContent?.core) {
+            return 'Orbital Order necesita un titulo y un nucleo central.';
+        }
+
+        const orbits = gameContent?.orbits;
+        const items = gameContent?.items;
+
+        if (!Array.isArray(orbits) || orbits.length === 0) {
+            return 'Orbital Order necesita al menos una orbita.';
+        }
+
+        if (!Array.isArray(items) || items.length === 0) {
+            return 'Orbital Order necesita al menos un concepto.';
+        }
+
+        const orbitIds = new Set();
+        const invalidOrbit = orbits.find((orbit) => {
+            const orbitId = Number(orbit?.id);
+            if (!orbit?.name || !Number.isFinite(orbitId) || orbitIds.has(orbitId) || !Number.isFinite(Number(orbit?.radius))) {
+                return true;
+            }
+
+            orbitIds.add(orbitId);
+            return false;
+        });
+
+        if (invalidOrbit) {
+            return 'Cada orbita debe tener un ID unico, nombre y radio valido.';
+        }
+
+        const invalidItem = items.find((item) => {
+            return !item?.id || !item?.text || !orbitIds.has(Number(item?.correctOrbit));
+        });
+
+        if (invalidItem) {
+            return 'Cada concepto debe tener ID, texto y una orbita correcta existente.';
+        }
+
+        return '';
+    }
+
     return '';
 }

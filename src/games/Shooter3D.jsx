@@ -7,6 +7,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { Crosshair, ShieldAlert, Zap, Award, RotateCcw, AlertTriangle } from 'lucide-react';
 import { sessionAPI } from '@/api/api';
 import { GameErrorState, GameLoadingState } from '@/games/shared/GameScreenShell';
+import { GameExitButton, GameSessionFinishedOverlay, useGameSessionUi } from '@/games/shared/GameSessionActions';
 import { useSessionGame } from '@/hooks/useSessionGame';
 import { validateGameContent } from '@/games/shared/gameContentValidation';
 
@@ -135,7 +136,7 @@ const AnswerTarget = ({ answer, position, onClick, disabled }) => {
 };
 
 export default function Shooter3D() {
-  const { content, sessionId, participant, isLoading, error, setError } = useSessionGame({
+  const { session, content, sessionId, participant, isLoading, error, setError } = useSessionGame({
     resolveContent: resolveShootingContent,
     validateContent: (resolvedContent) => validateGameContent('shooting', {
       questions: resolvedContent.questions.map((question) => ({
@@ -158,6 +159,7 @@ export default function Shooter3D() {
   const [feedback, setFeedback] = useState(null); // { text, type }
   const [gameState, setGameState] = useState('playing'); // playing, won, lost
   const [startedAt, setStartedAt] = useState(() => Date.now());
+  const { sessionFinished, handleExit, exitLabel, finishActionLabel } = useGameSessionUi({ session, sessionId, isPreview: false });
 
   useEffect(() => {
     setEnemyHealth(maxEnemyHealth);
@@ -172,7 +174,7 @@ export default function Shooter3D() {
   }, [maxEnemyHealth]);
 
   const handleShoot = async (answer) => {
-    if (gameState !== 'playing' || isComputing) return;
+    if (sessionFinished || gameState !== 'playing' || isComputing) return;
 
     setIsComputing(true);
     setError('');
@@ -251,6 +253,8 @@ export default function Shooter3D() {
 
   return (
     <div className="flex flex-col h-screen bg-zinc-950 text-white overflow-hidden relative cursor-crosshair">
+      <GameExitButton onExit={handleExit} label={exitLabel} />
+      <GameSessionFinishedOverlay visible={sessionFinished} onExit={handleExit} actionLabel={finishActionLabel} />
       {/* UI Overlay - Top HUD */}
       <header className="absolute top-0 left-0 w-full p-6 z-10 flex justify-between items-start pointer-events-none">
         <div className="flex flex-col gap-2">
@@ -397,6 +401,7 @@ export default function Shooter3D() {
 
               <button
                 onClick={restartGame}
+                disabled={sessionFinished}
                 className="w-full py-4 rounded-xl font-bold uppercase tracking-widest flex items-center justify-center gap-2 transition-all group bg-white text-black hover:bg-zinc-200"
               >
                 <RotateCcw className="w-5 h-5 group-hover:-rotate-180 transition-transform duration-500" />
