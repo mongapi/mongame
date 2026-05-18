@@ -1,3 +1,13 @@
+# === Environment files ===
+.env
+.env.*
+!.env.example
+
+# === Frontend React ===
+node_modules/
+dist/
+.pnpm-store/
+
 # Logs
 logs
 *.log
@@ -24,3 +34,23 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+*.swp
+*.swo
+*~
+
+# === Docker ===
+docker-compose.override.yml
+#/docker/redis-data
+
+
+# === Backups ===
+*.backup
+*.bak
+
+# === 3D Assets ===
+src/public/3d-meshes/**/*.gltf
+src/public/3d-meshes/**/*.glb
+src/public/3d-meshes/**/*.bin
+src/public/3d-meshes/**/*.txt
+src/public/3d-meshes/**/*.png
+src/components/canvas3D/meshes/**/*.glb

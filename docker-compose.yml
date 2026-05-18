@@ -1,0 +1,10 @@
+services:
+  frontend:
+    build: .
+    ports:
+      - "5173:5173"
+    volumes:
+      - .:/app
+      - /app/node_modules # Esto evita que el host (exFAT) sobrescriba los módulos del contenedor
+    environment:
+      - NODE_ENV=development
