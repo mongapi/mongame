@@ -3,6 +3,7 @@ import { motion } from 'motion/react';
 import { useNavigate } from 'react-router-dom';
 import { Mail, Lock, ArrowRight, Sparkles, AlertCircle, Loader } from 'lucide-react';
 import { authAPI } from '@/api/api';
+import monlauLogo from '../public/images/monlau_logo.png';
 
 export default function LoginView() {
     const navigate = useNavigate();
@@ -38,9 +39,11 @@ export default function LoginView() {
                     transition={{ duration: 0.5 }}
                     className="relative z-10 w-full glass-card p-8 sm:p-10 rounded-3xl">
                     <div className="mb-8 text-center">
-                        <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-break/20 text-break border border-break/30">
-                            <Sparkles className="h-8 w-8" />
-                        </div>
+                        <img 
+                            src={monlauLogo} 
+                            alt="Monlau Logo" 
+                            className="mx-auto mb-6 h-16 w-auto object-contain filter drop-shadow-[0_0_20px_rgba(250,204,21,0.8)]" 
+                        />
                         <h1 className="text-3xl font-bold tracking-tight text-white mb-2">Bienvenido de vuelta</h1>
                         <p className="text-sm text-zinc-400">Ingresa tus credenciales para continuar</p>
                     </div>

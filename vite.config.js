@@ -10,12 +10,11 @@ export default defineConfig({
       '@': path.resolve(__dirname, './src'),
     },
   },
-  // --- AÑADE ESTO ---
+  assetsInclude: ['**/*.glb'],
   server: {
-    host: true,       // Para que Docker lo exponga
+    host: true,       // Para que Docker exponga el servicio
     watch: {
-      usePolling: true, // <--- LA CLAVE: Obliga a mirar cambios
+      usePolling: true, // Crucial para que detecte cambios en discos exFAT/Windows
     }
   }
-  // ------------------
 })

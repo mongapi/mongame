@@ -1,10 +1,11 @@
 import { AuroraBackground } from "@/components/organisms/AuroraBackground";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { AlertCircle, Gamepad2, Loader, PlayCircle, Route, Sparkles } from "lucide-react";
+import { AlertCircle, Gamepad2, Loader, PlayCircle, Route } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { GameTypeIconBadge, GameTypePreview } from '@/components/gameTypes/GameTypeVisual';
 import { useGameChooserView } from '@/hooks/useGameChooserView';
+import LoadingScreen from '@/components/ui/LoadingScreen';
 
 /* ─────────────────────────────────────────────────────────────────
    GameChooserView
@@ -75,7 +76,7 @@ export default function GameChooserView() {
                                         </div>
                                     </div>
                                     <Badge className="shrink-0 border-amber-300/25 bg-amber-300/10 px-3 py-1 font-bold tracking-widest text-amber-100 group-hover:bg-amber-300/25 transition-colors">
-                                        CREAR →
+                                        CREAR
                                     </Badge>
                                 </div>
                             </motion.button>
@@ -92,7 +93,6 @@ export default function GameChooserView() {
                         >
                             <div className="h-px flex-1 bg-white/8" />
                             <span className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-500">
-                                <Sparkles className="h-3 w-3" />
                                 O lanza un solo juego
                             </span>
                             <div className="h-px flex-1 bg-white/8" />
@@ -101,22 +101,15 @@ export default function GameChooserView() {
 
                     {/* ── States: loading / error / vacío ───────────────────── */}
                     {isLoading && (
-                        <motion.div
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            className="rounded-2xl border border-white/8 bg-black/30 p-8 backdrop-blur-xl"
-                        >
-                            <div className="flex items-center gap-3 text-zinc-300">
-                                <Loader className="h-5 w-5 animate-spin text-cyan-400" />
-                                <span className="text-sm">Cargando tipos de juego desde el backend…</span>
-                            </div>
+                        <div className="rounded-2xl border border-white/8 bg-black/30 p-8 backdrop-blur-xl">
+                            <LoadingScreen title="Cargando tipos de juego desde el backend…" fullScreen={false} />
                             {/* Skeletons */}
                             <div className="mt-6 grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
                                 {[...Array(6)].map((_, i) => (
                                     <div key={i} className="h-64 animate-pulse rounded-2xl bg-white/5" />
                                 ))}
                             </div>
-                        </motion.div>
+                        </div>
                     )}
 
                     {!isLoading && error && (
@@ -159,31 +152,33 @@ export default function GameChooserView() {
                                     className="group cursor-pointer"
                                     onClick={() => openGameType(gameType.code)}
                                 >
-                                    <Card className="relative h-full overflow-hidden border-zinc-800/80 bg-black/40 backdrop-blur-xl transition-all duration-300 hover:border-cyan-500/40 hover:shadow-[0_0_28px_rgba(34,211,238,0.14)]">
+                                    <Card className="relative h-full overflow-hidden border-zinc-800/80 bg-black/40 backdrop-blur-xl transition-all duration-300 hover:border-cyan-500/40 hover:shadow-[0_0_28px_rgba(34,211,238,0.14)] flex flex-col">
 
                                         {/* Hover gradient wash */}
                                         <div className="pointer-events-none absolute inset-0 bg-linear-to-br from-cyan-500/0 to-purple-500/0 transition-all duration-500 group-hover:from-cyan-500/8 group-hover:to-purple-500/8" />
 
-                                        <CardContent className="relative z-10 p-6">
+                                        <CardContent className="relative z-10 p-6 flex flex-col flex-grow">
 
-                                            {/* Top row: icon + badge */}
-                                            <div className="mb-5 flex items-start justify-between gap-3">
-                                                <GameTypeIconBadge icon={gameType.icon} color={gameType.color} />
-                                                <Badge className="shrink-0 border border-zinc-700 bg-zinc-800/80 px-3 py-1 font-bold tracking-widest text-zinc-300 transition-all duration-300 group-hover:border-cyan-500/40 group-hover:bg-cyan-500/20 group-hover:text-cyan-200">
-                                                    {isSessionCreationFlow ? 'LANZAR' : 'CREAR'}
-                                                </Badge>
+                                            <div className="flex flex-col flex-grow">
+                                                {/* Top row: icon + badge */}
+                                                <div className="mb-5 flex items-start justify-between gap-3">
+                                                    <GameTypeIconBadge icon={gameType.icon} color={gameType.color} />
+                                                    <Badge className="shrink-0 border border-zinc-700 bg-zinc-800/80 px-3 py-1 font-bold tracking-widest text-zinc-300 transition-all duration-300 group-hover:border-cyan-500/40 group-hover:bg-cyan-500/20 group-hover:text-cyan-200">
+                                                        {isSessionCreationFlow ? 'LANZAR' : 'CREAR'}
+                                                    </Badge>
+                                                </div>
+
+                                                {/* Name + description */}
+                                                <h3 className="mb-2 text-xl font-black text-white transition-colors duration-200 group-hover:text-cyan-300">
+                                                    {gameType.name}
+                                                </h3>
+                                                <p className="mb-4 min-h-12 text-sm leading-6 text-zinc-500 group-hover:text-zinc-400 transition-colors duration-200">
+                                                    {gameType.description}
+                                                </p>
                                             </div>
 
-                                            {/* Name + description */}
-                                            <h3 className="mb-2 text-xl font-black text-white transition-colors duration-200 group-hover:text-cyan-300">
-                                                {gameType.name}
-                                            </h3>
-                                            <p className="mb-4 min-h-10 text-sm leading-6 text-zinc-500 group-hover:text-zinc-400 transition-colors duration-200">
-                                                {gameType.description}
-                                            </p>
-
                                             {/* Preview */}
-                                            <div className="relative overflow-hidden rounded-lg border border-zinc-800/60 transition-colors duration-300 group-hover:border-cyan-700/40">
+                                            <div className="relative overflow-hidden rounded-2xl">
                                                 <GameTypePreview type={gameType.previewType} />
 
                                                 {/* Play overlay */}

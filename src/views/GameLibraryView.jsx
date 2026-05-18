@@ -1,9 +1,34 @@
+import { useState } from 'react';
 import { motion } from 'motion/react';
-import { AlertCircle, ArrowDownUp, BookOpen, CopyPlus, Eye, Filter, Pencil, PlayCircle, PlusCircle, Rows3, Search, Shapes, Users } from 'lucide-react';
+import { AlertCircle, ArrowDownUp, BookOpen, CopyPlus, Eye, Filter, Pencil, PlayCircle, PlusCircle, Rows3, Search, Shapes, Users, ChevronDown, Settings } from 'lucide-react';
 import { GameTypePreview, getGameTypeVisualMeta } from '@/components/gameTypes/GameTypeVisual';
 import { useGameLibraryView } from '@/hooks/useGameLibraryView';
 import { SessionModeDialog } from '@/components/organisms/SessionModeSelector';
 import { formatDate } from '@/lib/formatters';
+import LoadingScreen from '@/components/ui/LoadingScreen';
+
+const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+        opacity: 1,
+        transition: {
+            staggerChildren: 0.04
+        }
+    }
+};
+
+const itemVariants = {
+    hidden: { opacity: 0, y: 12 },
+    visible: { 
+        opacity: 1, 
+        y: 0, 
+        transition: { 
+            type: 'spring', 
+            stiffness: 260, 
+            damping: 20 
+        } 
+    }
+};
 
 function PaginationControls({ page, totalPages, onPageChange, label }) {
     if (totalPages <= 1) {
@@ -11,8 +36,8 @@ function PaginationControls({ page, totalPages, onPageChange, label }) {
     }
 
     return (
-        <div className="mt-6 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-white/10 bg-black/20 px-4 py-3">
-            <p className="text-sm text-zinc-400">{label} · Página {page} de {totalPages}</p>
+        <div className="mt-6 flex flex-wrap items-center justify-between gap-3 px-2">
+            <p className="text-sm text-zinc-400"> Página {page} de {totalPages}</p>
             <div className="flex items-center gap-3">
                 <button
                     type="button"
@@ -50,11 +75,10 @@ function CategoryTab({ icon: Icon, label, isActive, onClick, count }) {
         <button
             type="button"
             onClick={onClick}
-            className={`inline-flex items-center gap-3 rounded-2xl border px-4 py-3 text-sm font-bold transition ${
-                isActive
-                    ? 'border-cyan-400/30 bg-cyan-400/15 text-cyan-200'
-                    : 'border-white/10 bg-white/5 text-zinc-400 hover:bg-white/10 hover:text-white'
-            }`}
+            className={`inline-flex items-center gap-3 rounded-2xl border px-4 py-3 text-sm font-bold transition ${isActive
+                ? 'border-cyan-400/30 bg-cyan-400/15 text-cyan-200'
+                : 'border-white/10 bg-white/5 text-zinc-400 hover:bg-white/10 hover:text-white'
+                }`}
         >
             <Icon className="h-4 w-4" />
             <span>{label}</span>
@@ -65,17 +89,17 @@ function CategoryTab({ icon: Icon, label, isActive, onClick, count }) {
 
 function FilterChip({ label, isActive, onClick }) {
     return (
-        <button
+        <motion.button
+            variants={itemVariants}
             type="button"
             onClick={onClick}
-            className={`rounded-full border px-3 py-2 text-xs font-semibold uppercase tracking-[0.16em] transition ${
-                isActive
-                    ? 'border-cyan-400/30 bg-cyan-400/15 text-cyan-200'
-                    : 'border-white/10 bg-white/5 text-zinc-400 hover:bg-white/10 hover:text-white'
-            }`}
+            className={`rounded-full border px-3 py-2 text-xs font-semibold uppercase tracking-[0.16em] transition duration-200 ${isActive
+                ? 'border-cyan-400/30 bg-cyan-400/15 text-cyan-200 shadow-[0_0_15px_rgba(34,211,238,0.2)]'
+                : 'border-white/10 bg-white/5 text-zinc-400 hover:bg-white/10 hover:text-white'
+                }`}
         >
             {label}
-        </button>
+        </motion.button>
     );
 }
 
@@ -91,17 +115,17 @@ function LessonPlanBadge({ lessonPlan }) {
 
 function LessonPlanPhaseFilterChip({ label, isActive, onClick }) {
     return (
-        <button
+        <motion.button
+            variants={itemVariants}
             type="button"
             onClick={onClick}
-            className={`rounded-full border px-3 py-2 text-xs font-semibold uppercase tracking-[0.16em] transition ${
-                isActive
-                    ? 'border-amber-400/30 bg-amber-400/15 text-amber-200'
-                    : 'border-white/10 bg-white/5 text-zinc-400 hover:bg-white/10 hover:text-white'
-            }`}
+            className={`rounded-full border px-3 py-2 text-xs font-semibold uppercase tracking-[0.16em] transition duration-200 ${isActive
+                ? 'border-amber-400/30 bg-amber-400/15 text-amber-200 shadow-[0_0_15px_rgba(251,191,36,0.2)]'
+                : 'border-white/10 bg-white/5 text-zinc-400 hover:bg-white/10 hover:text-white'
+                }`}
         >
             {label}
-        </button>
+        </motion.button>
     );
 }
 
@@ -117,9 +141,9 @@ function LessonPlanPhasePreviewStrip({ games }) {
     return (
         <div className="mb-4 grid grid-cols-2 gap-2 xl:grid-cols-3">
             {games.slice(0, 6).map((game) => (
-                <div key={game.id} className="overflow-hidden rounded-2xl border border-white/10 bg-black/20 p-2">
+                <div key={game.id} className="overflow-hidden rounded-2xl border border-white/10 bg-black/20 flex flex-col justify-between">
                     <GameTypePreview type={getGameTypeVisualMeta(game?.game_type?.code).previewType} />
-                    <p className="mt-2 truncate px-1 text-xs font-semibold text-zinc-300">{game.name}</p>
+                    <p className="py-2 truncate px-3 text-xs font-semibold text-zinc-300 bg-black/10">{game.name}</p>
                 </div>
             ))}
             {games.length > 6 ? (
@@ -131,34 +155,33 @@ function LessonPlanPhasePreviewStrip({ games }) {
     );
 }
 
-    function ScopeTab({ icon: Icon, label, isActive, onClick, count }) {
-        return (
-            <button
-                type="button"
-                onClick={onClick}
-                className={`inline-flex items-center gap-3 rounded-2xl border px-4 py-3 text-sm font-bold transition ${
-                    isActive
-                        ? 'border-emerald-400/30 bg-emerald-400/15 text-emerald-200'
-                        : 'border-white/10 bg-white/5 text-zinc-400 hover:bg-white/10 hover:text-white'
+function ScopeTab({ icon: Icon, label, isActive, onClick, count }) {
+    return (
+        <button
+            type="button"
+            onClick={onClick}
+            className={`inline-flex items-center gap-3 rounded-2xl border px-4 py-3 text-sm font-bold transition ${isActive
+                ? 'border-emerald-400/30 bg-emerald-400/15 text-emerald-200'
+                : 'border-white/10 bg-white/5 text-zinc-400 hover:bg-white/10 hover:text-white'
                 }`}
-            >
-                <Icon className="h-4 w-4" />
-                <span>{label}</span>
-                <span className="rounded-full bg-black/30 px-2 py-1 text-xs text-zinc-300">{count}</span>
-            </button>
-        );
-    }
+        >
+            <Icon className="h-4 w-4" />
+            <span>{label}</span>
+            <span className="rounded-full bg-black/30 px-2 py-1 text-xs text-zinc-300">{count}</span>
+        </button>
+    );
+}
 
 export default function GameLibraryView() {
     const {
-            currentUser,
+        currentUser,
         isLoading,
         error,
-            success,
+        success,
         startingGameId,
         startingLessonPlanId,
         activeCategory,
-            activeScope,
+        activeScope,
         activeGameTypeFilter,
         searchQuery,
         gameSort,
@@ -202,8 +225,12 @@ export default function GameLibraryView() {
         previewGame,
     } = useGameLibraryView();
 
+    const [isGameFiltersExpanded, setIsGameFiltersExpanded] = useState(false);
+    const [isLessonPlanFiltersExpanded, setIsLessonPlanFiltersExpanded] = useState(false);
+    const [isViewSettingsExpanded, setIsViewSettingsExpanded] = useState(false);
+
     if (isLoading) {
-        return <div className="min-h-screen flex items-center justify-center text-white font-['Orbitron']">CARGANDO BIBLIOTECA...</div>;
+        return <LoadingScreen title="Cargando Biblioteca..." />;
     }
 
     return (
@@ -237,117 +264,233 @@ export default function GameLibraryView() {
                     </button>
                 </div>
 
-                <div className="mb-6 rounded-3xl border border-white/10 bg-black/20 p-5 backdrop-blur-xl">
-                    <div className="relative">
-                        <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-500" />
-                        <input
-                            type="text"
-                            value={searchQuery}
-                            onChange={(event) => setSearchQuery(event.target.value)}
-                            placeholder={activeCategory === 'games' ? 'Buscar juegos por nombre, descripción o tipo...' : 'Buscar lesson plans por nombre o descripción...'}
-                            className="w-full rounded-2xl border border-white/10 bg-white/5 py-3 pl-11 pr-4 text-white outline-none transition focus:border-cyan-400"
-                        />
-                    </div>
-                </div>
-
-                <div className="mb-6 flex flex-wrap items-center gap-3">
-                    <ScopeTab
-                        icon={BookOpen}
-                        label="Mis recursos"
-                        count={activeCategory === 'games' ? ownGames.length : ownLessonPlans.length}
-                        isActive={activeScope === 'mine'}
-                        onClick={() => setActiveScope('mine')}
-                    />
-                    <ScopeTab
-                        icon={Users}
-                        label="Compartidos"
-                        count={activeCategory === 'games' ? sharedGames.length : sharedLessonPlans.length}
-                        isActive={activeScope === 'shared'}
-                        onClick={() => setActiveScope('shared')}
+                <div className="mb-6 relative">
+                    <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-500" />
+                    <input
+                        type="text"
+                        value={searchQuery}
+                        onChange={(event) => setSearchQuery(event.target.value)}
+                        placeholder={activeCategory === 'games' ? 'Buscar juegos por nombre, descripción o tipo...' : 'Buscar lesson plans por nombre o descripción...'}
+                        className="w-full rounded-2xl border border-white/10 bg-black/20 backdrop-blur-xl py-3.5 pl-11 pr-4 text-white outline-none transition focus:border-cyan-400"
                     />
                 </div>
 
-                <div className="mb-6 flex flex-wrap items-center gap-3">
-                    <CategoryTab
-                        icon={Rows3}
-                        label="Juegos"
-                        count={activeScope === 'shared' ? sharedGames.length : ownGames.length}
-                        isActive={activeCategory === 'games'}
-                        onClick={() => setActiveCategory('games')}
-                    />
-                    <CategoryTab
-                        icon={Shapes}
-                        label="Lesson plans"
-                        count={activeScope === 'shared' ? sharedLessonPlans.length : ownLessonPlans.length}
-                        isActive={activeCategory === 'lessonPlans'}
-                        onClick={() => setActiveCategory('lessonPlans')}
-                    />
-                </div>
-
-                {activeCategory === 'games' ? (
-                    <div className="mb-8 rounded-3xl border border-white/10 bg-black/20 p-5 backdrop-blur-xl">
-                        <div className="mb-4 flex flex-wrap items-center justify-between gap-4">
-                            <div className="flex items-center gap-2 text-sm font-bold uppercase tracking-[0.18em] text-zinc-400">
-                                <Filter className="h-4 w-4" />
-                                Filtrar por tipo de juego
-                            </div>
-                            <label className="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-zinc-300">
-                                <ArrowDownUp className="h-4 w-4 text-zinc-500" />
-                                <span>Ordenar</span>
-                                <select
-                                    value={gameSort}
-                                    onChange={(event) => setGameSort(event.target.value)}
-                                    className="bg-transparent text-sm text-white outline-none"
+                <div className="mb-8 grid grid-cols-1 lg:grid-cols-[1fr_1.5fr] gap-6 items-stretch">
+                    {/* COLUMNA 1: OPCIONES DE VISTA (40%) */}
+                    <div className="rounded-3xl border border-white/10 bg-black/20 p-6 backdrop-blur-xl h-full">
+                        <div className="space-y-4">
+                            <div className="flex flex-wrap items-center justify-between gap-4">
+                                <button
+                                    type="button"
+                                    onClick={() => setIsViewSettingsExpanded(!isViewSettingsExpanded)}
+                                    className="flex items-center gap-2 text-sm font-bold uppercase tracking-[0.18em] text-zinc-400 hover:text-white transition group"
                                 >
-                                    <option value="recent" className="bg-zinc-950 text-white">Más recientes</option>
-                                    <option value="oldest" className="bg-zinc-950 text-white">Más antiguos</option>
-                                    <option value="updated" className="bg-zinc-950 text-white">Última edición</option>
-                                    <option value="name" className="bg-zinc-950 text-white">Nombre A-Z</option>
-                                </select>
-                            </label>
-                        </div>
-                        <div className="flex flex-wrap gap-3">
-                            {gameTypeFilters.map((filter) => (
-                                <FilterChip
-                                    key={filter.code}
-                                    label={filter.label}
-                                    isActive={activeGameTypeFilter === filter.code}
-                                    onClick={() => setActiveGameTypeFilter(filter.code)}
-                                />
-                            ))}
-                        </div>
-                    </div>
-                ) : null}
-
-                {activeCategory === 'lessonPlans' ? (
-                    <div className="mb-8 rounded-3xl border border-white/10 bg-black/20 p-5 backdrop-blur-xl">
-                        <div className="mb-4 flex flex-wrap items-center justify-between gap-4">
-                            <div className="flex items-center gap-2 text-sm font-bold uppercase tracking-[0.18em] text-zinc-400">
-                                <Filter className="h-4 w-4" />
-                                Filtrar lesson plans
+                                    <Settings className="h-4 w-4 text-zinc-500 group-hover:text-emerald-400 transition animate-spin-slow" />
+                                    <span>Opciones de Vista y Biblioteca</span>
+                                    <motion.span
+                                        animate={{ rotate: isViewSettingsExpanded ? 180 : 0 }}
+                                        transition={{ type: 'spring', stiffness: 200, damping: 15 }}
+                                        className="inline-flex items-center justify-center p-1 rounded-lg bg-white/5 group-hover:bg-white/10"
+                                    >
+                                        <ChevronDown className="h-4 w-4 text-emerald-400" />
+                                    </motion.span>
+                                </button>
                             </div>
-                            <label className="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-zinc-300">
-                                <ArrowDownUp className="h-4 w-4 text-zinc-500" />
-                                <span>Ordenar</span>
-                                <select
-                                    value={lessonPlanSort}
-                                    onChange={(event) => setLessonPlanSort(event.target.value)}
-                                    className="bg-transparent text-sm text-white outline-none"
-                                >
-                                    <option value="recent" className="bg-zinc-950 text-white">Más recientes</option>
-                                    <option value="oldest" className="bg-zinc-950 text-white">Más antiguos</option>
-                                    <option value="name" className="bg-zinc-950 text-white">Nombre A-Z</option>
-                                </select>
-                            </label>
-                        </div>
-                        <div className="flex flex-wrap gap-3">
-                            <LessonPlanPhaseFilterChip label="Todos" isActive={lessonPlanPhaseFilter === 'all'} onClick={() => setLessonPlanPhaseFilter('all')} />
-                            <LessonPlanPhaseFilterChip label="1 fase" isActive={lessonPlanPhaseFilter === 'single'} onClick={() => setLessonPlanPhaseFilter('single')} />
-                            <LessonPlanPhaseFilterChip label="2-3 fases" isActive={lessonPlanPhaseFilter === 'medium'} onClick={() => setLessonPlanPhaseFilter('medium')} />
-                            <LessonPlanPhaseFilterChip label="4+ fases" isActive={lessonPlanPhaseFilter === 'large'} onClick={() => setLessonPlanPhaseFilter('large')} />
+
+                            <motion.div
+                                initial={false}
+                                animate={{ 
+                                    height: isViewSettingsExpanded ? 'auto' : 0,
+                                    opacity: isViewSettingsExpanded ? 1 : 0,
+                                    marginTop: isViewSettingsExpanded ? 16 : 0
+                                }}
+                                transition={{ type: 'spring', stiffness: 180, damping: 20 }}
+                                className="overflow-hidden"
+                            >
+                                {isViewSettingsExpanded && (
+                                    <motion.div
+                                        variants={containerVariants}
+                                        initial="hidden"
+                                        animate="visible"
+                                        className="flex flex-col gap-5 border-t border-white/5 pt-4"
+                                    >
+                                        {/* Origen de recursos */}
+                                        <div className="flex flex-col gap-2">
+                                            <span className="text-xs font-bold uppercase tracking-[0.18em] text-zinc-500">Filtrar por Origen</span>
+                                            <div className="flex flex-wrap items-center gap-3">
+                                                <ScopeTab
+                                                    icon={BookOpen}
+                                                    label="Mis recursos"
+                                                    count={activeCategory === 'games' ? ownGames.length : ownLessonPlans.length}
+                                                    isActive={activeScope === 'mine'}
+                                                    onClick={() => setActiveScope('mine')}
+                                                />
+                                                <ScopeTab
+                                                    icon={Users}
+                                                    label="Compartidos"
+                                                    count={activeCategory === 'games' ? sharedGames.length : sharedLessonPlans.length}
+                                                    isActive={activeScope === 'shared'}
+                                                    onClick={() => setActiveScope('shared')}
+                                                />
+                                            </div>
+                                        </div>
+
+                                        {/* Categoría */}
+                                        <div className="flex flex-col gap-2">
+                                            <span className="text-xs font-bold uppercase tracking-[0.18em] text-zinc-500">Filtrar por Categoría</span>
+                                            <div className="flex flex-wrap items-center gap-3">
+                                                <CategoryTab
+                                                    icon={Rows3}
+                                                    label="Juegos"
+                                                    count={activeScope === 'shared' ? sharedGames.length : ownGames.length}
+                                                    isActive={activeCategory === 'games'}
+                                                    onClick={() => setActiveCategory('games')}
+                                                />
+                                                <CategoryTab
+                                                    icon={Shapes}
+                                                    label="Lesson plans"
+                                                    count={activeScope === 'shared' ? sharedLessonPlans.length : ownLessonPlans.length}
+                                                    isActive={activeCategory === 'lessonPlans'}
+                                                    onClick={() => setActiveCategory('lessonPlans')}
+                                                />
+                                            </div>
+                                        </div>
+                                    </motion.div>
+                                )}
+                            </motion.div>
                         </div>
                     </div>
-                ) : null}
+
+                    {/* COLUMNA 2: FILTRAJE POR TIPO (60%) */}
+                    <div className="rounded-3xl border border-white/10 bg-black/20 p-6 backdrop-blur-xl h-full">
+                        <div className="space-y-4">
+                            {activeCategory === 'games' ? (
+                                <div>
+                                    <div className="flex flex-wrap items-center justify-between gap-4">
+                                        <button
+                                            type="button"
+                                            onClick={() => setIsGameFiltersExpanded(!isGameFiltersExpanded)}
+                                            className="flex items-center gap-2 text-sm font-bold uppercase tracking-[0.18em] text-zinc-400 hover:text-white transition group"
+                                        >
+                                            <Filter className="h-4 w-4 text-zinc-500 group-hover:text-cyan-400 transition" />
+                                            <span>Filtrar por tipo de juego</span>
+                                            <motion.span
+                                                animate={{ rotate: isGameFiltersExpanded ? 180 : 0 }}
+                                                transition={{ type: 'spring', stiffness: 200, damping: 15 }}
+                                                className="inline-flex items-center justify-center p-1 rounded-lg bg-white/5 group-hover:bg-white/10"
+                                            >
+                                                <ChevronDown className="h-4 w-4 text-cyan-400" />
+                                            </motion.span>
+                                        </button>
+                                        <label className="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-zinc-300">
+                                            <ArrowDownUp className="h-4 w-4 text-zinc-500" />
+                                            <span>Ordenar</span>
+                                            <select
+                                                value={gameSort}
+                                                onChange={(event) => setGameSort(event.target.value)}
+                                                className="bg-transparent text-sm text-white outline-none"
+                                            >
+                                                <option value="recent" className="bg-zinc-950 text-white">Más recientes</option>
+                                                <option value="oldest" className="bg-zinc-950 text-white">Más antiguos</option>
+                                                <option value="updated" className="bg-zinc-950 text-white">Última edición</option>
+                                                <option value="name" className="bg-zinc-950 text-white">Nombre A-Z</option>
+                                            </select>
+                                        </label>
+                                    </div>
+                                    
+                                    <motion.div
+                                        initial={false}
+                                        animate={{ 
+                                            height: isGameFiltersExpanded ? 'auto' : 0,
+                                            opacity: isGameFiltersExpanded ? 1 : 0,
+                                            marginTop: isGameFiltersExpanded ? 16 : 0
+                                        }}
+                                        transition={{ type: 'spring', stiffness: 180, damping: 20 }}
+                                        className="overflow-hidden"
+                                    >
+                                        {isGameFiltersExpanded && (
+                                            <motion.div 
+                                                variants={containerVariants}
+                                                initial="hidden"
+                                                animate="visible"
+                                                className="flex flex-wrap gap-3"
+                                            >
+                                                {gameTypeFilters.map((filter) => (
+                                                    <FilterChip
+                                                        key={filter.code}
+                                                        label={filter.label}
+                                                        isActive={activeGameTypeFilter === filter.code}
+                                                        onClick={() => setActiveGameTypeFilter(filter.code)}
+                                                    />
+                                                ))}
+                                            </motion.div>
+                                        )}
+                                    </motion.div>
+                                </div>
+                            ) : null}
+
+                            {activeCategory === 'lessonPlans' ? (
+                                <div>
+                                    <div className="flex flex-wrap items-center justify-between gap-4">
+                                        <button
+                                            type="button"
+                                            onClick={() => setIsLessonPlanFiltersExpanded(!isLessonPlanFiltersExpanded)}
+                                            className="flex items-center gap-2 text-sm font-bold uppercase tracking-[0.18em] text-zinc-400 hover:text-white transition group"
+                                        >
+                                            <Filter className="h-4 w-4 text-zinc-500 group-hover:text-amber-400 transition" />
+                                            <span>Filtrar lesson plans</span>
+                                            <motion.span
+                                                animate={{ rotate: isLessonPlanFiltersExpanded ? 180 : 0 }}
+                                                transition={{ type: 'spring', stiffness: 200, damping: 15 }}
+                                                className="inline-flex items-center justify-center p-1 rounded-lg bg-white/5 group-hover:bg-white/10"
+                                            >
+                                                <ChevronDown className="h-4 w-4 text-amber-400" />
+                                            </motion.span>
+                                        </button>
+                                        <label className="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-zinc-300">
+                                            <ArrowDownUp className="h-4 w-4 text-zinc-500" />
+                                            <span>Ordenar</span>
+                                            <select
+                                                value={lessonPlanSort}
+                                                onChange={(event) => setLessonPlanSort(event.target.value)}
+                                                className="bg-transparent text-sm text-white outline-none"
+                                            >
+                                                <option value="recent" className="bg-zinc-950 text-white">Más recientes</option>
+                                                <option value="oldest" className="bg-zinc-950 text-white">Más antiguos</option>
+                                                <option value="name" className="bg-zinc-950 text-white">Nombre A-Z</option>
+                                            </select>
+                                        </label>
+                                    </div>
+
+                                    <motion.div
+                                        initial={false}
+                                        animate={{ 
+                                            height: isLessonPlanFiltersExpanded ? 'auto' : 0,
+                                            opacity: isLessonPlanFiltersExpanded ? 1 : 0,
+                                            marginTop: isLessonPlanFiltersExpanded ? 16 : 0
+                                        }}
+                                        transition={{ type: 'spring', stiffness: 180, damping: 20 }}
+                                        className="overflow-hidden"
+                                    >
+                                        {isLessonPlanFiltersExpanded && (
+                                            <motion.div 
+                                                variants={containerVariants}
+                                                initial="hidden"
+                                                animate="visible"
+                                                className="flex flex-wrap gap-3"
+                                            >
+                                                <LessonPlanPhaseFilterChip label="Todos" isActive={lessonPlanPhaseFilter === 'all'} onClick={() => setLessonPlanPhaseFilter('all')} />
+                                                <LessonPlanPhaseFilterChip label="1 fase" isActive={lessonPlanPhaseFilter === 'single'} onClick={() => setLessonPlanPhaseFilter('single')} />
+                                                <LessonPlanPhaseFilterChip label="2-3 fases" isActive={lessonPlanPhaseFilter === 'medium'} onClick={() => setLessonPlanPhaseFilter('medium')} />
+                                                <LessonPlanPhaseFilterChip label="4+ fases" isActive={lessonPlanPhaseFilter === 'large'} onClick={() => setLessonPlanPhaseFilter('large')} />
+                                            </motion.div>
+                                        )}
+                                    </motion.div>
+                                </div>
+                            ) : null}
+                        </div>
+                    </div>
+                </div>
 
                 {error ? (
                     <div className="mb-6 flex items-center gap-3 rounded-2xl border border-red-500/30 bg-red-500/10 p-4 text-sm text-red-200">
@@ -398,82 +541,83 @@ export default function GameLibraryView() {
                             <p>Orden actual: {gameSort === 'recent' ? 'más recientes' : gameSort === 'oldest' ? 'más antiguos' : gameSort === 'updated' ? 'última edición' : 'nombre A-Z'}</p>
                         </div>
                         <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
-                        {paginatedGames.map((game, index) => (
-                            <motion.div
-                                key={game.id}
-                                initial={{ opacity: 0, y: 20 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                transition={{ delay: index * 0.04 }}
-                                className="rounded-3xl border border-white/10 bg-black/30 p-6 backdrop-blur-xl"
-                            >
-                                <div className="mb-5 overflow-hidden rounded-2xl border border-white/10 bg-black/25 p-3">
-                                    <GameTypePreview type={getGameTypeVisualMeta(game?.game_type?.code).previewType} />
-                                </div>
-
-                                <div className="flex items-start justify-between gap-4">
-                                    <div>
-                                        <h2 className="text-2xl font-black text-white">{game.name}</h2>
-                                        <p className="mt-2 text-sm text-zinc-400">{game.description || 'Sin descripción todavía.'}</p>
+                            {paginatedGames.map((game, index) => (
+                                <motion.div
+                                    key={game.id}
+                                    initial={{ opacity: 0, y: 20 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    transition={{ delay: index * 0.04 }}
+                                    className="rounded-3xl border border-white/10 bg-black/30 p-6 backdrop-blur-xl flex flex-col h-full justify-between"
+                                >
+                                    <div className="mb-5 relative">
+                                        <GameTypePreview type={getGameTypeVisualMeta(game?.game_type?.code).previewType} />
                                     </div>
-                                    <TypeBadge game={game} />
-                                </div>
 
-                                <div className="mt-6 rounded-2xl border border-white/10 bg-white/5 p-4 text-xs text-zinc-500">
-                                    <div className="font-semibold uppercase tracking-[0.16em] text-zinc-400">Juego #{game.id}</div>
-                                    <div className="mt-3 space-y-1 text-sm text-zinc-300">
-                                        <p>Autor: {game.user?.name || (game.user_id === currentUser?.id ? 'Tú' : 'Docente sin nombre')}</p>
-                                        <p>Creado: {formatDate(game.created_at)}</p>
-                                        <p>Última edición: {formatDate(game.updated_at)}</p>
+                                    <div className="flex flex-col flex-1 justify-start">
+                                        <div className="flex justify-start mb-3">
+                                            <TypeBadge game={game} />
+                                        </div>
+                                        <div className="flex-grow">
+                                            <h2 className="text-2xl font-black text-white min-h-[4.5rem] flex items-center leading-snug">{game.name}</h2>
+                                            <p className="mt-2 text-sm text-zinc-400 min-h-[2.5rem]">{game.description || 'Sin descripción todavía.'}</p>
+                                        </div>
                                     </div>
-                                </div>
 
-                                <div className="mt-6 flex flex-wrap gap-3">
-                                    <button
-                                        type="button"
-                                        onClick={() => previewGame(game)}
-                                        className="inline-flex items-center gap-2 rounded-2xl border border-sky-400/30 bg-sky-400/15 px-4 py-3 font-bold text-sky-200 transition hover:bg-sky-400/25"
-                                    >
-                                        <Eye className="h-5 w-5" />
-                                        Ver preview
-                                    </button>
-                                    <button
-                                        type="button"
-                                        onClick={() => handleStartSession(game)}
-                                        disabled={startingGameId === game.id}
-                                        className="inline-flex items-center gap-2 rounded-2xl border border-emerald-400/30 bg-emerald-400/15 px-4 py-3 font-bold text-emerald-200 transition hover:bg-emerald-400/25 disabled:cursor-not-allowed disabled:opacity-50"
-                                    >
-                                        <PlayCircle className="h-5 w-5" />
-                                        {startingGameId === game.id ? 'Creando...' : 'Crear sesión'}
-                                    </button>
-                                    {activeScope === 'mine' ? (
+                                    <div className="mt-6 rounded-2xl border border-white/10 bg-white/5 p-4 text-xs text-zinc-500">
+                                        <div className="font-semibold uppercase tracking-[0.16em] text-zinc-400">Juego #{game.id}</div>
+                                        <div className="mt-3 space-y-1 text-sm text-zinc-300">
+                                            <p>Autor: {game.user?.name || (game.user_id === currentUser?.id ? 'Tú' : 'Docente sin nombre')}</p>
+                                            <p>Creado: {formatDate(game.created_at)}</p>
+                                            <p>Última edición: {formatDate(game.updated_at)}</p>
+                                        </div>
+                                    </div>
+
+                                    <div className="mt-6 flex flex-wrap gap-3">
                                         <button
                                             type="button"
-                                            onClick={() => editGame(game.id)}
-                                            className="inline-flex items-center gap-2 rounded-2xl border border-white/10 bg-white/5 px-4 py-3 font-bold text-zinc-200 transition hover:bg-white/10"
+                                            onClick={() => previewGame(game)}
+                                            className="inline-flex items-center gap-2 rounded-2xl border border-sky-400/30 bg-sky-400/15 px-4 py-3 font-bold text-sky-200 transition hover:bg-sky-400/25"
                                         >
-                                            <Pencil className="h-4 w-4" />
-                                            Editar
+                                            <Eye className="h-5 w-5" />
+                                            Ver preview
                                         </button>
-                                    ) : (
                                         <button
                                             type="button"
-                                            onClick={() => duplicateGame(game)}
+                                            onClick={() => handleStartSession(game)}
                                             disabled={startingGameId === game.id}
-                                            className="inline-flex items-center gap-2 rounded-2xl border border-cyan-400/30 bg-cyan-400/15 px-4 py-3 font-bold text-cyan-200 transition hover:bg-cyan-400/25 disabled:cursor-not-allowed disabled:opacity-50"
+                                            className="inline-flex items-center gap-2 rounded-2xl border border-emerald-400/30 bg-emerald-400/15 px-4 py-3 font-bold text-emerald-200 transition hover:bg-emerald-400/25 disabled:cursor-not-allowed disabled:opacity-50"
                                         >
-                                            <CopyPlus className="h-4 w-4" />
-                                            {startingGameId === game.id ? 'Guardando...' : 'Guardar copia'}
+                                            <PlayCircle className="h-5 w-5" />
+                                            {startingGameId === game.id ? 'Creando...' : 'Crear sesión'}
                                         </button>
-                                    )}
-                                </div>
-                            </motion.div>
-                        ))}
+                                        {activeScope === 'mine' ? (
+                                            <button
+                                                type="button"
+                                                onClick={() => editGame(game.id)}
+                                                className="inline-flex items-center gap-2 rounded-2xl border border-white/10 bg-white/5 px-4 py-3 font-bold text-zinc-200 transition hover:bg-white/10"
+                                            >
+                                                <Pencil className="h-4 w-4" />
+                                                Editar
+                                            </button>
+                                        ) : (
+                                            <button
+                                                type="button"
+                                                onClick={() => duplicateGame(game)}
+                                                disabled={startingGameId === game.id}
+                                                className="inline-flex items-center gap-2 rounded-2xl border border-cyan-400/30 bg-cyan-400/15 px-4 py-3 font-bold text-cyan-200 transition hover:bg-cyan-400/25 disabled:cursor-not-allowed disabled:opacity-50"
+                                            >
+                                                <CopyPlus className="h-4 w-4" />
+                                                {startingGameId === game.id ? 'Guardando...' : 'Guardar copia'}
+                                            </button>
+                                        )}
+                                    </div>
+                                </motion.div>
+                            ))}
                         </div>
                         <PaginationControls
                             page={gamesPage}
                             totalPages={totalGamesPages}
                             onPageChange={setGamesPage}
-                            label="Paginación de juegos"
                         />
                     </div>
                 ) : null}
@@ -487,91 +631,91 @@ export default function GameLibraryView() {
                             </div>
                         ) : null}
                         <div className="overflow-hidden rounded-3xl border border-white/10 bg-black/20 backdrop-blur-xl">
-                        <div className="grid grid-cols-[minmax(0,1.25fr)_170px_120px_220px_220px] gap-4 border-b border-white/10 px-6 py-4 text-xs font-semibold uppercase tracking-[0.18em] text-zinc-500">
-                            <span>Lesson plan</span>
-                            <span>Autor</span>
-                            <span>Fases</span>
-                            <span>Fechas</span>
-                            <span>Acciones</span>
-                        </div>
-                        {paginatedLessonPlans.map((lessonPlan, index) => {
-                            const gamesInPlan = Array.isArray(lessonPlan.game_ids)
-                                ? lessonPlan.game_ids.map((gameId) => gamesById[gameId]).filter(Boolean)
-                                : [];
-                            const createdAtLabel = formatDate(lessonPlan.created_at);
-                            const updatedAtLabel = formatDate(lessonPlan.updated_at);
+                            <div className="grid grid-cols-[minmax(0,1.25fr)_170px_120px_220px_220px] gap-4 border-b border-white/10 px-6 py-4 text-xs font-semibold uppercase tracking-[0.18em] text-zinc-500">
+                                <span>Lesson plan</span>
+                                <span>Autor</span>
+                                <span>Fases</span>
+                                <span>Fechas</span>
+                                <span>Acciones</span>
+                            </div>
+                            {paginatedLessonPlans.map((lessonPlan, index) => {
+                                const gamesInPlan = Array.isArray(lessonPlan.game_ids)
+                                    ? lessonPlan.game_ids.map((gameId) => gamesById[gameId]).filter(Boolean)
+                                    : [];
+                                const createdAtLabel = formatDate(lessonPlan.created_at);
+                                const updatedAtLabel = formatDate(lessonPlan.updated_at);
 
-                            return (
-                                <motion.div
-                                    key={lessonPlan.id}
-                                    initial={{ opacity: 0, y: 20 }}
-                                    animate={{ opacity: 1, y: 0 }}
-                                    transition={{ delay: index * 0.04 }}
-                                    className="grid grid-cols-[minmax(0,1.25fr)_170px_120px_220px_220px] gap-4 border-b border-white/10 px-6 py-5 last:border-b-0"
-                                >
-                                    <div className="min-w-0">
-                                        <div>
-                                            <h2 className="truncate text-lg font-black text-white">{lessonPlan.name}</h2>
-                                            <p className="mt-2 text-sm text-zinc-400">{lessonPlan.description || 'Sin descripción todavía.'}</p>
+                                return (
+                                    <motion.div
+                                        key={lessonPlan.id}
+                                        initial={{ opacity: 0, y: 20 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        transition={{ delay: index * 0.04 }}
+                                        className="grid grid-cols-[minmax(0,1.25fr)_170px_120px_220px_220px] gap-4 border-b border-white/10 px-6 py-5 last:border-b-0"
+                                    >
+                                        <div className="min-w-0">
+                                            <div>
+                                                <h2 className="truncate text-lg font-black text-white">{lessonPlan.name}</h2>
+                                                <p className="mt-2 text-sm text-zinc-400">{lessonPlan.description || 'Sin descripción todavía.'}</p>
+                                            </div>
+                                            <div className="mt-4">
+                                                <LessonPlanPhasePreviewStrip games={gamesInPlan} />
+                                            </div>
+                                            <div className="mt-3 flex flex-wrap gap-2">
+                                                {gamesInPlan.length > 0 ? gamesInPlan.map((game) => (
+                                                    <span key={game.id} className="rounded-full border border-white/10 bg-black/20 px-3 py-2 text-xs text-zinc-300">
+                                                        {game.name}
+                                                    </span>
+                                                )) : (
+                                                    <span className="text-sm text-zinc-500">Los juegos de este lesson plan no están cargados en la biblioteca actual.</span>
+                                                )}
+                                            </div>
                                         </div>
-                                        <div className="mt-4">
-                                            <LessonPlanPhasePreviewStrip games={gamesInPlan} />
+                                        <div className="pt-1 text-sm text-zinc-300">
+                                            {lessonPlan.user?.name || (lessonPlan.user_id === currentUser?.id ? 'Tú' : 'Docente sin nombre')}
                                         </div>
-                                        <div className="mt-3 flex flex-wrap gap-2">
-                                            {gamesInPlan.length > 0 ? gamesInPlan.map((game) => (
-                                                <span key={game.id} className="rounded-full border border-white/10 bg-black/20 px-3 py-2 text-xs text-zinc-300">
-                                                    {game.name}
-                                                </span>
-                                            )) : (
-                                                <span className="text-sm text-zinc-500">Los juegos de este lesson plan no están cargados en la biblioteca actual.</span>
+                                        <div className="flex items-start">
+                                            <LessonPlanBadge lessonPlan={lessonPlan} />
+                                        </div>
+                                        <div className="space-y-1 pt-1 text-sm text-zinc-300">
+                                            <p>Creado: {createdAtLabel}</p>
+                                            <p>Última edición: {updatedAtLabel}</p>
+                                        </div>
+                                        <div className="flex flex-wrap gap-3">
+                                            <button
+                                                type="button"
+                                                onClick={() => handleStartLessonPlanSession(lessonPlan)}
+                                                disabled={startingLessonPlanId === lessonPlan.id}
+                                                className="inline-flex items-center gap-2 rounded-2xl border border-emerald-400/30 bg-emerald-400/15 px-4 py-3 font-bold text-emerald-200 transition hover:bg-emerald-400/25 disabled:cursor-not-allowed disabled:opacity-50"
+                                            >
+                                                <PlayCircle className="h-5 w-5" />
+                                                {startingLessonPlanId === lessonPlan.id ? 'Creando...' : 'Crear sesión'}
+                                            </button>
+                                            {activeScope === 'mine' ? (
+                                                <button
+                                                    type="button"
+                                                    onClick={() => editLessonPlan(lessonPlan.id)}
+                                                    className="inline-flex items-center gap-2 rounded-2xl border border-white/10 bg-white/5 px-4 py-3 font-bold text-zinc-200 transition hover:bg-white/10"
+                                                >
+                                                    <Pencil className="h-4 w-4" />
+                                                    Editar
+                                                </button>
+                                            ) : (
+                                                <button
+                                                    type="button"
+                                                    onClick={() => duplicateLessonPlan(lessonPlan)}
+                                                    disabled={startingLessonPlanId === lessonPlan.id}
+                                                    className="inline-flex items-center gap-2 rounded-2xl border border-cyan-400/30 bg-cyan-400/15 px-4 py-3 font-bold text-cyan-200 transition hover:bg-cyan-400/25 disabled:cursor-not-allowed disabled:opacity-50"
+                                                >
+                                                    <CopyPlus className="h-4 w-4" />
+                                                    {startingLessonPlanId === lessonPlan.id ? 'Guardando...' : 'Guardar copia'}
+                                                </button>
                                             )}
                                         </div>
-                                    </div>
-                                    <div className="pt-1 text-sm text-zinc-300">
-                                        {lessonPlan.user?.name || (lessonPlan.user_id === currentUser?.id ? 'Tú' : 'Docente sin nombre')}
-                                    </div>
-                                    <div className="flex items-start">
-                                        <LessonPlanBadge lessonPlan={lessonPlan} />
-                                    </div>
-                                    <div className="space-y-1 pt-1 text-sm text-zinc-300">
-                                        <p>Creado: {createdAtLabel}</p>
-                                        <p>Última edición: {updatedAtLabel}</p>
-                                    </div>
-                                    <div className="flex flex-wrap gap-3">
-                                        <button
-                                            type="button"
-                                            onClick={() => handleStartLessonPlanSession(lessonPlan)}
-                                            disabled={startingLessonPlanId === lessonPlan.id}
-                                            className="inline-flex items-center gap-2 rounded-2xl border border-emerald-400/30 bg-emerald-400/15 px-4 py-3 font-bold text-emerald-200 transition hover:bg-emerald-400/25 disabled:cursor-not-allowed disabled:opacity-50"
-                                        >
-                                            <PlayCircle className="h-5 w-5" />
-                                            {startingLessonPlanId === lessonPlan.id ? 'Creando...' : 'Crear sesión'}
-                                        </button>
-                                        {activeScope === 'mine' ? (
-                                            <button
-                                                type="button"
-                                                onClick={() => editLessonPlan(lessonPlan.id)}
-                                                className="inline-flex items-center gap-2 rounded-2xl border border-white/10 bg-white/5 px-4 py-3 font-bold text-zinc-200 transition hover:bg-white/10"
-                                            >
-                                                <Pencil className="h-4 w-4" />
-                                                Editar
-                                            </button>
-                                        ) : (
-                                            <button
-                                                type="button"
-                                                onClick={() => duplicateLessonPlan(lessonPlan)}
-                                                disabled={startingLessonPlanId === lessonPlan.id}
-                                                className="inline-flex items-center gap-2 rounded-2xl border border-cyan-400/30 bg-cyan-400/15 px-4 py-3 font-bold text-cyan-200 transition hover:bg-cyan-400/25 disabled:cursor-not-allowed disabled:opacity-50"
-                                            >
-                                                <CopyPlus className="h-4 w-4" />
-                                                {startingLessonPlanId === lessonPlan.id ? 'Guardando...' : 'Guardar copia'}
-                                            </button>
-                                        )}
-                                    </div>
-                                </motion.div>
-                            );
-                        })}
-                    </div>
+                                    </motion.div>
+                                );
+                            })}
+                        </div>
                         <PaginationControls
                             page={lessonPlansPage}
                             totalPages={totalLessonPlanPages}

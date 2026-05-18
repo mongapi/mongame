@@ -112,7 +112,7 @@ export default function ConfigView() {
                 </motion.section>
 
                 {/* ── Cuerpo ── */}
-                <div className="grid gap-5 xl:grid-cols-[1.15fr_0.85fr]">
+                <div className="grid gap-5 xl:grid-cols-[1.35fr_0.65fr]">
 
                     {/* ── Preferencias ── */}
                     <motion.div {...fadeUp(0.06)} className="rounded-[2rem] border border-white/10 bg-zinc-950/55 p-7 backdrop-blur-xl">

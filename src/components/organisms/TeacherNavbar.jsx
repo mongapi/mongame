@@ -2,6 +2,7 @@ import { motion } from 'motion/react';
 import { Home, Gamepad2, Activity, Settings, Power, Library } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { authAPI } from '@/api/api';
+import monlauLogo from '../../public/images/monlau_logo.png';
 import { cn } from '@/lib/utils';
 
 const NavItem = ({ icon: Icon, label, path }) => {
@@ -40,17 +41,15 @@ export default function TeacherNavbar() {
 
     return (
         <motion.nav className="fixed left-0 top-0 h-screen w-20 hover:w-64 bg-zinc-950/80 backdrop-blur-xl border-r border-white/10 z-50 flex flex-col items-center py-8 transition-all duration-500 ease-out group">
-            <div className="mb-12 cursor-pointer" onClick={() => navigate('/dashboard')}>
-                <motion.div
-                    animate={{ rotate: 360 }}
-                    transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
-                    className="w-12 h-12 rounded-full border-2 border-dashed border-blue-500 flex items-center justify-center"
-                >
-                    <div className="w-8 h-8 rounded-full bg-blue-500/20 blur-md absolute" />
-                </motion.div>
+            <div className="mb-12 cursor-pointer flex justify-center w-full" onClick={() => navigate('/dashboard')}>
+                <img
+                    src={monlauLogo}
+                    alt="Monlau Logo"
+                    className="w-12 h-12 object-contain filter drop-shadow-[0_0_12px_rgba(250,204,21,0.8)]"
+                />
             </div>
             <div className="flex-1 w-full px-4 space-y-4">
-                <NavItem icon={Home}     label="INICIO"      path="/dashboard" />
+                <NavItem icon={Home}     label="INICIO"      path="/" />
                 <NavItem icon={Activity} label="DASHBOARD"   path="/dashboard" />
                 <NavItem icon={Library}  label="BIBLIOTECA"  path="/games" />
                 <NavItem icon={Gamepad2} label="CREAR SESIÓN" path="/sessions/create" />

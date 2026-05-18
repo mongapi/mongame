@@ -3,6 +3,7 @@ import { AlertCircle, CheckCircle2, Code2, Eye, Loader, Save } from 'lucide-reac
 import { SessionModeCards } from '@/components/organisms/SessionModeSelector';
 import { validateGameContent } from '@/games/shared/gameContentValidation';
 import { useGameEditor } from '@/hooks/useGameEditor';
+import LoadingScreen from '@/components/ui/LoadingScreen';
 
 export default function GameEditorView() {
     const {
@@ -36,11 +37,7 @@ export default function GameEditorView() {
     } = useGameEditor();
 
     if (isLoading) {
-        return (
-            <div className="min-h-screen flex items-center justify-center text-white font-['Orbitron']">
-                CARGANDO EDITOR...
-            </div>
-        );
+        return <LoadingScreen title="Cargando Editor..." />;
     }
 
     return (

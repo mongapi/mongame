@@ -2,6 +2,7 @@ import { motion } from 'motion/react';
 import { AlertCircle, ArrowDown, ArrowUp, CheckCircle2, Loader, PlusCircle, Save, Trash2 } from 'lucide-react';
 import { SessionModeCards } from '@/components/organisms/SessionModeSelector';
 import { useLessonPlanEditor } from '@/hooks/useLessonPlanEditor';
+import LoadingScreen from '@/components/ui/LoadingScreen';
 
 function SelectedGameCard({ game, index, total, onMoveUp, onMoveDown, onRemove }) {
     return (
@@ -51,7 +52,7 @@ export default function LessonPlanEditorView() {
     } = useLessonPlanEditor();
 
     if (isLoading) {
-        return <div className="min-h-screen flex items-center justify-center text-white font-['Orbitron']">CARGANDO LESSON PLAN...</div>;
+        return <LoadingScreen title="Cargando Lesson Plan..." />;
     }
 
     return (

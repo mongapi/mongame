@@ -1,6 +1,7 @@
 import { Activity, Boxes, Database, Users } from 'lucide-react';
 import { useAdminDashboard } from '@/hooks/useAdminDashboard';
 import { formatDateTime } from '@/lib/formatters';
+import LoadingScreen from '@/components/ui/LoadingScreen';
 
 function MetricCard({ icon: Icon, label, value, tone = 'cyan' }) {
     const tones = {
@@ -27,7 +28,7 @@ export default function AdminDashboardView() {
     const { dashboard, loading, error, quickActions } = useAdminDashboard();
 
     if (loading) {
-        return <div className="min-h-screen flex items-center justify-center text-white font-['Orbitron']">CARGANDO DASHBOARD ADMIN...</div>;
+        return <LoadingScreen title="Cargando Dashboard Admin..." />;
     }
 
     if (error || !dashboard) {

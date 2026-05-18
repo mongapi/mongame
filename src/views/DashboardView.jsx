@@ -6,13 +6,14 @@ import {
 } from "lucide-react";
 import { useTeacherDashboard } from '@/hooks/useTeacherDashboard';
 import { formatDateTime, formatElapsed } from '@/lib/formatters';
+import LoadingScreen from '@/components/ui/LoadingScreen';
 
 const StatusBadge = ({ status }) => {
     const statusConfig = {
-        responding:   { color: "text-yellow-400 bg-yellow-400/10 border-yellow-400/30", icon: BrainCircuit, label: "PENSANDO",  animate: "animate-pulse" },
-        waiting:      { color: "text-green-400 bg-green-400/10 border-green-400/30",    icon: CheckCircle2, label: "LISTO",     animate: "" },
-        active:       { color: "text-cyan-400 bg-cyan-400/10 border-cyan-400/30",       icon: Activity,     label: "ACTIVO",    animate: "" },
-        disconnected: { color: "text-red-400 bg-red-400/10 border-red-400/30",          icon: WifiOff,      label: "OFFLINE",   animate: "" },
+        responding: { color: "text-yellow-400 bg-yellow-400/10 border-yellow-400/30", icon: BrainCircuit, label: "PENSANDO", animate: "animate-pulse" },
+        waiting: { color: "text-green-400 bg-green-400/10 border-green-400/30", icon: CheckCircle2, label: "LISTO", animate: "" },
+        active: { color: "text-cyan-400 bg-cyan-400/10 border-cyan-400/30", icon: Activity, label: "ACTIVO", animate: "" },
+        disconnected: { color: "text-red-400 bg-red-400/10 border-red-400/30", icon: WifiOff, label: "OFFLINE", animate: "" },
     };
     const config = statusConfig[status] || statusConfig.active;
     const Icon = config.icon;
@@ -79,7 +80,7 @@ export default function TeacherDashboard() {
         openRecentSession,
     } = useTeacherDashboard();
 
-    if (loading) return <div className="min-h-screen flex items-center justify-center text-white font-['Orbitron']">CARGANDO SESIÓN...</div>;
+    if (loading) return <LoadingScreen title="Cargando Sesión..." />;
     if (!sessionId) {
         if (recentSessions.length === 0) {
             return (
@@ -131,34 +132,35 @@ export default function TeacherDashboard() {
                                 : recentSession.game?.game_type?.name || 'Juego';
 
                             return (
-                            <button
-                                key={recentSession.id}
-                                type="button"
-                                onClick={() => openRecentSession(recentSession.id)}
-                                className="grid w-full grid-cols-[110px_minmax(0,1.2fr)_160px_210px_140px] items-center gap-4 rounded-2xl border border-white/10 bg-white/5 px-5 py-4 text-left transition hover:bg-white/10"
-                            >
-                                <span className="font-['Orbitron'] text-lg font-black text-white">#{recentSession.id}</span>
-                                <div className="min-w-0">
-                                    <p className="truncate font-bold text-white">{recentSession.lesson_plan?.name || recentSession.game?.name || 'Sesión sin título'}</p>
-                                    <p className="truncate text-sm text-zinc-500">{sessionTypeLabel}</p>
-                                </div>
-                                <span className="text-sm uppercase text-zinc-400">{recentSession.status}</span>
-                                <div className="text-sm text-zinc-500">
-                                    <p>Creada: {formatDateTime(recentSession.created_at)}</p>
-                                    <p>Actualizada: {formatDateTime(recentSession.updated_at)}</p>
-                                </div>
-                                <div className="text-right text-sm text-zinc-400">
-                                    <p className="font-semibold text-white">PIN {recentSession.pin}</p>
-                                    <p>Fase {Number(recentSession.current_phase_index ?? 0) + 1}/{recentSession.total_phases ?? 1}</p>
-                                    <p>{recentSession.sessionModeShortLabel}</p>
-                                </div>
-                            </button>
-                        );})}
+                                <button
+                                    key={recentSession.id}
+                                    type="button"
+                                    onClick={() => openRecentSession(recentSession.id)}
+                                    className="grid w-full grid-cols-[110px_minmax(0,1.2fr)_160px_210px_140px] items-center gap-4 rounded-2xl border border-white/10 bg-white/5 px-5 py-4 text-left transition hover:bg-white/10"
+                                >
+                                    <span className="font-['Orbitron'] text-lg font-black text-white">#{recentSession.id}</span>
+                                    <div className="min-w-0">
+                                        <p className="truncate font-bold text-white">{recentSession.lesson_plan?.name || recentSession.game?.name || 'Sesión sin título'}</p>
+                                        <p className="truncate text-sm text-zinc-500">{sessionTypeLabel}</p>
+                                    </div>
+                                    <span className="text-sm uppercase text-zinc-400">{recentSession.status}</span>
+                                    <div className="text-sm text-zinc-500">
+                                        <p>Creada: {formatDateTime(recentSession.created_at)}</p>
+                                        <p>Actualizada: {formatDateTime(recentSession.updated_at)}</p>
+                                    </div>
+                                    <div className="text-right text-sm text-zinc-400">
+                                        <p className="font-semibold text-white">PIN {recentSession.pin}</p>
+                                        <p>Fase {Number(recentSession.current_phase_index ?? 0) + 1}/{recentSession.total_phases ?? 1}</p>
+                                        <p>{recentSession.sessionModeShortLabel}</p>
+                                    </div>
+                                </button>
+                            );
+                        })}
                     </div>
 
                     {totalRecentSessionsPages > 1 ? (
                         <div className="mt-6 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-white/10 bg-white/5 px-4 py-3">
-                            <p className="text-sm text-zinc-400">Paginación de sesiones · Página {recentSessionsPage} de {totalRecentSessionsPages}</p>
+                            <p className="text-sm text-zinc-400">Página {recentSessionsPage} de {totalRecentSessionsPages}</p>
                             <div className="flex items-center gap-3">
                                 <button
                                     type="button"
