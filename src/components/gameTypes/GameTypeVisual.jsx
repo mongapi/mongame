@@ -1,4 +1,4 @@
-import { Box, Brain, Clock, Layers, Search, Shapes, Shuffle, Sparkles, Target, Type } from 'lucide-react';
+import { Box, Brain, Clock, HelpCircle, Layers, Search, Shapes, Sun, Target, Type, User } from 'lucide-react';
 
 const GAME_TYPE_META_BY_CODE = {
     quiz: { icon: Brain, color: 'text-purple-400', previewType: 'quiz' },
@@ -6,11 +6,11 @@ const GAME_TYPE_META_BY_CODE = {
     filling_blanks: { icon: Type, color: 'text-green-400', previewType: 'blank' },
     timeline: { icon: Clock, color: 'text-yellow-400', previewType: 'timeline' },
     shooting: { icon: Target, color: 'text-red-400', previewType: 'shooter' },
-    guess_who: { icon: Box, color: 'text-cyan-400', previewType: 'guess' },
+    guess_who: { icon: User, color: 'text-cyan-400', previewType: 'guess' },
     memory3d: { icon: Layers, color: 'text-blue-300', previewType: 'memory3d' },
-    orbital: { icon: Shuffle, color: 'text-orange-400', previewType: 'orbital' },
-    orbital_order: { icon: Shuffle, color: 'text-orange-400', previewType: 'orbital' },
-    hangman: { icon: Sparkles, color: 'text-lime-400', previewType: 'hangman' },
+    orbital: { icon: Sun, color: 'text-orange-400', previewType: 'orbital' },
+    orbital_order: { icon: Sun, color: 'text-orange-400', previewType: 'orbital' },
+    hangman: { icon: HelpCircle, color: 'text-lime-400', previewType: 'hangman' },
 };
 
 export function getGameTypeVisualMeta(typeCode) {
@@ -30,7 +30,7 @@ export function GameTypeIconBadge({ icon: Icon, color, className = '' }) {
 }
 
 export function GameTypePreview({ type }) {
-    const base = 'h-32 rounded-lg border overflow-hidden relative';
+    const base = 'h-32 rounded-2xl border overflow-hidden relative';
 
     if (type === 'quiz') {
         return (
@@ -93,14 +93,55 @@ export function GameTypePreview({ type }) {
 
     if (type === 'timeline') {
         return (
-            <div className={`${base} bg-amber-950/40 border-amber-700/40 p-3 flex flex-col justify-between`}>
-                <div className="absolute left-6 top-3 bottom-3 w-0.5 bg-amber-600/30 rounded" />
-                {[{ width: '60%' }, { width: '45%' }, { width: '75%' }, { width: '50%' }].map(({ width }, index) => (
-                    <div key={index} className="flex items-center gap-2 ml-0.5">
-                        <div className="w-2.5 h-2.5 rounded-full bg-amber-400 border-2 border-amber-900 shadow-[0_0_6px_rgba(251,191,36,0.5)] shrink-0" />
-                        <div className="flex-1 h-4 rounded bg-amber-500/20 border border-amber-500/30" style={{ width }} />
-                    </div>
-                ))}
+            <div className={`${base} bg-amber-950/40 border-amber-700/40`}>
+                <div className="relative flex h-full w-full items-center justify-between">
+                    {/* Magical Temporal SVG */}
+                    <svg viewBox="0 0 200 100" className="h-full w-full stroke-amber-400 fill-none" strokeLinecap="round" strokeLinejoin="round">
+                        {/* Temporal Timeline Path */}
+                        <path d="M 15 50 L 175 50" className="stroke-amber-500/40" strokeWidth="2.5" strokeDasharray="5 4" />
+                        <path d="M 15 50 L 175 50" className="stroke-amber-300/15" strokeWidth="6" />
+
+                        {/* Connectors */}
+                        <path d="M 50 50 L 50 26" className="stroke-amber-500/50" strokeWidth="1.2" strokeDasharray="2 2" />
+                        <path d="M 90 50 L 90 74" className="stroke-amber-500/50" strokeWidth="1.2" strokeDasharray="2 2" />
+                        <path d="M 130 50 L 130 26" className="stroke-amber-500/50" strokeWidth="1.2" strokeDasharray="2 2" />
+                        <path d="M 170 50 L 170 74" className="stroke-amber-500/50" strokeWidth="1.2" strokeDasharray="2 2" />
+
+                        {/* Orbs */}
+                        {/* Orb 1: Above */}
+                        <circle cx="50" cy="26" r="9" className="fill-amber-500/10 stroke-none" />
+                        <circle cx="50" cy="26" r="5.5" className="fill-amber-400 stroke-amber-200" strokeWidth="1.5" />
+                        <circle cx="50" cy="26" r="2" className="fill-white stroke-none" />
+
+                        {/* Orb 2: Below (Active / Being Fixed) */}
+                        <circle cx="90" cy="74" r="10" className="fill-amber-500/20 stroke-none" />
+                        <circle cx="90" cy="74" r="5.5" className="fill-amber-400 stroke-amber-200" strokeWidth="1.5" />
+                        <circle cx="90" cy="74" r="2" className="fill-white stroke-none" />
+                        <circle cx="90" cy="74" r="8" className="stroke-amber-300/40 fill-none" strokeWidth="1" strokeDasharray="1.5 1.5" />
+
+                        {/* Orb 3: Above */}
+                        <circle cx="130" cy="26" r="9" className="fill-amber-500/10 stroke-none" />
+                        <circle cx="130" cy="26" r="5.5" className="fill-amber-400 stroke-amber-200" strokeWidth="1.5" />
+                        <circle cx="130" cy="26" r="2" className="fill-white stroke-none" />
+
+                        {/* Orb 4: Below */}
+                        <circle cx="170" cy="74" r="9" className="fill-amber-500/10 stroke-none" />
+                        <circle cx="170" cy="74" r="5.5" className="fill-amber-400 stroke-amber-200" strokeWidth="1.5" />
+                        <circle cx="170" cy="74" r="2" className="fill-white stroke-none" />
+
+                        {/* Temporal Portal Emitters */}
+                        {/* Left Emitter */}
+                        <circle cx="15" cy="50" r="5" className="fill-amber-950 stroke-amber-500" strokeWidth="2" />
+                        <circle cx="15" cy="50" r="1.5" className="fill-white stroke-none" />
+
+                        {/* Right Main Portal */}
+                        <g className="translate-x-[178px] translate-y-[25px]">
+                            <ellipse cx="6" cy="25" rx="6" ry="24" className="stroke-amber-400/20 fill-amber-500/5" strokeWidth="3" />
+                            <ellipse cx="6" cy="25" rx="4" ry="20" className="stroke-amber-400/80 fill-none" strokeWidth="2" />
+                            <ellipse cx="6" cy="25" rx="1.5" ry="12" className="stroke-amber-200/95 fill-amber-300/20" strokeWidth="1.5" />
+                        </g>
+                    </svg>
+                </div>
             </div>
         );
     }
@@ -128,7 +169,7 @@ export function GameTypePreview({ type }) {
             <div className={`${base} bg-cyan-950/40 border-cyan-700/40 flex items-center justify-center gap-4`}>
                 <div className="flex flex-col items-center gap-2">
                     <div className="w-10 h-10 rounded-full bg-cyan-500/20 border border-cyan-500/30 flex items-center justify-center">
-                        <Box className="w-5 h-5 text-cyan-400/60" />
+                        <User className="w-5 h-5 text-cyan-400/60" />
                     </div>
                     <div className="flex gap-1">
                         {[...Array(5)].map((_, index) => (
@@ -160,8 +201,8 @@ export function GameTypePreview({ type }) {
 
     if (type === 'orbital') {
         return (
-            <div className={`${base} bg-orange-950/40 border-orange-700/40 p-3`}>
-                <div className="relative flex h-full items-center justify-center overflow-hidden rounded-md border border-orange-500/15 bg-radial-[circle_at_center] from-orange-200/10 via-orange-500/5 to-transparent">
+            <div className={`${base} bg-orange-950/40 border-orange-700/40`}>
+                <div className="relative flex h-full w-full items-center justify-center overflow-hidden bg-radial-[circle_at_center] from-orange-200/10 via-orange-500/5 to-transparent">
                     <div className="absolute h-10 w-10 rounded-full bg-amber-300/70 shadow-[0_0_20px_rgba(252,211,77,0.7)]" />
                     {[36, 58, 80].map((size, index) => (
                         <div
@@ -185,9 +226,6 @@ export function GameTypePreview({ type }) {
                             style={{ top: planet.top, left: planet.left }}
                         />
                     ))}
-                    <div className="absolute bottom-2 right-2 rounded-full border border-orange-400/20 bg-black/25 px-2 py-1 text-[9px] font-bold uppercase tracking-[0.22em] text-orange-200/75">
-                        Orbitas
-                    </div>
                 </div>
             </div>
         );
@@ -195,24 +233,29 @@ export function GameTypePreview({ type }) {
 
     if (type === 'hangman') {
         return (
-            <div className={`${base} bg-lime-950/40 border-lime-700/40 p-3`}>
-                <div className="relative flex h-full items-center justify-between rounded-md border border-lime-500/20 bg-linear-to-br from-lime-300/8 via-transparent to-emerald-300/8 px-4">
-                    <div className="relative h-20 w-20 shrink-0">
-                        <div className="absolute bottom-0 left-2 h-1 w-12 rounded-full bg-lime-200/40" />
-                        <div className="absolute bottom-0 left-6 h-16 w-1 rounded-full bg-lime-200/50" />
-                        <div className="absolute left-6 top-1 h-1 w-9 rounded-full bg-lime-200/50" />
-                        <div className="absolute left-14 top-1 h-4 w-0.5 rounded-full bg-lime-200/50" />
-                        <div className="absolute left-[3.15rem] top-5 h-4 w-4 rounded-full border-2 border-lime-200/70" />
-                        <div className="absolute left-[3.58rem] top-9 h-5 w-0.5 rounded-full bg-lime-200/70" />
-                        <div className="absolute left-[3.2rem] top-10 h-0.5 w-3 -rotate-30 rounded-full bg-lime-200/70" />
-                        <div className="absolute left-[3.55rem] top-10 h-0.5 w-3 rotate-30 rounded-full bg-lime-200/70" />
-                        <div className="absolute left-[3.2rem] top-[3.55rem] h-3 w-0.5 -rotate-25 rounded-full bg-lime-200/70" />
-                        <div className="absolute left-[3.55rem] top-[3.55rem] h-3 w-0.5 rotate-25 rounded-full bg-lime-200/70" />
-                    </div>
-                    <div className="flex flex-1 flex-col items-end gap-3">
-                        <div className="rounded-full border border-lime-400/20 bg-black/20 px-2 py-1 text-[9px] font-bold uppercase tracking-[0.22em] text-lime-200/75">
-                            Pista
-                        </div>
+            <div className={`${base} bg-lime-950/40 border-lime-700/40`}>
+                <div className="relative flex h-full w-full items-center justify-between bg-linear-to-br from-lime-300/8 via-transparent to-emerald-300/8 px-6">
+                    {/* Gallows and Stick Figure SVG */}
+                    <svg viewBox="0 0 100 100" className="h-20 w-20 shrink-0 stroke-lime-200/80 fill-none stroke-[3.5]" strokeLinecap="round" strokeLinejoin="round">
+                        {/* Gallows */}
+                        <path d="M 20 80 L 60 80 M 35 80 L 35 20 L 70 20" className="stroke-lime-200/45" />
+                        {/* Rope */}
+                        <path d="M 70 20 L 70 34" className="stroke-lime-200/60" />
+                        {/* Head */}
+                        <circle cx="70" cy="41" r="7" className="stroke-lime-200/80" />
+                        {/* Torso */}
+                        <path d="M 70 48 L 70 64" className="stroke-lime-200/80" />
+                        {/* Left Arm */}
+                        <path d="M 70 52 L 60 60" className="stroke-lime-200/80" />
+                        {/* Right Arm */}
+                        <path d="M 70 52 L 80 60" className="stroke-lime-200/80" />
+                        {/* Left Leg */}
+                        <path d="M 70 64 L 61 76" className="stroke-lime-200/80" />
+                        {/* Right Leg */}
+                        <path d="M 70 64 L 79 76" className="stroke-lime-200/80" />
+                    </svg>
+
+                    <div className="flex flex-col items-end gap-3.5 pr-2">
                         <div className="flex gap-1.5">
                             {['C', '_', 'D', '_', 'G', 'O'].map((character, index) => (
                                 <div key={index} className="flex flex-col items-center gap-1">

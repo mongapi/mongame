@@ -1,0 +1,83 @@
+================================================================================
+GUÍA DE IMPLEMENTACIÓN: DE MODELOS 3D (.GLB/.GLTF) A COMPONENTES REACT (R3F)
+================================================================================
+
+Esta guía resume el flujo de trabajo en este proyecto para importar modelos 3D,
+optimizarlos con Drake compression, y convertirlos en componentes listos para
+usar en React Three Fiber (R3F).
+
+1. DÓNDE COLOCAR LOS ARCHIVOS ORIGINALES
+--------------------------------------------------------------------------------
+Los modelos 3D descargados (por ejemplo, desde Sketchfab o creados por ti) deben
+guardarse en una carpeta dedicada bajo la siguiente ruta del workspace:
+  src/public/3d-meshes/<nombre_del_modelo>/
+
+Generalmente, aquí se incluye:
+  - scene.gltf (o scene.glb)
+  - scene.bin
+  - La carpeta /textures con las imágenes del modelo
+
+2. OPTIMIZACIÓN Y CONVERSIÓN CON GLTFJSX
+--------------------------------------------------------------------------------
+Los modelos en bruto suelen pesar demasiado (decenas de megabytes). Para que la
+aplicación cargue de inmediato, se utiliza el comando `gltfjsx` con la bandera
+`--transform`, que comprime texturas y geometrías drásticamente usando Draco.
+
+** IMPORTANTE **: Si usas Windows, PowerShell puede tener bloqueados los scripts
+de npx. Ejecuta siempre el comando usando cmd.exe:
+
+Comando en terminal (CMD):
+  cmd /c "cd src/public/3d-meshes/<carpeta_modelo> && npx -y gltfjsx@latest scene.gltf --transform"
+
+Este comando generará dos archivos nuevos en la carpeta del modelo:
+  - scene.jsx (El componente React con la estructura de mallas de Three.js)
+  - scene-transformed.glb (El modelo 3D comprimido al máximo)
+
+3. CÓMO INCORPORARLO AL CÓDIGO DEL PROYECTO
+--------------------------------------------------------------------------------
+Para tener los modelos ordenados, muévelos a la carpeta de componentes 3D:
+Ruta destino recomendada:
+  src/components/canvas3D/meshes/<environments_o_planets>/
+
+Pasos a seguir:
+  a. Renombra "scene.jsx" a un nombre descriptivo, ej: "Sun.jsx" o "Planet02.jsx".
+  b. Renombra "scene-transformed.glb" al mismo nombre, ej: "sun_02.glb" o "planet_02.glb".
+  c. Mueve ambos archivos a la ruta destino de components.
+
+4. CÓMO ADAPTAR EL ARCHIVO .JSX GENERADO
+--------------------------------------------------------------------------------
+Abre tu nuevo archivo `.jsx` y adáptalo para importar el modelo `.glb` usando
+el cargador de Vite y exportar el componente con el nombre correcto.
+Ejemplo de estructura final (ej. src/components/canvas3D/meshes/environments/Sun.jsx):
+
+--------------------------------------------------------------------------------
+import React from 'react'
+import { useGLTF } from '@react-three/drei'
+import modelUrl from './sun_02.glb' // Importante: usar import de Vite para el .glb
+
+export function Sun(props) {
+  const { nodes, materials } = useGLTF(modelUrl)
+  return (
+    <group {...props} dispose={null}>
+      {/* Mallas auto-generadas */}
+      <mesh geometry={nodes.Object_2.geometry} material={materials.material} rotation={[-Math.PI / 2, 0, 0]} />
+    </group>
+  )
+}
+
+useGLTF.preload(modelUrl) // Precarga automática para evitar demoras visuales
+--------------------------------------------------------------------------------
+
+5. CÓMO UTILIZARLO EN TUS COMPONENTES CANVAS
+--------------------------------------------------------------------------------
+Ahora puedes importar tu modelo 3D directamente como cualquier componente React:
+
+  import { Sun } from '@/components/canvas3D/meshes/environments/Sun';
+
+  // Y dentro del Canvas 3D:
+  <Float speed={2}>
+    <group scale={1.5}>
+      <Sun />
+    </group>
+  </Float>
+================================================================================

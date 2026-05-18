@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useRef, useEffect } from 'react';
+import React, { useMemo, useState, useRef, useEffect, Suspense } from 'react';
 import { useFrame } from '@react-three/fiber';
 import { Text, Float, Sparkles, Html } from '@react-three/drei';
 import * as THREE from 'three';
@@ -10,19 +10,20 @@ import { GameErrorState, GameLoadingState } from '@/games/shared/GameScreenShell
 import { GameExitButton, GameSessionFinishedOverlay, useGameSessionUi } from '@/games/shared/GameSessionActions';
 import { useSessionGame } from '@/hooks/useSessionGame';
 import { validateGameContent } from '@/games/shared/gameContentValidation';
+import { EnemyBot } from '@/components/canvas3D/meshes/characters/EnemyBot';
 
 function resolveShootingContent(gameContent) {
   const questions = Array.isArray(gameContent?.questions)
     ? gameContent.questions.map((question, questionIndex) => ({
-        id: question.id ?? `shooting-${questionIndex + 1}`,
-        q: question.text,
-        answers: (question.options ?? []).map((option, optionIndex) => ({
-          text: option,
-          correct: Number(question.correct) === optionIndex,
-          value: optionIndex,
-          id: `${question.id ?? questionIndex}-${optionIndex}`,
-        })),
-      }))
+      id: question.id ?? `shooting-${questionIndex + 1}`,
+      q: question.text,
+      answers: (question.options ?? []).map((option, optionIndex) => ({
+        text: option,
+        correct: Number(question.correct) === optionIndex,
+        value: optionIndex,
+        id: `${question.id ?? questionIndex}-${optionIndex}`,
+      })),
+    }))
     : [];
 
   return { questions };
@@ -31,49 +32,72 @@ function resolveShootingContent(gameContent) {
 const INTER_FONT = "https://fonts.gstatic.com/s/inter/v12/UcCO3FwrK3iLTeHuS_fvQtMwCp50KnMw2boKoduKmMEVuLyeMZhrib2Bg-4.ttf";
 
 // The Computer Enemy (Boss)
-const EnemyBoss = ({ health, maxHealth, isComputing, tookDamage }) => {
+const EnemyBoss = ({ health, maxHealth, isComputing, tookDamage, isEntering, isDying }) => {
   const meshRef = useRef();
 
   useFrame((state, delta) => {
     if (!meshRef.current) return;
 
-    // Constant rotation
-    meshRef.current.rotation.y += delta * 0.5;
-    meshRef.current.rotation.x += delta * 0.2;
+    // Bobbing/hover effect & Hit shake
+    if (isDying) {
+      // Boss is dead/dying: keep it completely still so the death animation plays cleanly
+      meshRef.current.position.y = -2.4;
+      meshRef.current.position.x = 0;
+    } else if (!tookDamage) {
+      // Normal floating bobbing effect
+      meshRef.current.position.y = -2.4 + Math.sin(state.clock.elapsedTime * 2) * 0.15;
+      meshRef.current.position.x = 0;
+    } else {
+      // Rapid horizontal hit shake (X axis) when taking damage (even the final blow!)
+      meshRef.current.position.y = -2.4;
+      meshRef.current.position.x = Math.sin(state.clock.elapsedTime * 50) * 0.15;
+    }
 
-    // Pulsating effect based on computing state and damage
-    const targetScale = tookDamage ? 1.5 : (isComputing ? 1.2 + Math.sin(state.clock.elapsedTime * 10) * 0.1 : 1);
+    // Scale physics
+    const baseScale = 0.75;
+    const targetScale = tookDamage ? baseScale * 1.3 : (isComputing ? baseScale * 1.1 + Math.sin(state.clock.elapsedTime * 10) * 0.05 : baseScale);
     meshRef.current.scale.lerp(new THREE.Vector3(targetScale, targetScale, targetScale), 0.1);
   });
 
   const healthPercent = health / maxHealth;
-  const color = tookDamage ? '#ef4444' : (healthPercent > 0.5 ? '#8b5cf6' : '#eab308');
 
   return (
-    <group position={[0, 4, -8]}>
-      <mesh ref={meshRef}>
-        <octahedronGeometry args={[2, 0]} />
-        <meshStandardMaterial
-          color={color}
-          emissive={color}
-          emissiveIntensity={tookDamage ? 1 : 0.5}
-          wireframe={healthPercent <= 0.3 && !tookDamage}
-        />
-      </mesh>
-      <Text position={[0, 3, 0]} fontSize={0.5} color="#cbd5e1" font={INTER_FONT} anchorX="center" anchorY="bottom">
+    <group position={[0, 2.0, -7]}>
+      <group ref={meshRef} position={[0, -2.4, 0]} rotation={[0, 0, 0]} scale={0.75}>
+        <Suspense fallback={null}>
+          <EnemyBot
+            tookDamage={tookDamage}
+            animationState={
+              isDying
+                ? 'death'
+                : isEntering
+                  ? 'entrance'
+                  : isComputing
+                    ? 'attack'
+                    : 'idle'
+            }
+          />
+        </Suspense>
+      </group>
+      <Text position={[0, 2.2, 0.5]} fontSize={0.4} color="#cbd5e1" font={INTER_FONT} anchorX="center" anchorY="bottom">
         SISTEMA CENTRAL
       </Text>
       {/* Enemy Health Bar */}
-      <mesh position={[0, 2.5, 0]}>
-        <planeGeometry args={[4, 0.2]} />
+      <mesh position={[0, 1.8, 0.5]}>
+        <planeGeometry args={[4, 0.15]} />
         <meshBasicMaterial color="#1e293b" />
       </mesh>
-      <mesh position={[-2 + (4 * healthPercent) / 2, 2.5, 0.01]}>
-        <planeGeometry args={[4 * healthPercent, 0.2]} />
+      <mesh position={[-2 + (4 * healthPercent) / 2, 1.8, 0.51]}>
+        <planeGeometry args={[4 * healthPercent, 0.15]} />
         <meshBasicMaterial color={tookDamage ? "#ef4444" : "#10b981"} />
       </mesh>
+      {/* HP Numeric Text */}
+      <Text position={[0, 1.4, 0.5]} fontSize={0.22} color="#94a3b8" font={INTER_FONT} anchorX="center" anchorY="bottom">
+        {`${health} / ${maxHealth} HP`}
+      </Text>
 
-      {isComputing && <Sparkles count={100} scale={5} size={4} speed={2} opacity={0.5} color="#ec4899" />}
+      {/* Cyber particles when computing/attacking */}
+      {isComputing && !tookDamage && <Sparkles count={100} scale={5} size={4} speed={2} opacity={0.5} color="#ec4899" />}
     </group>
   );
 };
@@ -104,7 +128,7 @@ const AnswerTarget = ({ answer, position, onClick, disabled }) => {
     >
       <Float speed={2} rotationIntensity={0.2} floatIntensity={0.5}>
         <mesh castShadow>
-          <boxGeometry args={[3.2, 1.2, 0.4]} />
+          <boxGeometry args={[2.5, 0.9, 0.3]} />
           <meshStandardMaterial
             color={color}
             emissive={color}
@@ -115,13 +139,13 @@ const AnswerTarget = ({ answer, position, onClick, disabled }) => {
         </mesh>
         {/* Frontera de neón simulada */}
         <mesh position={[0, 0, 0.01]}>
-          <boxGeometry args={[3.3, 1.3, 0.38]} />
+          <boxGeometry args={[2.55, 0.95, 0.28]} />
           <meshBasicMaterial color={hovered ? "#fbcfe8" : "#93c5fd"} wireframe transparent opacity={0.5} />
         </mesh>
         <Text
           position={[0, 0, 0.21]}
-          fontSize={0.28}
-          maxWidth={3}
+          fontSize={0.22}
+          maxWidth={2.3}
           textAlign="center"
           color="white"
           anchorX="center"
@@ -161,6 +185,23 @@ export default function Shooter3D() {
   const [startedAt, setStartedAt] = useState(() => Date.now());
   const { sessionFinished, handleExit, exitLabel, finishActionLabel } = useGameSessionUi({ session, sessionId, isPreview: false });
 
+  // Controlar la animación de entrada al iniciar o reiniciar
+  const [isEntering, setIsEntering] = useState(true);
+  useEffect(() => {
+    if (gameState === 'playing' && qIndex === 0) {
+      setIsEntering(true);
+      const timer = setTimeout(() => {
+        setIsEntering(false);
+      }, 3000);
+      return () => clearTimeout(timer);
+    } else {
+      setIsEntering(false);
+    }
+  }, [gameState, qIndex]);
+
+  // Estado para la muerte retrasada y dramática
+  const [isDying, setIsDying] = useState(false);
+
   useEffect(() => {
     setEnemyHealth(maxEnemyHealth);
     setQIndex(0);
@@ -169,6 +210,7 @@ export default function Shooter3D() {
     setFeedback(null);
     setIsComputing(false);
     setTookDamage(false);
+    setIsDying(false);
     setStartedAt(Date.now());
     setError('');
   }, [maxEnemyHealth]);
@@ -195,32 +237,59 @@ export default function Shooter3D() {
       }
     }
 
+    const nextScore = score + (answer.correct ? 100 : -50);
+    const nextHealth = answer.correct ? Math.max(0, enemyHealth - 100) : enemyHealth;
+
     if (answer.correct) {
       setFeedback({ text: "¡IMPACTO CRÍTICO!", type: "success" });
       setTookDamage(true);
-      setScore(prev => prev + 100);
-      setEnemyHealth(prev => Math.max(0, prev - 100));
+      setScore(nextScore);
+      setEnemyHealth(nextHealth);
     } else {
       setFeedback({ text: "¡FALLASTE! El sistema ha contraatacado.", type: "error" });
-      setScore(prev => Math.max(0, prev - 50));
+      setScore(Math.max(0, nextScore));
+      setEnemyHealth(nextHealth);
     }
 
-    setTimeout(() => {
-      setTookDamage(false);
-      setFeedback(null);
-      setIsComputing(false);
+    const isLastQuestion = qIndex === questions.length - 1;
+    const isDefeated = nextHealth === 0;
 
-      if (qIndex < questions.length - 1) {
-        setQIndex(prev => prev + 1);
-      } else {
-        // En of game
-        if (score > 0 || enemyHealth === 0) {
-          setGameState('won');
+    if (isDefeated) {
+      // El robot ha perdido toda su vida: 
+      // 1. Durante los primeros 2 segundos, se muestra el temblor (tookDamage es true) y mantiene su animación activa.
+      // 2. Después de 2 segundos, deja de temblar y activa la animación de muerte (isDying es true).
+      // 3. Después de 6 segundos en total, se muestra la pantalla de victoria (gameState = won).
+
+      // Timer para transicionar del temblor a la muerte a los 2 segundos
+      setTimeout(() => {
+        setTookDamage(false);
+        setIsDying(true);
+      }, 2000);
+
+      // Timer para terminar la partida a los 6 segundos
+      setTimeout(() => {
+        setFeedback(null);
+        setIsComputing(false);
+        setIsDying(false);
+        setGameState('won');
+      }, 6000);
+    } else {
+      setTimeout(() => {
+        setTookDamage(false);
+        setFeedback(null);
+        setIsComputing(false);
+
+        if (isLastQuestion) {
+          if (nextScore > 0) {
+            setGameState('won');
+          } else {
+            setGameState('lost');
+          }
         } else {
-          setGameState('lost');
+          setQIndex(prev => prev + 1);
         }
-      }
-    }, 2000);
+      }, 2000);
+    }
   };
 
   if (isLoading) {
@@ -239,6 +308,8 @@ export default function Shooter3D() {
     setFeedback(null);
     setIsComputing(false);
     setTookDamage(false);
+    setIsEntering(true);
+    setIsDying(false);
   };
 
   // Posiciones de los "objetivos" (las 4 respuestas) en la escena
@@ -291,25 +362,11 @@ export default function Shooter3D() {
           </AnimatePresence>
         </div>
 
-        <div className="bg-zinc-900/80 backdrop-blur-md px-6 py-4 rounded-2xl border border-white/10 border-t-rose-500/50 shadow-lg shadow-rose-500/10 pointer-events-auto min-w-50 text-right">
-          <h2 className="text-sm font-bold text-rose-400 flex items-center justify-end gap-2 mb-2 uppercase tracking-widest">
-            Sistema Enemigo <ShieldAlert className="w-4 h-4" />
-          </h2>
-          <div className="w-full bg-zinc-800 rounded-full h-3 overflow-hidden">
-            <motion.div
-              className="bg-linear-to-r from-rose-600 to-orange-500 h-full"
-              initial={{ width: '100%' }}
-              animate={{ width: `${(enemyHealth / maxEnemyHealth) * 100}%` }}
-              transition={{ type: 'spring', bounce: 0.2 }}
-            />
-          </div>
-          <p className="text-zinc-500 text-xs font-mono mt-1 pr-1">{enemyHealth} / {maxEnemyHealth} HP</p>
-        </div>
       </header>
 
       {/* Main Game Interface (Overlaid Question) */}
       {gameState === 'playing' && (
-        <div className="absolute inset-x-0 top-170 z-10 flex justify-center pointer-events-none">
+        <div className="absolute inset-x-0 bottom-12 z-10 flex justify-center pointer-events-none">
           <motion.div
             key={qIndex}
             initial={{ opacity: 0, y: -20 }}
@@ -334,7 +391,7 @@ export default function Shooter3D() {
       {/* 3D Canvas */}
       <main className="flex-1 w-full h-full">
         {/* We reuse RoomCanvas but adjust styling or pass children directly */}
-        <RoomCanvas cameraPosition={[0, 4, 12]}>
+        <RoomCanvas cameraPosition={[0, 2.2, 9.5]}>
           {/* Escena dinámica */}
           <ambientLight intensity={0.4} />
           <pointLight position={[0, 10, 0]} intensity={1.5} color="#4f46e5" />
@@ -344,6 +401,8 @@ export default function Shooter3D() {
             maxHealth={maxEnemyHealth}
             isComputing={isComputing}
             tookDamage={tookDamage}
+            isEntering={isEntering}
+            isDying={isDying}
           />
 
           {gameState === 'playing' && !isComputing && currentQ.answers.map((ans, idx) => (

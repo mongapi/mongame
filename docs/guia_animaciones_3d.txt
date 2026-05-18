@@ -1,0 +1,187 @@
+================================================================================
+GUÍA DE IMPLEMENTACIÓN: CÓMO DETECTAR Y USAR ANIMACIONES 3D EN REACT (R3F)
+================================================================================
+
+Esta guía detalla cómo identificar las animaciones empacadas dentro de cualquier 
+modelo 3D (.glb o .gltf) y cómo controlarlas dinámicamente desde tus componentes 
+de React Three Fiber (R3F) utilizando hooks modernos.
+
+--------------------------------------------------------------------------------
+1. CÓMO DETECTAR QUÉ ANIMACIONES TRAE UN MODELO .GLB
+--------------------------------------------------------------------------------
+
+Antes de escribir código de control, necesitas conocer los nombres exactos (keys)
+de los clips de animación almacenados en el modelo. Tienes tres formas sencillas:
+
+Método A: Debug por Consola en Desarrollo (Rápido)
+  Dentro del hook useEffect del componente, puedes listar los clips disponibles:
+  ```javascript
+  const { actions } = useAnimations(animations, group);
+  useEffect(() => {
+    console.log("Animaciones disponibles:", Object.keys(actions));
+  }, [actions]);
+  ```
+
+Método B: Usar un Visor Web
+  Arrastra tu archivo `.glb` a uno de estos visores interactivos gratuitos:
+  - https://gltf-viewer.donmccurdy.com/  (Muestra la estructura y lista de animaciones)
+  - https://sandbox.babylonjs.com/
+  Ahí podrás ver los nombres de cada clip y reproducirlos.
+
+Método C: Script rápido en Node.js (Sin levantar el servidor)
+  Dado que los archivos GLB contienen una cabecera JSON, puedes leerla con un script 
+  como este en la consola de tu proyecto para ver la lista al instante:
+  ```javascript
+  const fs = require('fs');
+  const buffer = fs.readFileSync('tu_modelo.glb');
+  const jsonLength = buffer.readUInt32LE(12);
+  const jsonChunk = buffer.toString('utf8', 20, 20 + jsonLength);
+  const gltf = JSON.parse(jsonChunk);
+  console.log("Clips:", gltf.animations.map(a => a.name));
+  ```
+
+--------------------------------------------------------------------------------
+2. CÓMO CARGAR Y CONTROLAR LAS ANIMACIONES EN REACT THREE FIBER
+--------------------------------------------------------------------------------
+
+Para controlar las animaciones de forma reactiva a partir de props o estados de tu 
+juego (ej. "idle", "attack", "death"), utiliza el hook `useAnimations` de `@react-three/drei`.
+
+PASO 1: Importar los elementos necesarios
+  ```javascript
+  import React, { useEffect, useMemo, useRef } from 'react';
+  import { useGLTF, useAnimations } from '@react-three/drei';
+  import { useGraph } from '@react-three/fiber';
+  import * as SkeletonUtils from 'three/examples/jsm/utils/SkeletonUtils.js';
+  import modelUrl from './miModelo.glb';
+  ```
+
+PASO 2: Clonar la Escena (CRÍTICO para SkinnedMesh)
+  Si vas a renderizar más de un robot/enemigo a la vez en la pantalla, debes clonar 
+  la escena y el esqueleto. Si no lo haces, los robots compartirán las mismas 
+  referencias óseas y las mallas se deformarán o romperán.
+  ```javascript
+  const { scene, animations } = useGLTF(modelUrl);
+  // Clonación profunda e independiente
+  const clone = useMemo(() => SkeletonUtils.clone(scene), [scene]);
+  const { nodes, materials } = useGraph(clone);
+  ```
+
+PASO 3: Vincular el esqueleto al grupo y al Hook de animaciones
+  ```javascript
+  const group = useRef();
+  const { actions } = useAnimations(animations, group);
+  ```
+
+--------------------------------------------------------------------------------
+3. CONTROL DE TRANSICIONES Y CAMBIO DE ESTADOS (FLUJO ÓPTIMO)
+--------------------------------------------------------------------------------
+
+Para evitar saltos visuales bruscos (cortes instantáneos) al cambiar de animación, 
+debes hacer que la animación vieja haga un "fundido de salida" (`fadeOut`) mientras 
+la nueva hace un "fundido de entrada" (`fadeIn`).
+
+Código de ejemplo robusto dentro de tu componente:
+
+```javascript
+export function EnemyBot({ animationState = 'idle', tookDamage, ...props }) {
+  const group = useRef();
+  const { scene, animations } = useGLTF(modelUrl);
+  
+  // Clonación segura
+  const clone = useMemo(() => SkeletonUtils.clone(scene), [scene]);
+  const { nodes, materials } = useGraph(clone);
+  
+  // Activa el mezclador de animaciones vinculado al grupo contenedor
+  const { actions } = useAnimations(animations, group);
+
+  useEffect(() => {
+    if (!actions) return;
+    
+    // 1. Determinar cuál animación reproducir según el estado de React
+    let actionName = 'Idle'; // Animación por defecto
+
+    if (tookDamage && actions['Death']) {
+      actionName = 'Death';
+    } else {
+      switch (animationState?.toLowerCase()) {
+        case 'attack':
+          if (actions['Attack']) actionName = 'Attack';
+          break;
+        case 'death':
+          if (actions['Death']) actionName = 'Death';
+          break;
+        case 'entrance':
+          if (actions['Entrance']) actionName = 'Entrance';
+          break;
+        case 'idle':
+        default:
+          if (actions['Idle']) actionName = 'Idle';
+          break;
+      }
+    }
+
+    // 2. Obtener la acción del Mixer de Three.js
+    const activeAction = actions[actionName];
+    if (activeAction) {
+      // .reset() inicializa el tiempo de la animación a 0
+      // .fadeIn(0.25) realiza una transición suave de 250ms
+      // .play() inicia la animación
+      activeAction.reset().fadeIn(0.25).play();
+    }
+
+    // 3. FUNCIÓN DE LIMPIEZA: Apaga la animación suavemente antes de cambiar a otra
+    return () => {
+      if (activeAction) {
+        activeAction.fadeOut(0.25);
+      }
+    };
+  }, [actions, animationState, tookDamage]); // Se vuelve a ejecutar al cambiar estas dependencias
+
+  return (
+    <group ref={group} {...props} dispose={null}>
+      <group name="Sketchfab_Scene">
+        {/* El rootJoint de la estructura ósea (Armature) */}
+        <primitive object={nodes._rootJoint} />
+        
+        {/* La malla vinculada al esqueleto */}
+        <skinnedMesh 
+          name="Object_9" 
+          geometry={nodes.Object_9.geometry} 
+          material={materials.Patrol} 
+          skeleton={nodes.Object_9.skeleton} 
+          position={[0, 4.065, -0.325]} 
+          rotation={[-Math.PI / 2, 0, 0]} 
+        />
+      </group>
+    </group>
+  );
+}
+
+useGLTF.preload(modelUrl);
+```
+
+--------------------------------------------------------------------------------
+4. MEJORES PRÁCTICAS Y DETECCIÓN DE ERRORES COMUNES
+--------------------------------------------------------------------------------
+
+1. Animaciones que no se detienen:
+   Asegúrate siempre de retornar la función de limpieza `activeAction.fadeOut(0.25)` 
+   en tu `useEffect`. Si no lo haces, múltiples animaciones intentarán reproducirse 
+   simultáneamente a máxima intensidad, distorsionando el modelo.
+
+2. Animaciones de un solo uso (ej. muerte o salto):
+   Por defecto, Three.js repite en bucle (`loop`) todas las animaciones. Si quieres 
+   que una animación como `Death` o `Attack` se reproduzca solo una vez y se detenga:
+   ```javascript
+   import * as THREE from 'three';
+   // ...
+   activeAction.setLoop(THREE.LoopOnce);
+   activeAction.clampWhenFinished = true; // Hace que se quede en el último frame
+   ```
+
+3. Nombres en minúsculas/mayúsculas:
+   Los nombres de las animaciones en los archivos 3D distinguen mayúsculas y minúsculas 
+   (ej. "Idle" no es lo mismo que "idle"). Siempre verifica el casing real usando uno 
+   de los métodos de detección descritos en el punto 1.
+================================================================================

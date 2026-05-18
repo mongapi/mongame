@@ -1,0 +1,115 @@
+================================================================================
+GUÍA DE CONFIGURACIÓN Y PERSONALIZACIÓN DE ORBITAL ORDER 3D
+================================================================================
+
+Este documento sirve como "chuleta" rápida para modificar tamaños, órbitas, 
+físicas de planetas, fondos y el sol en el archivo:
+  src/games/OrbitalOrder.jsx
+
+--------------------------------------------------------------------------------
+1. ESTRUCTURA DE ÓRBITAS Y NIVELES (DEFAULT_LEVEL_DATA)
+--------------------------------------------------------------------------------
+Ubicado al principio del archivo (Línea ~28). Controla los datos iniciales
+usados cuando no se reciben órbitas dinámicas de la base de datos:
+
+  orbits: [
+      { id: 0, name: "Macronutrientes", radius: 4.0, color: "#4ade80", speed: 0.5 },
+      { id: 1, name: "Micronutrientes", radius: 7.0, color: "#60a5fa", speed: 0.3 },
+      { id: 2, name: "Hidratación", radius: 10.0, color: "#c084fc", speed: 0.2 }
+  ]
+
+- radius: Modifica la amplitud estática del anillo en el Canvas.
+- speed: Cambia la velocidad de rotación angular del planeta que esté en esta órbita.
+
+--------------------------------------------------------------------------------
+2. CÁLCULO DE RADIOS DE ÓRBITAS EN PANTALLA
+--------------------------------------------------------------------------------
+Para evitar que el backend fuerce radios que rompen la estética visual 3D, el
+mapeo se realiza dentro de la función `resolveOrbitalContent` (Línea ~46):
+
+  radius: Number(orbit?.radius) > 0 ? Number(orbit.radius) : fallbackOrbits[index]?.radius
+
+* Si deseas aplicar una fórmula de escala fija/matemática para que crezcan
+  geométricamente o exponencialmente ignorando los radios de la base de datos, 
+  puedes reemplazar esa línea por:
+  
+  radius: 10.0 + (index * 15.0), // Crecimiento aritmético (10, 25, 40...)
+  // o
+  radius: 15.0 * Math.pow(2, index), // Crecimiento exponencial (15, 30, 60...)
+
+--------------------------------------------------------------------------------
+3. TAMAÑO DE LOS PLANETAS Y DEL SOL
+--------------------------------------------------------------------------------
+Debido a que cada modelo 3D tiene escalas de diseño nativas diferentes, las escalas
+se controlan en el renderizado de cada grupo:
+
+- ESCALA DE PLANETAS:
+  Dentro del componente `ConceptNode` (Línea ~266):
+    <group scale={0.7}>
+        <PlanetComponent />
+    </group>
+  (Sube a 1.2+ para planetas gigantes, o baja a 0.4 para planetas diminutos).
+
+- ESCALA DEL SOL:
+  Dentro de la sección principal del `Canvas` (Línea ~552):
+    <group scale={0.0030}>
+        <Sun />
+    </group>
+  *(Nota: El modelo actual de sun_02 requiere un scale muy pequeño como 0.003
+   para no tapar toda la pantalla debido a sus gigantescas dimensiones de origen).*
+
+--------------------------------------------------------------------------------
+4. FÍSICAS DE LOS PLANETAS ERRANTES (CHAOTIC PLANETS)
+--------------------------------------------------------------------------------
+Los planetas que aún no han sido asignados orbitan de forma libre. Su física 
+está en el componente `ConceptNode` (Línea ~114):
+
+  const baseDistance = useMemo(() => 45 + Math.random() * 10, []);
+
+- Qué hace: Controla a qué distancia orbitan respecto al sol.
+- Regla de oro: Asegúrate de que este número sea significativamente mayor al
+  radio de tu última órbita (ej. si tu última órbita mide 40, baseDistance debe
+  ser de 45 en adelante) para evitar que orbiten dentro del sistema de anillos.
+
+--------------------------------------------------------------------------------
+5. POSICIÓN DE SELECCIÓN (PLANETA ELEGIDO A LA DERECHA)
+--------------------------------------------------------------------------------
+Cuando haces clic sobre un planeta, este viaja a una posición estática a la 
+derecha de la cámara. Su física está en `ConceptNode` (Línea ~153):
+
+  const distToRight = 50;
+  targetX = rightVec.x * distToRight;
+  targetZ = rightVec.z * distToRight;
+
+- distToRight: Determina qué tan lejos a la derecha visual se apartará. Si cambias
+  el tamaño de tus órbitas, sube o baja este valor para evitar que coincida con
+  los anillos y quede en zona limpia.
+
+--------------------------------------------------------------------------------
+6. ALTURA DE LAS ETIQUETAS FLOTANTES (HTML LABELS)
+--------------------------------------------------------------------------------
+Para que los textos no toquen ni se metan dentro de la geometría 3D, puedes elevarlos
+en el eje Y (segundo parámetro del array de `position`):
+
+- ETIQUETAS DE PLANETAS (`ConceptNode`, Línea ~280):
+  <Html position={[0, 4.0, 0]} center>
+  (Sube el 4.0 si los nombres tocan los planetas).
+
+- ETIQUETA DEL SOL (Línea ~575):
+  <Html position={[0, 5.0, 0]} center>
+  (Sube el 5.0 si el nombre del sol roza su superficie o su corona de brillo).
+
+--------------------------------------------------------------------------------
+7. BRILLO Y EFECTO GLOW DEL SOL
+--------------------------------------------------------------------------------
+El brillo solar se simula apilando esferas translúcidas concéntricas con
+AdditiveBlending en la sección del núcleo (Líneas ~547-573):
+
+  <Sphere args={[0.8, 32, 32]}>
+      <meshBasicMaterial color="#fbbf24" transparent opacity={0.8} blending={THREE.AdditiveBlending} ... />
+  </Sphere>
+
+- args: Controla el radio del aura (0.8, 1.2, 2.0).
+- opacity: Controla qué tan densa es la corona de luz.
+- Agrega más o menos esferas si deseas capas de brillo extras o diferentes colores.
+================================================================================

@@ -1,6 +1,8 @@
 import { AlertCircle, Loader } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 
+import LoadingScreen from '@/components/ui/LoadingScreen';
+
 function CenterState({ children }) {
     return (
         <div className="flex min-h-screen items-center justify-center p-6 text-white">
@@ -10,16 +12,7 @@ function CenterState({ children }) {
 }
 
 export function GameLoadingState({ title = 'Cargando sesión...' }) {
-    return (
-        <CenterState>
-            <Card className="border-white/10 bg-black/40 text-white backdrop-blur-xl">
-                <CardContent className="flex items-center justify-center gap-3 py-10">
-                    <Loader className="h-6 w-6 animate-spin text-cyan-300" />
-                    <span className="text-sm font-medium tracking-wide text-zinc-200">{title}</span>
-                </CardContent>
-            </Card>
-        </CenterState>
-    );
+    return <LoadingScreen title={title} fullScreen={true} />;
 }
 
 export function GameErrorState({ title = 'No se pudo cargar el juego', message }) {
