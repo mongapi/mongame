@@ -16,17 +16,16 @@ const NavItem = ({ icon: Icon, label, path }) => {
             whileTap={{ scale: 0.95 }}
             onClick={() => navigate(path)}
             className={cn(
-                "relative p-3 rounded-xl transition-all duration-300 group flex items-center gap-4 w-full overflow-hidden",
+                "relative flex w-full items-center justify-center gap-4 overflow-hidden rounded-xl p-3 transition-all duration-300 md:justify-start group",
                 isActive
                     ? "bg-blue-500/20 text-blue-300 shadow-[0_0_15px_rgba(59,130,246,0.4)]"
                     : "text-zinc-500 hover:text-white hover:bg-white/5"
             )}
         >
             <Icon className="w-6 h-6 z-10 relative" />
-            <span className="text-sm font-bold tracking-wider whitespace-nowrap opacity-0 group-hover:opacity-100 transition-all duration-300 absolute left-14">
+            <span className="absolute left-14 hidden whitespace-nowrap text-sm font-bold tracking-wider opacity-0 transition-all duration-300 group-hover:opacity-100 md:block">
                 {label}
             </span>
-            {isActive && <div className="absolute inset-0 border-l-2 border-blue-500" />}
         </motion.button>
     );
 };
@@ -40,15 +39,15 @@ export default function TeacherNavbar() {
     };
 
     return (
-        <motion.nav className="fixed left-0 top-0 h-screen w-20 hover:w-64 bg-zinc-950/80 backdrop-blur-xl border-r border-white/10 z-50 flex flex-col items-center py-8 transition-all duration-500 ease-out group">
-            <div className="mb-12 cursor-pointer flex justify-center w-full" onClick={() => navigate('/dashboard')}>
+        <motion.nav className="fixed inset-x-0 bottom-0 z-50 flex items-center gap-2 border-t border-white/10 bg-zinc-950/90 px-3 py-3 backdrop-blur-xl md:left-0 md:top-0 md:bottom-0 md:h-screen md:w-20 md:flex-col md:items-center md:gap-0 md:border-r md:border-t-0 md:px-0 md:py-8 md:hover:w-64 md:transition-all md:duration-500 md:ease-out group">
+            <div className="hidden w-full cursor-pointer justify-center md:mb-12 md:flex" onClick={() => navigate('/dashboard')}>
                 <img
                     src={monlauLogo}
                     alt="Monlau Logo"
                     className="w-12 h-12 object-contain filter drop-shadow-[0_0_12px_rgba(250,204,21,0.8)]"
                 />
             </div>
-            <div className="flex-1 w-full px-4 space-y-4">
+            <div className="grid flex-1 w-full grid-cols-6 gap-2 md:block md:px-4 md:space-y-4 md:gap-0">
                 <NavItem icon={Home}     label="INICIO"      path="/" />
                 <NavItem icon={Activity} label="DASHBOARD"   path="/dashboard" />
                 <NavItem icon={Library}  label="BIBLIOTECA"  path="/games" />
@@ -58,10 +57,10 @@ export default function TeacherNavbar() {
                     whileHover={{ scale: 1.1, x: 5 }}
                     whileTap={{ scale: 0.95 }}
                     onClick={handleLogout}
-                    className="relative p-3 rounded-xl transition-all duration-300 group flex items-center gap-4 w-full overflow-hidden text-zinc-500 hover:text-white hover:bg-white/5"
+                    className="relative flex w-full items-center justify-center gap-4 overflow-hidden rounded-xl p-3 text-zinc-500 transition-all duration-300 hover:bg-white/5 hover:text-white md:justify-start group"
                 >
                     <Power className="w-6 h-6 z-10 relative" />
-                    <span className="text-sm font-bold tracking-wider whitespace-nowrap opacity-0 group-hover:opacity-100 transition-all duration-300 absolute left-14">
+                    <span className="absolute left-14 hidden whitespace-nowrap text-sm font-bold tracking-wider opacity-0 transition-all duration-300 group-hover:opacity-100 md:block">
                         CERRAR
                     </span>
                 </motion.button>

@@ -12,14 +12,14 @@ function MetricCard({ icon: Icon, label, value, tone = 'cyan' }) {
     };
 
     return (
-        <div className="rounded-3xl border border-white/10 bg-black/30 p-6 backdrop-blur-xl">
+        <div className="rounded-3xl border border-white/10 bg-black/30 p-5 backdrop-blur-xl sm:p-6">
             <div className="mb-4 flex items-center justify-between gap-4">
                 <span className="text-xs font-bold uppercase tracking-[0.2em] text-zinc-500">{label}</span>
                 <div className={`rounded-2xl border p-3 ${tones[tone]}`}>
                     <Icon className="h-5 w-5" />
                 </div>
             </div>
-            <p className="font-['Orbitron'] text-4xl font-black text-white">{value}</p>
+            <p className="font-['Orbitron'] text-3xl font-black text-white sm:text-4xl">{value}</p>
         </div>
     );
 }
@@ -33,7 +33,7 @@ export default function AdminDashboardView() {
 
     if (error || !dashboard) {
         return (
-            <div className="min-h-screen flex items-center justify-center px-8">
+            <div className="min-h-screen flex items-center justify-center px-4 sm:px-8">
                 <div className="max-w-2xl rounded-3xl border border-red-500/20 bg-red-500/10 p-8 text-red-100">
                     <h1 className="font-['Orbitron'] text-2xl font-black">No se pudo cargar el dashboard admin</h1>
                     <p className="mt-4 text-sm text-red-100/80">{error || 'Falta información para construir el panel.'}</p>
@@ -43,10 +43,10 @@ export default function AdminDashboardView() {
     }
 
     return (
-        <div className="min-h-screen px-8 py-10 text-white">
+        <div className="min-h-screen px-4 py-6 text-white sm:px-6 sm:py-10 lg:px-8">
             <div className="mx-auto max-w-7xl space-y-8">
                 <div>
-                    <h1 className="font-['Orbitron'] text-4xl font-black">PANEL DE ADMINISTRACIÓN</h1>
+                    <h1 className="font-['Orbitron'] text-3xl font-black sm:text-4xl">PANEL DE ADMINISTRACIÓN</h1>
                     <p className="mt-3 max-w-3xl text-sm leading-6 text-zinc-400">
                         Vista operativa del sistema: volumen de usuarios, recursos, sesiones recientes, actividad y salud técnica básica.
                     </p>
@@ -113,7 +113,7 @@ export default function AdminDashboardView() {
                         <div className="mt-5 space-y-3">
                             {dashboard.recent_activity.sessions.map((session) => (
                                 <div key={session.id} className="rounded-2xl border border-white/10 bg-white/5 p-4">
-                                    <div className="flex items-start justify-between gap-3">
+                                    <div className="flex flex-col items-start justify-between gap-3 sm:flex-row">
                                         <div className="min-w-0">
                                             <p className="truncate font-bold text-white">{session.lesson_plan?.name || session.game?.name || `Sesión #${session.id}`}</p>
                                             <p className="mt-1 text-sm text-zinc-500">{session.teacher?.name || 'Sin profesor'} · {formatDateTime(session.created_at)}</p>
@@ -133,7 +133,7 @@ export default function AdminDashboardView() {
                                 <div key={user.id} className="rounded-2xl border border-white/10 bg-white/5 p-4">
                                     <p className="font-bold text-white">{user.name}</p>
                                     <p className="mt-1 text-sm text-zinc-500">{user.email}</p>
-                                    <div className="mt-3 flex items-center justify-between gap-3 text-xs uppercase tracking-[0.18em] text-zinc-400">
+                                    <div className="mt-3 flex flex-col gap-2 text-xs uppercase tracking-[0.18em] text-zinc-400 sm:flex-row sm:items-center sm:justify-between sm:gap-3">
                                         <span>{user.role}</span>
                                         <span>{formatDateTime(user.created_at)}</span>
                                     </div>
@@ -147,7 +147,7 @@ export default function AdminDashboardView() {
                         <div className="mt-5 space-y-3">
                             {dashboard.recent_activity.resources.map((resource) => (
                                 <div key={`${resource.type}-${resource.id}`} className="rounded-2xl border border-white/10 bg-white/5 p-4">
-                                    <div className="flex items-start justify-between gap-3">
+                                    <div className="flex flex-col items-start justify-between gap-3 sm:flex-row">
                                         <p className="font-bold text-white">{resource.name}</p>
                                         <span className="rounded-full border border-white/10 bg-black/20 px-3 py-1 text-xs uppercase text-zinc-300">{resource.type === 'game' ? 'Juego' : 'Lesson plan'}</span>
                                     </div>
