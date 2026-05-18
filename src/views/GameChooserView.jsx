@@ -1,4 +1,3 @@
-import { AuroraBackground } from "@/components/organisms/AuroraBackground";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { AlertCircle, Gamepad2, Loader, PlayCircle, Route } from "lucide-react";
@@ -6,6 +5,9 @@ import { motion, AnimatePresence } from "motion/react";
 import { GameTypeIconBadge, GameTypePreview } from '@/components/gameTypes/GameTypeVisual';
 import { useGameChooserView } from '@/hooks/useGameChooserView';
 import LoadingScreen from '@/components/ui/LoadingScreen';
+import blurBg from '../public/images/as05.jpg';
+import cardBg from '../public/images/as04.jpg';
+
 
 /* ─────────────────────────────────────────────────────────────────
    GameChooserView
@@ -22,8 +24,19 @@ export default function GameChooserView() {
     } = useGameChooserView();
 
     return (
-        <AuroraBackground className="pl-20">
-            <div className="min-h-screen w-full overflow-y-auto">
+        <div className="relative min-h-screen pl-20 text-white overflow-hidden bg-zinc-950">
+            {/* Background image with subtle animation and gradient overlay */}
+            <div className="absolute inset-0 z-0 select-none pointer-events-none">
+                <img 
+                    src={blurBg} 
+                    alt="Background Blur" 
+                    className="w-full h-full object-cover opacity-25 scale-105"
+                />
+                <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_20%,#09090b_90%)]" />
+                <div className="absolute inset-0 bg-zinc-950/20" />
+            </div>
+
+            <div className="min-h-screen w-full overflow-y-auto relative z-10">
                 <div className="mx-auto max-w-7xl px-8 pb-20 pt-10">
 
                     {/* ── Header compacto ───────────────────────────────────── */}
@@ -152,7 +165,16 @@ export default function GameChooserView() {
                                     className="group cursor-pointer"
                                     onClick={() => openGameType(gameType.code)}
                                 >
-                                    <Card className="relative h-full overflow-hidden border-zinc-800/80 bg-black/40 backdrop-blur-xl transition-all duration-300 hover:border-cyan-500/40 hover:shadow-[0_0_28px_rgba(34,211,238,0.14)] flex flex-col">
+                                    <Card className="relative h-full overflow-hidden border-zinc-800/80 bg-zinc-900/40 backdrop-blur-xl transition-all duration-300 hover:border-cyan-500/40 hover:shadow-[0_0_28px_rgba(34,211,238,0.14)] flex flex-col z-10 shadow-2xl">
+                                        {/* Inner card textured background */}
+                                        <div className="absolute inset-0 -z-10 pointer-events-none overflow-hidden select-none">
+                                            <img 
+                                                src={cardBg} 
+                                                alt="Card Texture" 
+                                                className="w-full h-full object-cover opacity-[0.12] mix-blend-color-dodge scale-110 filter brightness-125"
+                                            />
+                                            <div className="absolute inset-0 bg-zinc-900/60" />
+                                        </div>
 
                                         {/* Hover gradient wash */}
                                         <div className="pointer-events-none absolute inset-0 bg-linear-to-br from-cyan-500/0 to-purple-500/0 transition-all duration-500 group-hover:from-cyan-500/8 group-hover:to-purple-500/8" />
@@ -196,6 +218,6 @@ export default function GameChooserView() {
 
                 </div>
             </div>
-        </AuroraBackground>
+        </div>
     );
 }

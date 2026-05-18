@@ -6,6 +6,10 @@ import { useGameLibraryView } from '@/hooks/useGameLibraryView';
 import { SessionModeDialog } from '@/components/organisms/SessionModeSelector';
 import { formatDate } from '@/lib/formatters';
 import LoadingScreen from '@/components/ui/LoadingScreen';
+import blurBg from '../public/images/blur01.jpg';
+import cardBg from '../public/images/as04.jpg';
+
+
 
 const containerVariants = {
     hidden: { opacity: 0 },
@@ -19,14 +23,14 @@ const containerVariants = {
 
 const itemVariants = {
     hidden: { opacity: 0, y: 12 },
-    visible: { 
-        opacity: 1, 
-        y: 0, 
-        transition: { 
-            type: 'spring', 
-            stiffness: 260, 
-            damping: 20 
-        } 
+    visible: {
+        opacity: 1,
+        y: 0,
+        transition: {
+            type: 'spring',
+            stiffness: 260,
+            damping: 20
+        }
     }
 };
 
@@ -232,9 +236,19 @@ export default function GameLibraryView() {
     if (isLoading) {
         return <LoadingScreen title="Cargando Biblioteca..." />;
     }
-
     return (
-        <div className="min-h-screen px-8 py-10 text-white">
+        <div className="relative min-h-screen px-8 py-10 text-white overflow-hidden bg-zinc-950">
+            {/* Background image with subtle animation and gradient overlay */}
+            <div className="absolute inset-0 z-0 select-none pointer-events-none">
+                <img
+                    src={blurBg}
+                    alt="Background Blur"
+                    className="w-full h-full object-cover opacity-25 scale-105"
+                />
+                <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_20%,#09090b_90%)]" />
+                <div className="absolute inset-0 bg-zinc-950/20" />
+            </div>
+
             <SessionModeDialog
                 isOpen={Boolean(pendingLaunch)}
                 value={sessionMode}
@@ -245,7 +259,7 @@ export default function GameLibraryView() {
                 title={pendingLaunch?.type === 'lessonPlan' ? 'Elegir modo para la sesión del lesson plan' : 'Elegir modo para la sesión del juego'}
             />
 
-            <div className="mx-auto max-w-7xl">
+            <div className="mx-auto max-w-7xl relative z-10">
                 <div className="mb-8 flex flex-wrap items-end justify-between gap-6">
                     <div>
                         <h1 className="text-4xl font-black font-['Orbitron']">BIBLIOTECA DE JUEGOS</h1>
@@ -299,7 +313,7 @@ export default function GameLibraryView() {
 
                             <motion.div
                                 initial={false}
-                                animate={{ 
+                                animate={{
                                     height: isViewSettingsExpanded ? 'auto' : 0,
                                     opacity: isViewSettingsExpanded ? 1 : 0,
                                     marginTop: isViewSettingsExpanded ? 16 : 0
@@ -397,10 +411,10 @@ export default function GameLibraryView() {
                                             </select>
                                         </label>
                                     </div>
-                                    
+
                                     <motion.div
                                         initial={false}
-                                        animate={{ 
+                                        animate={{
                                             height: isGameFiltersExpanded ? 'auto' : 0,
                                             opacity: isGameFiltersExpanded ? 1 : 0,
                                             marginTop: isGameFiltersExpanded ? 16 : 0
@@ -409,7 +423,7 @@ export default function GameLibraryView() {
                                         className="overflow-hidden"
                                     >
                                         {isGameFiltersExpanded && (
-                                            <motion.div 
+                                            <motion.div
                                                 variants={containerVariants}
                                                 initial="hidden"
                                                 animate="visible"
@@ -464,7 +478,7 @@ export default function GameLibraryView() {
 
                                     <motion.div
                                         initial={false}
-                                        animate={{ 
+                                        animate={{
                                             height: isLessonPlanFiltersExpanded ? 'auto' : 0,
                                             opacity: isLessonPlanFiltersExpanded ? 1 : 0,
                                             marginTop: isLessonPlanFiltersExpanded ? 16 : 0
@@ -473,7 +487,7 @@ export default function GameLibraryView() {
                                         className="overflow-hidden"
                                     >
                                         {isLessonPlanFiltersExpanded && (
-                                            <motion.div 
+                                            <motion.div
                                                 variants={containerVariants}
                                                 initial="hidden"
                                                 animate="visible"
@@ -547,8 +561,18 @@ export default function GameLibraryView() {
                                     initial={{ opacity: 0, y: 20 }}
                                     animate={{ opacity: 1, y: 0 }}
                                     transition={{ delay: index * 0.04 }}
-                                    className="rounded-3xl border border-white/10 bg-black/30 p-6 backdrop-blur-xl flex flex-col h-full justify-between"
+                                    className="relative rounded-3xl border border-white/10 bg-zinc-900/40 p-6 backdrop-blur-xl flex flex-col h-full justify-between overflow-hidden z-10 shadow-2xl"
                                 >
+                                    {/* Inner card textured background */}
+                                    <div className="absolute inset-0 -z-10 pointer-events-none overflow-hidden select-none">
+                                        <img
+                                            src={cardBg}
+                                            alt="Card Texture"
+                                            className="w-full h-full object-cover opacity-[0.12] mix-blend-color-dodge scale-110 filter brightness-125"
+                                        />
+                                        <div className="absolute inset-0 bg-zinc-900/60" />
+                                    </div>
+
                                     <div className="mb-5 relative">
                                         <GameTypePreview type={getGameTypeVisualMeta(game?.game_type?.code).previewType} />
                                     </div>

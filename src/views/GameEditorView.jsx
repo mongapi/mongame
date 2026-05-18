@@ -4,6 +4,9 @@ import { SessionModeCards } from '@/components/organisms/SessionModeSelector';
 import { validateGameContent } from '@/games/shared/gameContentValidation';
 import { useGameEditor } from '@/hooks/useGameEditor';
 import LoadingScreen from '@/components/ui/LoadingScreen';
+import blurBg from '../public/images/as05.jpg';
+import cardBg from '../public/images/as04.jpg';
+
 
 export default function GameEditorView() {
     const {
@@ -37,12 +40,39 @@ export default function GameEditorView() {
     } = useGameEditor();
 
     if (isLoading) {
-        return <LoadingScreen title="Cargando Editor..." />;
+        return (
+            <div className="relative min-h-screen px-8 py-10 overflow-hidden bg-zinc-950 flex items-center justify-center">
+                {/* Background image with subtle animation and gradient overlay */}
+                <div className="absolute inset-0 z-0 select-none pointer-events-none">
+                    <img 
+                        src={blurBg} 
+                        alt="Background Blur" 
+                        className="w-full h-full object-cover opacity-25 scale-105"
+                    />
+                    <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_20%,#09090b_90%)]" />
+                    <div className="absolute inset-0 bg-zinc-950/20" />
+                </div>
+                <div className="relative z-10 w-full flex items-center justify-center">
+                    <LoadingScreen title="Cargando Editor..." fullScreen={false} />
+                </div>
+            </div>
+        );
     }
 
     return (
-        <div className="min-h-screen px-8 py-10 text-white">
-            <div className="mx-auto max-w-5xl">
+        <div className="relative min-h-screen px-8 py-10 text-white overflow-hidden bg-zinc-950">
+            {/* Background image with subtle animation and gradient overlay */}
+            <div className="absolute inset-0 z-0 select-none pointer-events-none">
+                <img 
+                    src={blurBg} 
+                    alt="Background Blur" 
+                    className="w-full h-full object-cover opacity-25 scale-105"
+                />
+                <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_20%,#09090b_90%)]" />
+                <div className="absolute inset-0 bg-zinc-950/20" />
+            </div>
+
+            <div className="mx-auto max-w-5xl relative z-10">
                 <div className="mb-8 flex items-end justify-between gap-6">
                     <div>
                         <h1 className="text-4xl font-black font-['Orbitron']">{isEditing ? 'EDITAR JUEGO' : 'CREAR JUEGO'}</h1>
@@ -92,7 +122,17 @@ export default function GameEditorView() {
                     )}
 
                     <div className="grid gap-6 lg:grid-cols-2">
-                        <div className="rounded-3xl border border-white/10 bg-black/30 p-6 backdrop-blur-xl">
+                        <div className="relative rounded-3xl border border-white/10 bg-zinc-900/40 p-6 backdrop-blur-xl overflow-hidden z-10 shadow-2xl">
+                            {/* Inner card textured background */}
+                            <div className="absolute inset-0 -z-10 pointer-events-none overflow-hidden select-none">
+                                <img 
+                                    src={cardBg} 
+                                    alt="Card Texture" 
+                                    className="w-full h-full object-cover opacity-[0.12] mix-blend-color-dodge scale-110 filter brightness-125"
+                                />
+                                <div className="absolute inset-0 bg-zinc-900/60" />
+                            </div>
+
                             <label className="mb-2 block text-sm font-medium text-zinc-300">Nombre</label>
                             <input
                                 type="text"
@@ -149,7 +189,17 @@ export default function GameEditorView() {
                             ) : null}
                         </div>
 
-                        <div className="space-y-4 rounded-3xl border border-white/10 bg-black/30 p-6 backdrop-blur-xl">
+                        <div className="relative space-y-4 rounded-3xl border border-white/10 bg-zinc-900/40 p-6 backdrop-blur-xl overflow-hidden z-10 shadow-2xl">
+                            {/* Inner card textured background */}
+                            <div className="absolute inset-0 -z-10 pointer-events-none overflow-hidden select-none">
+                                <img 
+                                    src={cardBg} 
+                                    alt="Card Texture" 
+                                    className="w-full h-full object-cover opacity-[0.12] mix-blend-color-dodge scale-110 filter brightness-125"
+                                />
+                                <div className="absolute inset-0 bg-zinc-900/60" />
+                            </div>
+
                             <div className="flex items-center justify-between gap-4">
                                 <div>
                                     <h2 className="text-sm font-medium text-zinc-300">Contenido del juego</h2>

@@ -2,6 +2,7 @@ import { motion } from "motion/react";
 import { AlertCircle, ArrowRight, Clock3, Mail, Settings2, ShieldCheck, UserRound } from "lucide-react";
 import { useConfigView } from "@/hooks/useConfigView";
 import { SessionModeCards } from "@/components/organisms/SessionModeSelector";
+import blurBg from '../public/images/as02.jpg';
 
 const fadeUp = (delay = 0) => ({
     initial: { opacity: 0, y: 14 },
@@ -32,8 +33,19 @@ export default function ConfigView() {
     } = useConfigView();
 
     if (isLoading) return (
-        <div className="min-h-screen px-8 py-10 lg:px-10">
-            <div className="mx-auto max-w-7xl space-y-4">
+        <div className="relative min-h-screen px-8 py-10 lg:px-10 overflow-hidden bg-zinc-950">
+            {/* Background image with subtle animation and gradient overlay */}
+            <div className="absolute inset-0 z-0 select-none pointer-events-none">
+                <img
+                    src={blurBg}
+                    alt="Background Blur"
+                    className="w-full h-full object-cover opacity-25 scale-105"
+                />
+                <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_20%,#09090b_90%)]" />
+                <div className="absolute inset-0 bg-zinc-950/20" />
+            </div>
+
+            <div className="mx-auto max-w-7xl space-y-4 relative z-10">
                 <div className="h-48 animate-pulse rounded-[2rem] bg-white/4" />
                 <div className="grid gap-4 xl:grid-cols-[1.15fr_0.85fr]">
                     <div className="h-96 animate-pulse rounded-[2rem] bg-white/4" />
@@ -47,8 +59,19 @@ export default function ConfigView() {
     );
 
     return (
-        <div className="min-h-screen px-8 py-10 text-white lg:px-10">
-            <div className="mx-auto max-w-7xl space-y-6">
+        <div className="relative min-h-screen px-8 py-10 text-white overflow-hidden bg-zinc-950 lg:px-10">
+            {/* Background image with subtle animation and gradient overlay */}
+            <div className="absolute inset-0 z-0 select-none pointer-events-none">
+                <img
+                    src={blurBg}
+                    alt="Background Blur"
+                    className="w-full h-full object-cover opacity-25 scale-105"
+                />
+                <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_20%,#09090b_90%)]" />
+                <div className="absolute inset-0 bg-zinc-950/20" />
+            </div>
+
+            <div className="mx-auto max-w-7xl space-y-6 relative z-10">
 
                 {/* ── Error ── */}
                 {error && (
@@ -97,10 +120,10 @@ export default function ConfigView() {
                         {/* Stats */}
                         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-2 xl:grid-cols-4">
                             {[
-                                { label: 'Modo habitual',   value: preferredModeMeta.label },
-                                { label: 'Juegos',          value: games.length },
-                                { label: 'Lesson plans',    value: lessonPlans.length },
-                                { label: 'Activas ahora',   value: activeSessions.length },
+                                { label: 'Modo habitual', value: preferredModeMeta.label },
+                                { label: 'Juegos', value: games.length },
+                                { label: 'Lesson plans', value: lessonPlans.length },
+                                { label: 'Activas ahora', value: activeSessions.length },
                             ].map(({ label, value }) => (
                                 <div key={label} className="rounded-2xl border border-white/8 bg-white/4 px-4 py-3">
                                     <p className="text-[9px] font-bold uppercase tracking-[0.2em] text-zinc-500">{label}</p>
@@ -132,18 +155,17 @@ export default function ConfigView() {
                                 <div className="grid grid-cols-3 gap-2">
                                     {[
                                         { value: 'dashboard', label: 'Dashboard' },
-                                        { value: 'library',   label: 'Biblioteca' },
-                                        { value: 'create',    label: 'Crear sesión' },
+                                        { value: 'library', label: 'Biblioteca' },
+                                        { value: 'create', label: 'Crear sesión' },
                                     ].map((opt) => (
                                         <button
                                             key={opt.value}
                                             type="button"
                                             onClick={() => setDefaultStartSection(opt.value)}
-                                            className={`rounded-xl border px-3 py-2.5 text-sm font-bold transition ${
-                                                defaultStartSection === opt.value
-                                                    ? 'border-cyan-300/30 bg-cyan-300/15 text-cyan-100'
-                                                    : 'border-white/8 bg-white/4 text-zinc-400 hover:bg-white/8 hover:text-white'
-                                            }`}
+                                            className={`rounded-xl border px-3 py-2.5 text-sm font-bold transition ${defaultStartSection === opt.value
+                                                ? 'border-cyan-300/30 bg-cyan-300/15 text-cyan-100'
+                                                : 'border-white/8 bg-white/4 text-zinc-400 hover:bg-white/8 hover:text-white'
+                                                }`}
                                         >
                                             {opt.label}
                                         </button>
@@ -212,9 +234,9 @@ export default function ConfigView() {
                             </div>
                             <div className="space-y-2">
                                 {[
-                                    { label: 'Correo',    value: currentUser?.email || '—' },
+                                    { label: 'Correo', value: currentUser?.email || '—' },
                                     { label: 'Actividad', value: lastActivityLabel },
-                                    { label: 'Material',  value: `${games.length} juegos · ${lessonPlans.length} lesson plans` },
+                                    { label: 'Material', value: `${games.length} juegos · ${lessonPlans.length} lesson plans` },
                                     {
                                         label: 'Sesiones',
                                         value: recentSessions.length > 0

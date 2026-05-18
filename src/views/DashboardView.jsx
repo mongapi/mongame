@@ -7,6 +7,8 @@ import {
 import { useTeacherDashboard } from '@/hooks/useTeacherDashboard';
 import { formatDateTime, formatElapsed } from '@/lib/formatters';
 import LoadingScreen from '@/components/ui/LoadingScreen';
+import blurBg from '../public/images/as05.jpg';
+
 
 const StatusBadge = ({ status }) => {
     const statusConfig = {
@@ -84,8 +86,19 @@ export default function TeacherDashboard() {
     if (!sessionId) {
         if (recentSessions.length === 0) {
             return (
-                <div className="min-h-screen flex items-center justify-center px-6">
-                    <div className="max-w-2xl rounded-3xl border border-white/10 bg-zinc-950/60 p-8 text-center text-white backdrop-blur-xl">
+                <div className="relative min-h-screen flex items-center justify-center px-6 overflow-hidden bg-zinc-950">
+                    {/* Background image with subtle animation and gradient overlay */}
+                    <div className="absolute inset-0 z-0 select-none pointer-events-none">
+                        <img
+                            src={blurBg}
+                            alt="Background Blur"
+                            className="w-full h-full object-cover opacity-25 scale-105"
+                        />
+                        <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_20%,#09090b_90%)]" />
+                        <div className="absolute inset-0 bg-zinc-950/20" />
+                    </div>
+
+                    <div className="max-w-2xl rounded-3xl border border-white/10 bg-zinc-950/60 p-8 text-center text-white backdrop-blur-xl relative z-10">
                         <h1 className="font-['Orbitron'] text-2xl font-black text-cyan-300">TODAVÍA NO TIENES SESIONES</h1>
                         <p className="mt-4 text-sm leading-6 text-zinc-400">
                             {emptyStateError || 'Cuando crees una sesión desde un juego o un lesson plan aparecerá aquí para poder controlarla desde el dashboard.'}
@@ -106,8 +119,19 @@ export default function TeacherDashboard() {
         }
 
         return (
-            <div className="min-h-screen flex items-center justify-center px-6">
-                <div className="w-full max-w-5xl rounded-3xl border border-white/10 bg-zinc-950/60 p-8 text-white backdrop-blur-xl">
+            <div className="relative min-h-screen flex items-center justify-center px-6 overflow-hidden bg-zinc-950">
+                {/* Background image with subtle animation and gradient overlay */}
+                <div className="absolute inset-0 z-0 select-none pointer-events-none">
+                    <img
+                        src={blurBg}
+                        alt="Background Blur"
+                        className="w-full h-full object-cover opacity-25 scale-105"
+                    />
+                    <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_20%,#09090b_90%)]" />
+                    <div className="absolute inset-0 bg-zinc-950/20" />
+                </div>
+
+                <div className="w-full max-w-5xl rounded-3xl border border-white/10 bg-zinc-950/60 p-8 text-white backdrop-blur-xl relative z-10">
                     <div className="mb-6 flex items-end justify-between gap-6">
                         <div>
                             <h1 className="font-['Orbitron'] text-2xl font-black text-cyan-300">SESIONES RECIENTES</h1>
@@ -187,16 +211,29 @@ export default function TeacherDashboard() {
     }
 
     if (!session) return (
-        <div className="min-h-screen flex items-center justify-center flex-col gap-4 px-6 text-center">
-            <div className="text-red-400 font-['Orbitron'] text-xl">NO SE ENCONTRÓ ESA SESIÓN</div>
-            <div className="max-w-xl text-sm text-zinc-500">El dashboard solo puede abrir sesiones activas o existentes. Si acabas de guardar un juego, vuelve al editor y crea una sesión con ese juego.</div>
-            <button
-                type="button"
-                onClick={goToGames}
-                className="rounded-2xl border border-cyan-400/30 bg-cyan-400/15 px-5 py-3 font-bold text-cyan-200 transition hover:bg-cyan-400/25"
-            >
-                Volver a juegos
-            </button>
+        <div className="relative min-h-screen flex items-center justify-center flex-col gap-4 px-6 text-center overflow-hidden bg-zinc-950">
+            {/* Background image with subtle animation and gradient overlay */}
+            <div className="absolute inset-0 z-0 select-none pointer-events-none">
+                <img
+                    src={blurBg}
+                    alt="Background Blur"
+                    className="w-full h-full object-cover opacity-25 scale-105"
+                />
+                <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_20%,#09090b_90%)]" />
+                <div className="absolute inset-0 bg-zinc-950/20" />
+            </div>
+
+            <div className="relative z-10 flex flex-col items-center gap-4">
+                <div className="text-red-400 font-['Orbitron'] text-xl">NO SE ENCONTRÓ ESA SESIÓN</div>
+                <div className="max-w-xl text-sm text-zinc-500">El dashboard solo puede abrir sesiones activas o existentes. Si acabas de guardar un juego, vuelve al editor y crea una sesión con ese juego.</div>
+                <button
+                    type="button"
+                    onClick={goToGames}
+                    className="rounded-2xl border border-cyan-400/30 bg-cyan-400/15 px-5 py-3 font-bold text-cyan-200 transition hover:bg-cyan-400/25"
+                >
+                    Volver a juegos
+                </button>
+            </div>
         </div>
     );
 
@@ -258,11 +295,16 @@ export default function TeacherDashboard() {
                 ) : null}
             </AnimatePresence>
 
-            <div className="fixed inset-0 overflow-hidden -z-10 pointer-events-none">
-                <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(255,255,255,0.03)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.03)_1px,transparent_1px)] bg-size-[28px_28px] opacity-30" />
-                <motion.div animate={{ x: [0, 30, 0], y: [0, -20, 0] }} transition={{ duration: 18, repeat: Infinity }} className="absolute top-[8%] left-[12%] h-160 w-160 rounded-full bg-cyan-500/8 blur-[130px]" />
-                <motion.div animate={{ x: [0, -35, 0], y: [0, 22, 0] }} transition={{ duration: 16, repeat: Infinity }} className="absolute bottom-[8%] right-[8%] h-140 w-140 rounded-full bg-emerald-500/8 blur-[120px]" />
+            <div className="fixed inset-0 overflow-hidden -z-10 pointer-events-none select-none">
+                <img
+                    src={blurBg}
+                    alt="Background Blur"
+                    className="w-full h-full object-cover opacity-25 scale-105"
+                />
+                <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_20%,#09090b_90%)]" />
+                <div className="absolute inset-0 bg-zinc-950/20" />
             </div>
+
 
             <header className="rounded-[1.75rem] border border-white/10 bg-black/35 p-6 backdrop-blur-md">
                 <div className="flex flex-col gap-5 xl:flex-row xl:items-end xl:justify-between">
