@@ -53,4 +53,3 @@ src/public/3d-meshes/**/*.glb
 src/public/3d-meshes/**/*.bin
 src/public/3d-meshes/**/*.txt
 src/public/3d-meshes/**/*.png
-src/components/canvas3D/meshes/**/*.glb
