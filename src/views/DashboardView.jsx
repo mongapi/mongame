@@ -28,14 +28,14 @@ const StatusBadge = ({ status }) => {
 
 const StudentRow = ({ student, index }) => (
     <motion.div layout initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.4, delay: index * 0.05 }}
-        className="flex items-center justify-between p-4 bg-white/5 border border-white/10 rounded-xl hover:bg-white/10 transition-colors">
-        <div className="flex items-center gap-4 w-1/3">
-            <span className="font-bold text-lg">{student.name}</span>
+        className="flex flex-col gap-4 rounded-xl border border-white/10 bg-white/5 p-4 transition-colors hover:bg-white/10 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex w-full min-w-0 items-center gap-4 sm:w-1/3">
+            <span className="truncate font-bold text-base sm:text-lg">{student.name}</span>
         </div>
-        <div className="flex items-center justify-center w-1/3">
+        <div className="flex w-full items-center justify-start sm:w-1/3 sm:justify-center">
             <StatusBadge status={student.status} />
         </div>
-        <div className="flex items-center justify-end gap-6 w-1/3">
+        <div className="flex w-full items-center justify-between gap-4 sm:w-1/3 sm:justify-end sm:gap-6">
             <div className="flex flex-col items-end">
                 <span className="text-xs text-zinc-500 font-bold tracking-wider">TIEMPO</span>
                 <span className="text-cyan-400 font-black font-['Orbitron']">{student.timeLabel ?? 'Sin tiempo'}</span>
@@ -98,7 +98,7 @@ export default function TeacherDashboard() {
                         <div className="absolute inset-0 bg-zinc-950/20" />
                     </div>
 
-                    <div className="max-w-2xl rounded-3xl border border-white/10 bg-zinc-950/60 p-8 text-center text-white backdrop-blur-xl relative z-10">
+                    <div className="relative z-10 max-w-2xl rounded-3xl border border-white/10 bg-zinc-950/60 p-6 text-center text-white backdrop-blur-xl sm:p-8">
                         <h1 className="font-['Orbitron'] text-2xl font-black text-cyan-300">TODAVÍA NO TIENES SESIONES</h1>
                         <p className="mt-4 text-sm leading-6 text-zinc-400">
                             {emptyStateError || 'Cuando crees una sesión desde un juego o un lesson plan aparecerá aquí para poder controlarla desde el dashboard.'}
@@ -107,7 +107,7 @@ export default function TeacherDashboard() {
                             <button
                                 type="button"
                                 onClick={goToSessionCreate}
-                                className="inline-flex items-center gap-2 rounded-2xl border border-cyan-400/30 bg-cyan-400/15 px-5 py-3 font-bold text-cyan-200 transition hover:bg-cyan-400/25"
+                                className="inline-flex w-full items-center justify-center gap-2 rounded-2xl border border-cyan-400/30 bg-cyan-400/15 px-5 py-3 font-bold text-cyan-200 transition hover:bg-cyan-400/25 sm:w-auto"
                             >
                                 <PlusCircle className="h-5 w-5" />
                                 Iniciar una sesión
@@ -131,8 +131,8 @@ export default function TeacherDashboard() {
                     <div className="absolute inset-0 bg-zinc-950/20" />
                 </div>
 
-                <div className="w-full max-w-5xl rounded-3xl border border-white/10 bg-zinc-950/60 p-8 text-white backdrop-blur-xl relative z-10">
-                    <div className="mb-6 flex items-end justify-between gap-6">
+                <div className="relative z-10 w-full max-w-5xl rounded-3xl border border-white/10 bg-zinc-950/60 p-6 text-white backdrop-blur-xl sm:p-8">
+                    <div className="mb-6 flex flex-col items-start justify-between gap-6 sm:flex-row sm:items-end">
                         <div>
                             <h1 className="font-['Orbitron'] text-2xl font-black text-cyan-300">SESIONES RECIENTES</h1>
                             <p className="mt-4 text-sm leading-6 text-zinc-400">
@@ -142,7 +142,7 @@ export default function TeacherDashboard() {
                         <button
                             type="button"
                             onClick={goToSessionCreate}
-                            className="inline-flex items-center gap-2 rounded-2xl border border-cyan-400/30 bg-cyan-400/15 px-5 py-3 font-bold text-cyan-200 transition hover:bg-cyan-400/25"
+                            className="inline-flex w-full items-center justify-center gap-2 rounded-2xl border border-cyan-400/30 bg-cyan-400/15 px-5 py-3 font-bold text-cyan-200 transition hover:bg-cyan-400/25 sm:w-auto"
                         >
                             <PlusCircle className="h-5 w-5" />
                             Iniciar una sesión
@@ -160,19 +160,19 @@ export default function TeacherDashboard() {
                                     key={recentSession.id}
                                     type="button"
                                     onClick={() => openRecentSession(recentSession.id)}
-                                    className="grid w-full grid-cols-[110px_minmax(0,1.2fr)_160px_210px_140px] items-center gap-4 rounded-2xl border border-white/10 bg-white/5 px-5 py-4 text-left transition hover:bg-white/10"
+                                    className="grid w-full gap-3 rounded-2xl border border-white/10 bg-white/5 px-4 py-4 text-left transition hover:bg-white/10 sm:px-5 md:grid-cols-[110px_minmax(0,1.2fr)] md:items-center xl:grid-cols-[110px_minmax(0,1.2fr)_160px_210px_140px] xl:gap-4"
                                 >
                                     <span className="font-['Orbitron'] text-lg font-black text-white">#{recentSession.id}</span>
                                     <div className="min-w-0">
                                         <p className="truncate font-bold text-white">{recentSession.lesson_plan?.name || recentSession.game?.name || 'Sesión sin título'}</p>
                                         <p className="truncate text-sm text-zinc-500">{sessionTypeLabel}</p>
                                     </div>
-                                    <span className="text-sm uppercase text-zinc-400">{recentSession.status}</span>
+                                    <span className="text-sm uppercase text-zinc-400 xl:text-left">{recentSession.status}</span>
                                     <div className="text-sm text-zinc-500">
                                         <p>Creada: {formatDateTime(recentSession.created_at)}</p>
                                         <p>Actualizada: {formatDateTime(recentSession.updated_at)}</p>
                                     </div>
-                                    <div className="text-right text-sm text-zinc-400">
+                                    <div className="text-sm text-zinc-400 xl:text-right">
                                         <p className="font-semibold text-white">PIN {recentSession.pin}</p>
                                         <p>Fase {Number(recentSession.current_phase_index ?? 0) + 1}/{recentSession.total_phases ?? 1}</p>
                                         <p>{recentSession.sessionModeShortLabel}</p>
@@ -238,25 +238,25 @@ export default function TeacherDashboard() {
     );
 
     return (
-        <div className="min-h-screen pl-24 pr-8 py-8 relative flex flex-col gap-6 bg-zinc-950 text-white">
+        <div className="relative flex min-h-screen flex-col gap-6 bg-zinc-950 px-4 py-6 text-white sm:px-6 lg:pl-24 lg:pr-8 lg:py-8">
             <AnimatePresence>
                 {showPinModal && session?.pin ? (
                     <motion.div
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
-                        className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-6 backdrop-blur-sm"
+                        className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4 backdrop-blur-sm sm:px-6"
                     >
                         <motion.div
                             initial={{ opacity: 0, y: 20, scale: 0.96 }}
                             animate={{ opacity: 1, y: 0, scale: 1 }}
                             exit={{ opacity: 0, y: 12, scale: 0.98 }}
-                            className="w-full max-w-xl rounded-3xl border border-cyan-400/20 bg-zinc-950/95 p-8 text-white shadow-[0_20px_90px_rgba(0,0,0,0.45)]"
+                            className="w-full max-w-xl rounded-3xl border border-cyan-400/20 bg-zinc-950/95 p-6 text-white shadow-[0_20px_90px_rgba(0,0,0,0.45)] sm:p-8"
                         >
                             <div className="mb-6 flex items-start justify-between gap-4">
                                 <div>
                                     <p className="text-xs font-bold uppercase tracking-[0.24em] text-cyan-300">Sesión creada</p>
-                                    <h2 className="mt-2 text-3xl font-black font-['Orbitron'] text-white">Comparte este PIN</h2>
+                                    <h2 className="mt-2 font-['Orbitron'] text-2xl font-black text-white sm:text-3xl">Comparte este PIN</h2>
                                     <p className="mt-3 text-sm leading-6 text-zinc-400">Tu sesión ya está lista. El alumnado tiene que entrar con este PIN antes de empezar: {sessionLabel}.</p>
                                 </div>
                                 <button
@@ -270,7 +270,7 @@ export default function TeacherDashboard() {
 
                             <div className="rounded-3xl border border-cyan-400/20 bg-cyan-400/10 p-6 text-center">
                                 <p className="text-xs font-bold uppercase tracking-[0.2em] text-cyan-200/80">PIN de acceso</p>
-                                <p className="mt-3 font-['Orbitron'] text-5xl font-black tracking-[0.28em] text-cyan-200">{session.pin}</p>
+                                <p className="mt-3 font-['Orbitron'] text-4xl font-black tracking-[0.2em] text-cyan-200 sm:text-5xl sm:tracking-[0.28em]">{session.pin}</p>
                             </div>
 
                             <div className="mt-6 flex flex-wrap justify-end gap-3">
@@ -306,20 +306,20 @@ export default function TeacherDashboard() {
             </div>
 
 
-            <header className="rounded-[1.75rem] border border-white/10 bg-black/35 p-6 backdrop-blur-md">
+            <header className="rounded-[1.75rem] border border-white/10 bg-black/35 p-4 backdrop-blur-md sm:p-6">
                 <div className="flex flex-col gap-5 xl:flex-row xl:items-end xl:justify-between">
                     <div>
                         <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-cyan-400/20 bg-cyan-400/10 px-3 py-2 text-[11px] font-bold uppercase tracking-[0.22em] text-cyan-200">
                             <PanelTop className="h-4 w-4" />
                             Sala de control
                         </div>
-                        <h1 className="font-['Orbitron'] text-3xl font-black text-white">Operación en vivo</h1>
+                        <h1 className="font-['Orbitron'] text-2xl font-black text-white sm:text-3xl">Operación en vivo</h1>
                         <p className="mt-3 max-w-3xl text-sm leading-6 text-zinc-400">
                             {sessionLabel}. Desde aquí diriges la sesión, vigilas participantes, mueves fases y exportas resultados.
                         </p>
                     </div>
 
-                    <div className="grid gap-3 sm:grid-cols-2 xl:min-w-105">
+                    <div className="grid w-full gap-3 sm:grid-cols-2 xl:min-w-105 xl:w-auto">
                         <div className="rounded-2xl border border-white/10 bg-white/3 p-4">
                             <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-zinc-500">Sesión</p>
                             <p className="mt-2 font-['Orbitron'] text-2xl font-black text-white">#{session.id}</p>
@@ -368,28 +368,28 @@ export default function TeacherDashboard() {
                                 <p className="mt-1 text-sm text-zinc-400">Acciones directas sobre el estado de la partida actual.</p>
                             </div>
                         </div>
-                        <div className="flex items-center justify-end gap-2">
+                        <div className="flex flex-wrap items-center justify-stretch gap-2 sm:justify-end">
                             <button onClick={handlePauseResume}
                                 disabled={isFinished}
-                                className={`p-3 rounded-xl transition-all ${isPaused ? 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/50' : 'bg-white/5 hover:bg-white/10 text-white border border-transparent'}`}>
+                                className={`w-full rounded-xl p-3 transition-all sm:w-auto ${isPaused ? 'border border-yellow-500/50 bg-yellow-500/20 text-yellow-400' : 'border border-transparent bg-white/5 text-white hover:bg-white/10'}`}>
                                 {isPaused ? <Play className="w-5 h-5" /> : <Pause className="w-5 h-5" />}
                             </button>
                             <button onClick={handleFinish}
                                 disabled={isFinished}
-                                className="p-3 rounded-xl bg-purple-500/20 hover:bg-purple-500/40 text-purple-300 border border-purple-500/50 transition-all flex items-center gap-2 font-bold text-sm">
+                                className="flex w-full items-center justify-center gap-2 rounded-xl border border-purple-500/50 bg-purple-500/20 p-3 text-sm font-bold text-purple-300 transition-all hover:bg-purple-500/40 sm:w-auto">
                                 FINALIZAR <SkipForward className="w-4 h-4" />
                             </button>
                             <button onClick={nextPhase}
                                 disabled={isFinished || (session.total_phases ?? 1) <= Number(session.current_phase_index ?? 0) + 1}
-                                className="p-3 rounded-xl bg-cyan-500/20 hover:bg-cyan-500/40 disabled:opacity-40 disabled:cursor-not-allowed text-cyan-300 border border-cyan-500/50 transition-all flex items-center gap-2 font-bold text-sm">
+                                className="flex w-full items-center justify-center gap-2 rounded-xl border border-cyan-500/50 bg-cyan-500/20 p-3 text-sm font-bold text-cyan-300 transition-all hover:bg-cyan-500/40 disabled:cursor-not-allowed disabled:opacity-40 sm:w-auto">
                                 SIGUIENTE FASE <SkipForward className="w-4 h-4" />
                             </button>
                         </div>
                     </div>
 
                     <div className="bg-zinc-950/50 backdrop-blur-xl border border-white/10 rounded-2xl p-6 flex-1 flex flex-col">
-                        <div className="flex items-center justify-between mb-4 border-b border-white/5 pb-4">
-                            <h2 className="text-lg font-bold font-['Orbitron'] tracking-wider flex items-center gap-2">
+                        <div className="mb-4 flex items-center justify-between border-b border-white/5 pb-4">
+                            <h2 className="flex items-center gap-2 font-['Orbitron'] text-base font-bold tracking-wider sm:text-lg">
                                 <Users className="w-5 h-5 text-purple-400" />MAPA DE {sessionModeMeta.value === 'table' ? 'MESAS' : sessionModeMeta.value === 'shared' ? 'PUESTOS' : 'ALUMNOS'}
                             </h2>
                         </div>
@@ -417,18 +417,18 @@ export default function TeacherDashboard() {
 
                 <div className="lg:col-span-4 flex flex-col gap-6">
                     <div className="bg-zinc-950/50 backdrop-blur-xl border border-white/10 rounded-2xl p-6 flex flex-col gap-5">
-                        <div className="flex items-center justify-between gap-4 border-b border-white/5 pb-4">
+                        <div className="flex flex-col items-start justify-between gap-4 border-b border-white/5 pb-4 sm:flex-row sm:items-center">
                             <div>
                                 <h2 className="text-lg font-bold font-['Orbitron'] tracking-wider flex items-center gap-2 text-amber-300">
                                     <Trophy className="w-5 h-5" />RESULTADOS GUARDADOS
                                 </h2>
                                 <p className="mt-2 text-sm text-zinc-400">Se actualizan en vivo mientras juegan y siguen accesibles cuando la sesión termina.</p>
                             </div>
-                            <div className="flex items-center gap-2">
+                            <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto">
                                 <button
                                     type="button"
                                     onClick={() => refreshResults()}
-                                    className="rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-xs font-bold uppercase tracking-[0.16em] text-zinc-200 transition hover:bg-white/10"
+                                    className="w-full rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-xs font-bold uppercase tracking-[0.16em] text-zinc-200 transition hover:bg-white/10 sm:w-auto"
                                 >
                                     Recargar
                                 </button>
@@ -436,7 +436,7 @@ export default function TeacherDashboard() {
                                     type="button"
                                     onClick={handleExportResults}
                                     disabled={isExportingResults}
-                                    className="inline-flex items-center gap-2 rounded-xl border border-amber-400/20 bg-amber-400/10 px-3 py-2 text-xs font-bold uppercase tracking-[0.16em] text-amber-100 transition hover:bg-amber-400/20 disabled:cursor-not-allowed disabled:opacity-50"
+                                    className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-amber-400/20 bg-amber-400/10 px-3 py-2 text-xs font-bold uppercase tracking-[0.16em] text-amber-100 transition hover:bg-amber-400/20 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
                                 >
                                     <Download className="h-4 w-4" />
                                     {isExportingResults ? 'Exportando' : 'Exportar CSV'}
@@ -444,7 +444,7 @@ export default function TeacherDashboard() {
                             </div>
                         </div>
 
-                        <div className="grid grid-cols-3 gap-3">
+                        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
                             <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
                                 <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-500">Con resultados</p>
                                 <p className="mt-2 font-['Orbitron'] text-2xl font-black text-white">{resultsData?.stats?.participants_with_results ?? 0}</p>
@@ -462,12 +462,12 @@ export default function TeacherDashboard() {
                         {resultsData?.best_result ? (
                             <div className="rounded-2xl border border-amber-400/20 bg-amber-400/10 p-4">
                                 <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-amber-200/80">Mejor resultado guardado</p>
-                                <div className="mt-3 flex items-start justify-between gap-3">
+                                <div className="mt-3 flex flex-col items-start justify-between gap-3 sm:flex-row">
                                     <div>
                                         <p className="text-lg font-bold text-white">{resultsData.best_result.label}</p>
                                         <p className="mt-1 text-sm text-amber-100/80">{formatElapsed(resultsData.best_result.time_seconds)} · {resultsData.best_result.answers_count} respuestas</p>
                                     </div>
-                                    <div className="rounded-2xl bg-black/20 px-4 py-3 text-right">
+                                    <div className="rounded-2xl bg-black/20 px-4 py-3 text-left sm:text-right">
                                         <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-500">Puntos</p>
                                         <p className="font-['Orbitron'] text-2xl font-black text-amber-200">{resultsData.best_result.score}</p>
                                     </div>
@@ -481,8 +481,8 @@ export default function TeacherDashboard() {
 
                         <div className="space-y-3">
                             {(resultsData?.results_summary ?? []).slice(0, 5).map((entry, index) => (
-                                <div key={entry.participant_key} className="flex items-center justify-between gap-4 rounded-2xl border border-white/10 bg-white/5 px-4 py-3">
-                                    <div className="flex items-center gap-3 min-w-0">
+                                <div key={entry.participant_key} className="flex flex-col gap-4 rounded-2xl border border-white/10 bg-white/5 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+                                    <div className="flex min-w-0 items-center gap-3">
                                         <div className={`flex h-10 w-10 items-center justify-center rounded-2xl border ${index === 0 ? 'border-amber-400/30 bg-amber-400/10 text-amber-200' : 'border-white/10 bg-black/20 text-zinc-300'}`}>
                                             {index === 0 ? <Trophy className="h-4 w-4" /> : <Medal className="h-4 w-4" />}
                                         </div>
@@ -491,7 +491,7 @@ export default function TeacherDashboard() {
                                             <p className="text-xs text-zinc-500">{formatElapsed(entry.time_seconds)} · {entry.completed ? 'Completado' : 'En curso'}</p>
                                         </div>
                                     </div>
-                                    <div className="text-right">
+                                    <div className="text-left sm:text-right">
                                         <p className="font-['Orbitron'] text-xl font-black text-cyan-200">{entry.score}</p>
                                         <p className="text-xs text-zinc-500">{entry.correct_answers}/{entry.answers_count} aciertos</p>
                                     </div>

@@ -11,7 +11,7 @@ const AdminLayout = () => {
                     <div className="absolute bottom-[10%] right-[10%] w-[400px] h-[400px] bg-amber-600/10 rounded-full blur-[100px]" />
                 </div>
                 <AdminNavbar />
-                <div className="flex-1 ml-20 min-h-screen">
+                <div className="min-h-screen flex-1 pb-24 md:pb-0 md:ml-20">
                     <Outlet />
                 </div>
             </div>

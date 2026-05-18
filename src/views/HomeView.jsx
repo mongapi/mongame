@@ -88,6 +88,127 @@ export default function HomePage() {
             .btn-a:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 8px 28px rgba(251,191,36,.38) !important; }
             .lk { transition: color .15s; }
             .lk:hover { color: rgba(255,255,255,.75) !important; }
+
+            .home-main {
+                position: relative;
+                z-index: 10;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                width: 100%;
+                max-width: 1120px;
+                padding: 32px 16px 48px;
+                opacity: 0;
+                transition: opacity .5s ease;
+            }
+            .home-badge {
+                display: inline-flex;
+                align-items: center;
+                gap: 8px;
+                margin-bottom: 24px;
+                padding: 7px 16px;
+                font-size: 10px;
+                letter-spacing: 0.16em;
+            }
+            .home-title {
+                margin-bottom: 12px;
+                font-size: clamp(42px, 16vw, 96px);
+                letter-spacing: 0.06em;
+            }
+            .home-subtitle {
+                margin-bottom: 36px;
+                padding-inline: 8px;
+                font-size: clamp(11px, 3.2vw, 15px);
+                letter-spacing: 0.18em;
+                text-align: center;
+            }
+            .home-portals {
+                display: grid;
+                width: 100%;
+                max-width: 760px;
+                gap: 16px;
+                grid-template-columns: minmax(0, 1fr);
+                animation: fadeUp .7s .22s ease both;
+            }
+            .home-portal-card {
+                padding: 28px 20px;
+            }
+            .home-portal-icon {
+                width: 48px;
+                height: 48px;
+                margin-bottom: 16px;
+            }
+            .home-portal-title {
+                margin-bottom: 10px;
+                font-size: 17px;
+            }
+            .home-portal-copy {
+                margin-bottom: 24px;
+                font-size: 14px;
+                line-height: 1.7;
+            }
+            .home-pin-input {
+                padding: 14px 12px;
+                font-size: 22px;
+                letter-spacing: 0.3em;
+            }
+            .home-footer {
+                margin-top: 32px;
+                padding-inline: 10px;
+                font-size: 10px;
+                letter-spacing: 0.14em;
+                text-align: center;
+            }
+
+            @media (min-width: 640px) {
+                .home-main {
+                    padding: 40px 24px 56px;
+                }
+                .home-badge {
+                    margin-bottom: 32px;
+                    padding: 7px 20px;
+                    font-size: 11px;
+                    letter-spacing: 0.22em;
+                }
+                .home-subtitle {
+                    margin-bottom: 44px;
+                    letter-spacing: 0.24em;
+                }
+                .home-portal-card {
+                    padding: 32px 28px;
+                }
+                .home-pin-input {
+                    font-size: 26px;
+                    letter-spacing: 0.38em;
+                }
+                .home-footer {
+                    margin-top: 40px;
+                    font-size: 11px;
+                    letter-spacing: 0.2em;
+                }
+            }
+
+            @media (min-width: 768px) {
+                .home-portals {
+                    grid-template-columns: repeat(2, minmax(0, 1fr));
+                    gap: 20px;
+                }
+                .home-portal-card {
+                    padding: 36px 32px;
+                }
+                .home-portal-icon {
+                    width: 52px;
+                    height: 52px;
+                    margin-bottom: 20px;
+                }
+                .home-portal-title {
+                    font-size: 18px;
+                }
+                .home-pin-input {
+                    font-size: 28px;
+                    letter-spacing: 0.45em;
+                }
+            }
         `}</style>
 
             <div style={{
@@ -136,22 +257,14 @@ export default function HomePage() {
                 ))}
 
                 {/* ── Contenido ── */}
-                <main style={{
-                    position: 'relative', zIndex: 10,
-                    display: 'flex', flexDirection: 'column', alignItems: 'center',
-                    padding: '48px 24px',
-                    opacity: ready ? 1 : 0,
-                    transition: 'opacity .5s ease',
-                }}>
+                <main className="home-main" style={{ opacity: ready ? 1 : 0 }}>
 
                     {/* Badge */}
-                    <div style={{
-                        display: 'inline-flex', alignItems: 'center', gap: 8,
+                    <div className="home-badge" style={{
                         background: 'rgba(34,211,238,.08)',
                         border: '1px solid rgba(34,211,238,.28)',
-                        borderRadius: 999, padding: '7px 20px',
-                        fontSize: 11, fontWeight: 700,
-                        letterSpacing: '0.22em', textTransform: 'uppercase',
+                        borderRadius: 999, fontWeight: 700,
+                        textTransform: 'uppercase',
                         color: 'rgba(34,211,238,.9)', marginBottom: 32,
                         fontFamily: "'Orbitron', monospace",
                         animation: 'badgePulse 3s ease-in-out infinite, fadeUp .7s ease both',
@@ -160,64 +273,54 @@ export default function HomePage() {
                     </div>
 
                     {/* Título */}
-                    <h1 style={{
+                    <h1 className="home-title" style={{
                         fontFamily: "'Orbitron', monospace",
-                        fontSize: 'clamp(52px, 10vw, 96px)',
-                        fontWeight: 900, letterSpacing: '0.08em',
+                        fontWeight: 900,
                         lineHeight: 1, color: '#fff', textAlign: 'center',
                         animation: 'titleGlow 4s ease-in-out infinite, fadeUp .7s .08s ease both',
-                        marginBottom: 12,
                     }}>
                         MON<span style={{ color: 'rgb(34,211,238)' }}>GAME</span>
                     </h1>
 
-                    <p style={{
-                        fontSize: 'clamp(12px, 1.5vw, 15px)',
+                    <p className="home-subtitle" style={{
                         color: 'rgba(255,255,255,.35)', letterSpacing: '0.28em',
                         textTransform: 'uppercase', fontWeight: 300,
-                        animation: 'fadeUp .7s .14s ease both', marginBottom: 52,
+                        animation: 'fadeUp .7s .14s ease both',
                     }}>
                         Gamificación · Inmersión · Aprendizaje
                     </p>
 
                     {/* ── Dos portales ── */}
-                    <div style={{
-                        display: 'grid',
-                        gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
-                        gap: 20, width: '100%', maxWidth: 720,
-                        animation: 'fadeUp .7s .22s ease both',
-                    }}>
+                    <div className="home-portals">
 
                         {/* ─ Portal docente ─ */}
-                        <div className="card-t" style={{
+                        <div className="card-t home-portal-card" style={{
                             background: 'rgba(255,255,255,.03)',
                             border: '1px solid rgba(34,211,238,.18)',
-                            borderRadius: 24, padding: '36px 32px',
+                            borderRadius: 24,
                             display: 'flex', flexDirection: 'column',
                             backdropFilter: 'blur(12px)',
                             boxShadow: '0 8px 32px rgba(0,0,0,.35)',
                             ...getParallaxStyle(0.004),
                         }}>
-                            <div style={{
-                                width: 52, height: 52, borderRadius: 14,
+                            <div className="home-portal-icon" style={{
+                                borderRadius: 14,
                                 background: 'rgba(34,211,238,.1)',
                                 border: '1px solid rgba(34,211,238,.22)',
                                 display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                marginBottom: 20,
                             }}>
                                 <LogIn size={22} color="rgb(34,211,238)" />
                             </div>
 
-                            <h2 style={{
+                            <h2 className="home-portal-title" style={{
                                 fontFamily: "'Orbitron', monospace",
-                                fontSize: 18, fontWeight: 700,
-                                color: '#fff', letterSpacing: '0.04em', marginBottom: 10,
+                                fontWeight: 700,
+                                color: '#fff', letterSpacing: '0.04em',
                             }}>Soy docente</h2>
 
-                            <p style={{
-                                fontSize: 14, lineHeight: 1.75,
+                            <p className="home-portal-copy" style={{
                                 color: 'rgba(255,255,255,.45)', fontWeight: 300,
-                                marginBottom: 28, flexGrow: 1,
+                                flexGrow: 1,
                             }}>
                                 Accede a tu espacio, prepara actividades,
                                 crea sesiones y controla lo que ocurre en clase.
@@ -246,35 +349,33 @@ export default function HomePage() {
                         </div>
 
                         {/* ─ Portal alumno / PIN ─ */}
-                        <div className="card-s" style={{
+                        <div className="card-s home-portal-card" style={{
                             background: 'rgba(255,255,255,.03)',
                             border: '1px solid rgba(251,191,36,.18)',
-                            borderRadius: 24, padding: '36px 32px',
+                            borderRadius: 24,
                             display: 'flex', flexDirection: 'column',
                             backdropFilter: 'blur(12px)',
                             boxShadow: '0 8px 32px rgba(0,0,0,.35)',
                             ...getParallaxStyle(0.007),
                         }}>
-                            <div style={{
-                                width: 52, height: 52, borderRadius: 14,
+                            <div className="home-portal-icon" style={{
+                                borderRadius: 14,
                                 background: 'rgba(251,191,36,.1)',
                                 border: '1px solid rgba(251,191,36,.22)',
                                 display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                marginBottom: 20,
                             }}>
                                 <Gamepad2 size={22} color="rgb(251,191,36)" />
                             </div>
 
-                            <h2 style={{
+                            <h2 className="home-portal-title" style={{
                                 fontFamily: "'Orbitron', monospace",
-                                fontSize: 18, fontWeight: 700,
-                                color: '#fff', letterSpacing: '0.04em', marginBottom: 10,
+                                fontWeight: 700,
+                                color: '#fff', letterSpacing: '0.04em',
                             }}>Tengo un PIN</h2>
 
-                            <p style={{
-                                fontSize: 14, lineHeight: 1.75,
+                            <p className="home-portal-copy" style={{
                                 color: 'rgba(255,255,255,.45)', fontWeight: 300,
-                                marginBottom: 24, flexGrow: 1,
+                                flexGrow: 1,
                             }}>
                                 Tu docente te ha dado un código de 6 dígitos.
                                 Escríbelo y entra directamente a la sesión.
@@ -295,7 +396,7 @@ export default function HomePage() {
                                 )}
 
                                 <input
-                                    className="pin-field"
+                                    className="pin-field home-pin-input"
                                     type="text" inputMode="numeric"
                                     pattern="[0-9]{6}" maxLength={6}
                                     required disabled={loading}
@@ -306,10 +407,9 @@ export default function HomePage() {
                                         width: '100%',
                                         background: 'rgba(255,255,255,.04)',
                                         border: '1px solid rgba(251,191,36,.22)',
-                                        borderRadius: 14, padding: '14px 16px',
+                                        borderRadius: 14,
                                         textAlign: 'center',
                                         fontFamily: "'Orbitron', monospace",
-                                        fontSize: 28, letterSpacing: '0.45em',
                                         color: '#fcd34d', caretColor: 'rgb(251,191,36)',
                                     }}
                                 />
@@ -343,10 +443,9 @@ export default function HomePage() {
                     </div>
 
                     {/* Footer mínimo */}
-                    <p style={{
-                        marginTop: 40, fontSize: 11,
+                    <p className="home-footer" style={{
                         color: 'rgba(255,255,255,.15)',
-                        letterSpacing: '0.2em', textTransform: 'uppercase',
+                        textTransform: 'uppercase',
                         fontFamily: "'Orbitron', monospace",
                         animation: 'fadeUp .7s .35s ease both',
                     }}>

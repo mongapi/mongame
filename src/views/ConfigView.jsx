@@ -33,7 +33,7 @@ export default function ConfigView() {
     } = useConfigView();
 
     if (isLoading) return (
-        <div className="relative min-h-screen px-8 py-10 lg:px-10 overflow-hidden bg-zinc-950">
+        <div className="relative min-h-screen overflow-hidden bg-zinc-950 px-4 py-6 sm:px-6 sm:py-8 lg:px-10 lg:py-10">
             {/* Background image with subtle animation and gradient overlay */}
             <div className="absolute inset-0 z-0 select-none pointer-events-none">
                 <img
@@ -45,7 +45,7 @@ export default function ConfigView() {
                 <div className="absolute inset-0 bg-zinc-950/20" />
             </div>
 
-            <div className="mx-auto max-w-7xl space-y-4 relative z-10">
+            <div className="relative z-10 mx-auto max-w-7xl space-y-4">
                 <div className="h-48 animate-pulse rounded-[2rem] bg-white/4" />
                 <div className="grid gap-4 xl:grid-cols-[1.15fr_0.85fr]">
                     <div className="h-96 animate-pulse rounded-[2rem] bg-white/4" />
@@ -59,7 +59,7 @@ export default function ConfigView() {
     );
 
     return (
-        <div className="relative min-h-screen px-8 py-10 text-white overflow-hidden bg-zinc-950 lg:px-10">
+        <div className="relative min-h-screen overflow-hidden bg-zinc-950 px-4 py-6 text-white sm:px-6 sm:py-8 lg:px-10 lg:py-10">
             {/* Background image with subtle animation and gradient overlay */}
             <div className="absolute inset-0 z-0 select-none pointer-events-none">
                 <img
@@ -71,7 +71,7 @@ export default function ConfigView() {
                 <div className="absolute inset-0 bg-zinc-950/20" />
             </div>
 
-            <div className="mx-auto max-w-7xl space-y-6 relative z-10">
+            <div className="relative z-10 mx-auto max-w-7xl space-y-6">
 
                 {/* ── Error ── */}
                 {error && (
@@ -84,7 +84,7 @@ export default function ConfigView() {
                 {/* ── Hero ── */}
                 <motion.section
                     {...fadeUp(0)}
-                    className="relative overflow-hidden rounded-[2rem] border border-white/10 bg-zinc-950/70 p-7 shadow-[0_20px_80px_rgba(0,0,0,0.3)] backdrop-blur-xl lg:p-8"
+                    className="relative overflow-hidden rounded-[2rem] border border-white/10 bg-zinc-950/70 p-5 shadow-[0_20px_80px_rgba(0,0,0,0.3)] backdrop-blur-xl sm:p-6 lg:p-8"
                 >
                     <div className="pointer-events-none absolute -left-12 top-6 h-36 w-36 rounded-full bg-cyan-300/10 blur-[70px]" />
                     <div className="pointer-events-none absolute right-0 top-0 h-44 w-44 rounded-full bg-amber-300/8 blur-[80px]" />
@@ -99,18 +99,18 @@ export default function ConfigView() {
                             <h1 className="font-['Orbitron'] text-3xl font-black text-white md:text-4xl">
                                 {currentUser?.name ? `Hola, ${currentUser.name.split(' ')[0]}` : 'Tu espacio'}
                             </h1>
-                            <div className="mt-5 flex flex-wrap gap-2">
+                            <div className="mt-5 flex flex-col gap-2 sm:flex-row sm:flex-wrap">
                                 <button
                                     type="button"
                                     onClick={goToQuickSession}
-                                    className="rounded-xl bg-cyan-300 px-4 py-2.5 text-sm font-bold text-zinc-950 transition hover:bg-cyan-200"
+                                    className="rounded-xl bg-cyan-300 px-4 py-2.5 text-sm font-bold text-zinc-950 transition hover:bg-cyan-200 sm:w-auto"
                                 >
                                     Crear sesión rápida
                                 </button>
                                 <button
                                     type="button"
                                     onClick={goToFavoriteSection}
-                                    className="rounded-xl border border-white/12 bg-white/5 px-4 py-2.5 text-sm font-bold text-white transition hover:bg-white/10"
+                                    className="rounded-xl border border-white/12 bg-white/5 px-4 py-2.5 text-sm font-bold text-white transition hover:bg-white/10 sm:w-auto"
                                 >
                                     Acceso favorito
                                 </button>
@@ -118,7 +118,7 @@ export default function ConfigView() {
                         </div>
 
                         {/* Stats */}
-                        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-2 xl:grid-cols-4">
+                        <div className="grid grid-cols-2 gap-3 lg:grid-cols-2 xl:grid-cols-4">
                             {[
                                 { label: 'Modo habitual', value: preferredModeMeta.label },
                                 { label: 'Juegos', value: games.length },
@@ -138,7 +138,7 @@ export default function ConfigView() {
                 <div className="grid gap-5 xl:grid-cols-[1.35fr_0.65fr]">
 
                     {/* ── Preferencias ── */}
-                    <motion.div {...fadeUp(0.06)} className="rounded-[2rem] border border-white/10 bg-zinc-950/55 p-7 backdrop-blur-xl">
+                    <motion.div {...fadeUp(0.06)} className="rounded-[2rem] border border-white/10 bg-zinc-950/55 p-5 backdrop-blur-xl sm:p-6 lg:p-7">
                         <div className="mb-5 flex items-center justify-between gap-3">
                             <h2 className="font-['Orbitron'] text-xl font-black text-white">Preferencias</h2>
                             <div className="rounded-xl border border-cyan-300/15 bg-cyan-300/8 p-2 text-cyan-200">
@@ -152,7 +152,7 @@ export default function ConfigView() {
                                 <p className="mb-3 text-[10px] font-bold uppercase tracking-[0.18em] text-zinc-500">
                                     Sección de inicio
                                 </p>
-                                <div className="grid grid-cols-3 gap-2">
+                                <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
                                     {[
                                         { value: 'dashboard', label: 'Dashboard' },
                                         { value: 'library', label: 'Biblioteca' },
@@ -206,8 +206,8 @@ export default function ConfigView() {
                     <div className="space-y-5">
 
                         {/* Accesos rápidos */}
-                        <motion.div {...fadeUp(0.1)} className="rounded-[2rem] border border-white/10 bg-zinc-950/55 p-6 backdrop-blur-xl">
-                            <div className="mb-4 flex items-center justify-between">
+                        <motion.div {...fadeUp(0.1)} className="rounded-[2rem] border border-white/10 bg-zinc-950/55 p-5 backdrop-blur-xl sm:p-6">
+                            <div className="mb-4 flex items-center justify-between gap-3">
                                 <h2 className="font-['Orbitron'] text-lg font-black text-white">Accesos rápidos</h2>
                                 <Clock3 className="h-4 w-4 text-zinc-600" />
                             </div>
@@ -227,8 +227,8 @@ export default function ConfigView() {
                         </motion.div>
 
                         {/* Cuenta */}
-                        <motion.div {...fadeUp(0.14)} className="rounded-[2rem] border border-white/10 bg-zinc-950/55 p-6 backdrop-blur-xl">
-                            <div className="mb-4 flex items-center justify-between">
+                        <motion.div {...fadeUp(0.14)} className="rounded-[2rem] border border-white/10 bg-zinc-950/55 p-5 backdrop-blur-xl sm:p-6">
+                            <div className="mb-4 flex items-center justify-between gap-3">
                                 <h2 className="font-['Orbitron'] text-lg font-black text-white">Cuenta</h2>
                                 <Mail className="h-4 w-4 text-zinc-600" />
                             </div>
@@ -244,9 +244,9 @@ export default function ConfigView() {
                                             : 'Sin historial aún',
                                     },
                                 ].map(({ label, value }) => (
-                                    <div key={label} className="flex items-baseline justify-between gap-4 rounded-xl border border-white/6 bg-white/3 px-4 py-3">
+                                    <div key={label} className="flex flex-col gap-2 rounded-xl border border-white/6 bg-white/3 px-4 py-3 sm:flex-row sm:items-baseline sm:justify-between sm:gap-4">
                                         <span className="shrink-0 text-[10px] font-bold uppercase tracking-[0.18em] text-zinc-500">{label}</span>
-                                        <span className="truncate text-right text-sm font-semibold text-white">{value}</span>
+                                        <span className="truncate text-left text-sm font-semibold text-white sm:text-right">{value}</span>
                                     </div>
                                 ))}
                             </div>
