@@ -331,6 +331,56 @@ export const adminAPI = {
             return { success: false, error: message };
         }
     },
+
+    async users() {
+        try {
+            const response = await api.get('/admin/users');
+            return { success: true, data: response.data.data };
+        } catch (error) {
+            const message = error.response?.data?.message || 'No se pudo cargar la gestión de usuarios';
+            return { success: false, error: message };
+        }
+    },
+
+    async updateUserRole(id, role) {
+        try {
+            const response = await api.patch(`/admin/users/${id}/role`, { role });
+            return { success: true, data: response.data.data };
+        } catch (error) {
+            const message = error.response?.data?.message || 'No se pudo actualizar el rol';
+            return { success: false, error: message };
+        }
+    },
+
+    async deleteUser(id) {
+        try {
+            const response = await api.delete(`/admin/users/${id}`);
+            return { success: true, data: response.data.data };
+        } catch (error) {
+            const message = error.response?.data?.message || 'No se pudo eliminar el usuario';
+            return { success: false, error: message };
+        }
+    },
+
+    async gameTypes() {
+        try {
+            const response = await api.get('/admin/game-types');
+            return { success: true, data: response.data.data };
+        } catch (error) {
+            const message = error.response?.data?.message || 'No se pudo cargar el catálogo de tipos de juego';
+            return { success: false, error: message };
+        }
+    },
+
+    async audit() {
+        try {
+            const response = await api.get('/admin/audit');
+            return { success: true, data: response.data.data };
+        } catch (error) {
+            const message = error.response?.data?.message || 'No se pudo cargar la actividad administrativa';
+            return { success: false, error: message };
+        }
+    },
 };
 
 // 5. EXPORTAR API CONFIGURADA PARA OTRAS PETICIONES

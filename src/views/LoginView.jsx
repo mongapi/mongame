@@ -77,7 +77,7 @@ export default function LoginView() {
                                 animate={{ opacity: 1, y: 0 }}
                                 className="flex items-center gap-2 p-3 bg-red-500/20 border border-red-500/40 rounded-xl text-red-200 backdrop-blur-md"
                             >
-                                <AlertCircle className="h-4 w-4 flex-shrink-0 text-red-400" />
+                                <AlertCircle className="h-4 w-4 shrink-0 text-red-400" />
                                 <span className="text-sm font-medium">{error}</span>
                             </motion.div>
                         )}
