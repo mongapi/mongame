@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
-import { motion } from "motion/react";
-import { AlertCircle, CheckCircle2, Loader, Timer, XCircle, Zap } from "lucide-react";
+import { motion, AnimatePresence } from "motion/react";
+import { AlertCircle, CheckCircle2, Loader, Timer, XCircle, Zap, Award, RotateCcw } from "lucide-react";
 import { sessionAPI } from "@/api/api";
 import { GameErrorState, GameLoadingState } from "@/games/shared/GameScreenShell";
 import { GameExitButton, GameSessionFinishedOverlay, useGameSessionUi } from '@/games/shared/GameSessionActions';
@@ -44,6 +44,7 @@ export default function QuizGame() {
     const [timeLeft, setTimeLeft] = useState(currentQuestion?.timeLimit ?? 15);
     const [selectedOption, setSelectedOption] = useState(null);
     const [gameState, setGameState] = useState("playing"); // 'playing', 'answered', 'timeout'
+    const [showResultModal, setShowResultModal] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [roundStartedAt, setRoundStartedAt] = useState(() => Date.now());
     const { sessionFinished, handleExit, exitLabel, finishActionLabel } = useGameSessionUi({ session, sessionId, isPreview: false });
@@ -52,8 +53,28 @@ export default function QuizGame() {
         setTimeLeft(currentQuestion?.timeLimit ?? 15);
         setSelectedOption(null);
         setGameState('playing');
+        setShowResultModal(false);
         setRoundStartedAt(Date.now());
     }, [currentQuestion?.id, currentQuestion?.timeLimit]);
+
+    useEffect(() => {
+        if (gameState === 'answered' || gameState === 'timeout') {
+            const timer = setTimeout(() => {
+                setShowResultModal(true);
+            }, 1500);
+            return () => clearTimeout(timer);
+        } else {
+            setShowResultModal(false);
+        }
+    }, [gameState]);
+
+    const restartGame = () => {
+        setTimeLeft(currentQuestion?.timeLimit ?? 15);
+        setSelectedOption(null);
+        setGameState('playing');
+        setShowResultModal(false);
+        setRoundStartedAt(Date.now());
+    };
 
     const submitCurrentAnswer = async (answerValue, nextState) => {
         if (!currentQuestion || isSubmitting) return;
@@ -218,8 +239,8 @@ export default function QuizGame() {
                     ))}
                 </div>
 
-                {/* Mensaje de Timeout */}
-                {gameState === "timeout" && (
+                {/* Mensaje de Timeout en pantalla */}
+                {gameState === "timeout" && !showResultModal && (
                     <motion.div
                         initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }}
                         className="text-center p-4 bg-red-500/20 border border-red-500/50 rounded-xl text-red-400 font-bold font-['Orbitron'] tracking-widest"
@@ -229,6 +250,72 @@ export default function QuizGame() {
                 )}
 
             </div>
+
+            {/* Modal de Fin de Partida / Resultados */}
+            <AnimatePresence>
+                {showResultModal && (
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="fixed inset-0 z-50 bg-zinc-950/90 backdrop-blur-xl flex flex-col items-center justify-center p-6"
+                    >
+                        <motion.div
+                            initial={{ scale: 0.9, y: 20 }}
+                            animate={{ scale: 1, y: 0 }}
+                            className="bg-zinc-900 border border-white/10 p-10 rounded-3xl max-w-lg w-full text-center relative overflow-hidden shadow-2xl"
+                        >
+                            {/* Línea decorativa superior */}
+                            <div className={`absolute top-0 left-0 w-full h-2 ${
+                                selectedOption === currentQuestion.correctAnswer ? 'bg-emerald-500' : 'bg-rose-500'
+                            }`} />
+
+                            <div className={`w-20 h-20 mx-auto rounded-full flex items-center justify-center mb-6 shadow-lg ${
+                                selectedOption === currentQuestion.correctAnswer 
+                                    ? 'bg-emerald-500/20 text-emerald-400 shadow-emerald-500/20' 
+                                    : 'bg-rose-500/20 text-rose-400 shadow-rose-500/20'
+                            }`}>
+                                {selectedOption === currentQuestion.correctAnswer ? <Award className="w-10 h-10" /> : <XCircle className="w-10 h-10" />}
+                            </div>
+
+                            <h2 className="text-3xl font-extrabold text-white mb-2 font-['Orbitron'] tracking-wide">
+                                {selectedOption === currentQuestion.correctAnswer ? '¡RESPUESTA CORRECTA!' : gameState === 'timeout' ? '¡TIEMPO AGOTADO!' : '¡RESPUESTA INCORRECTA!'}
+                            </h2>
+                            <p className="text-zinc-400 mb-8 font-medium">
+                                {selectedOption === currentQuestion.correctAnswer
+                                    ? '¡Excelente trabajo! Has respondido correctamente demostrando un gran conocimiento de la materia.'
+                                    : gameState === 'timeout'
+                                        ? 'Se ha agotado el tiempo de respuesta. ¡Sé más rápido la próxima vez!'
+                                        : 'La opción seleccionada es incorrecta. ¡No te rindas, repasa tus conocimientos e inténtalo de nuevo!'}
+                            </p>
+
+                            <div className="bg-black/50 rounded-2xl p-6 mb-8 border border-white/5 flex justify-center gap-12">
+                                <div className="text-center">
+                                    <p className="text-xs text-zinc-500 uppercase font-bold tracking-widest mb-1">Resultado</p>
+                                    <p className={`text-2xl font-black ${
+                                        selectedOption === currentQuestion.correctAnswer ? 'text-emerald-400' : 'text-rose-400'
+                                    }`}>
+                                        {selectedOption === currentQuestion.correctAnswer ? 'Aprobado' : 'Fallido'}
+                                    </p>
+                                </div>
+                                <div className="text-center">
+                                    <p className="text-xs text-zinc-500 uppercase font-bold tracking-widest mb-1">Tiempo Restante</p>
+                                    <p className="text-3xl font-black text-cyan-400">{timeLeft}s</p>
+                                </div>
+                            </div>
+
+                            <button
+                                onClick={restartGame}
+                                disabled={sessionFinished}
+                                className="w-full py-4 rounded-xl font-bold uppercase tracking-widest flex items-center justify-center gap-2 transition-all group bg-white text-black hover:bg-zinc-200"
+                            >
+                                <RotateCcw className="w-5 h-5 group-hover:-rotate-180 transition-transform duration-500" />
+                                Volver a intentar
+                            </button>
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
         </div>
     );
 }

@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { CheckCircle2, XCircle, RotateCcw, Sparkles } from 'lucide-react';
+import { CheckCircle2, XCircle, RotateCcw } from 'lucide-react';
 import { sessionAPI } from '@/api/api';
 import { GameErrorState, GameLoadingState } from '@/games/shared/GameScreenShell';
 import { GameExitButton, GameSessionFinishedOverlay, useGameSessionUi } from '@/games/shared/GameSessionActions';
@@ -96,9 +96,9 @@ function buildBlankData(gameContent) {
         : hiddenWords;
     const normalizedOptions = ensureOptionsContainAnswers(
         rawOptions
-        .map((option) => String(option ?? '').trim())
-        .filter(Boolean)
-        .filter((option, index, list) => list.findIndex((item) => item.toLowerCase() === option.toLowerCase()) === index),
+            .map((option) => String(option ?? '').trim())
+            .filter(Boolean)
+            .filter((option, index, list) => list.findIndex((item) => item.toLowerCase() === option.toLowerCase()) === index),
         hiddenWords,
     );
     const splitParts = splitTextAroundHiddenWords(text, hiddenWords);
@@ -168,22 +168,22 @@ export default function CompletarEnunciado() {
         e.preventDefault();
         if (sessionFinished) return;
         if (status === 'success') return;
-        
+
         const optionId = e.dataTransfer.getData("optionId");
         if (!optionId) return;
 
         const newFilledBlanks = { ...filledBlanks };
-        
+
         // Remove from its previous blank if it was in one
         Object.keys(newFilledBlanks).forEach(key => {
             if (newFilledBlanks[key] === optionId) {
                 delete newFilledBlanks[key];
             }
         });
-        
+
         // Add to the new blank
         newFilledBlanks[blankId] = optionId;
-        
+
         setFilledBlanks(newFilledBlanks);
         if (status === 'error') setStatus('playing');
     };
@@ -197,14 +197,14 @@ export default function CompletarEnunciado() {
         if (!optionId) return;
 
         const newFilledBlanks = { ...filledBlanks };
-        
+
         // Remove the option from any blank it currently occupies
         Object.keys(newFilledBlanks).forEach(key => {
             if (newFilledBlanks[key] === optionId) {
                 delete newFilledBlanks[key];
             }
         });
-        
+
         setFilledBlanks(newFilledBlanks);
         if (status === 'error') setStatus('playing');
     };
@@ -257,8 +257,8 @@ export default function CompletarEnunciado() {
         }
 
         if (!isComplete && !isAllCorrect) {
-             setStatus('error');
-             return;
+            setStatus('error');
+            return;
         }
 
         if (isAllCorrect) {
@@ -281,21 +281,19 @@ export default function CompletarEnunciado() {
     };
 
     return (
-        <div className="flex min-h-[calc(100vh-80px)] items-center justify-center p-4 font-sans text-stone-100 selection:bg-indigo-500/30">
+        <div className="flex min-h-[calc(100vh-80px)] items-center justify-center p-4 font-sans text-stone-100 selection:bg-blue-500/30">
             <GameExitButton onExit={handleExit} label={exitLabel} />
             <GameSessionFinishedOverlay visible={sessionFinished} onExit={handleExit} actionLabel={finishActionLabel} />
             {/* Background elements */}
             <div className="fixed inset-0 overflow-hidden pointer-events-none -z-10 bg-zinc-950">
-                <div className="absolute -top-[20%] -left-[10%] w-[50%] h-[50%] rounded-full bg-indigo-900/10 blur-[120px]" />
-                <div className="absolute top-[60%] -right-[10%] w-[40%] h-[40%] rounded-full bg-purple-900/10 blur-[100px]" />
+                <div className="absolute -top-[20%] -left-[10%] w-[50%] h-[50%] rounded-full bg-blue-900/10 blur-[120px]" />
+                <div className="absolute top-[60%] -right-[10%] w-[40%] h-[40%] rounded-full bg-cyan-900/10 blur-[100px]" />
             </div>
 
             <div className="relative z-10 w-full max-w-5xl rounded-[2.5rem] border border-white/5 bg-white/2 p-8 shadow-2xl backdrop-blur-3xl sm:p-12">
                 <div className="mb-12 text-center">
-                    <h1 className="mb-4 flex items-center justify-center gap-4 bg-linear-to-r from-indigo-300 via-purple-300 to-indigo-300 bg-clip-text text-4xl font-black tracking-tight text-transparent sm:text-5xl">
-                        <Sparkles className="w-8 h-8 text-indigo-400" />
+                    <h1 className="mb-4 flex items-center justify-center gap-4 bg-linear-to-r from-sky-300 via-blue-400 to-sky-300 bg-clip-text text-4xl font-black tracking-tight text-transparent sm:text-5xl">
                         {levelData.title}
-                        <Sparkles className="w-8 h-8 text-purple-400" />
                     </h1>
                     <p className="text-lg text-zinc-400 font-medium">
                         {levelData.instruction}
@@ -330,7 +328,7 @@ export default function CompletarEnunciado() {
                 </div>
 
                 {/* Options Pool */}
-                <div 
+                <div
                     className="mb-10 flex min-h-40 items-center justify-center rounded-3xl border border-zinc-800/60 bg-zinc-900/40 p-8 shadow-inner transition-colors duration-300"
                     onDrop={handleDropOnPool}
                     onDragOver={handleDragOver}
@@ -348,9 +346,9 @@ export default function CompletarEnunciado() {
                             ))}
                         </AnimatePresence>
                         {getAvailableOptions().length === 0 && (
-                            <motion.div 
-                                initial={{ opacity: 0 }} 
-                                animate={{ opacity: 1 }} 
+                            <motion.div
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: 1 }}
                                 className="text-zinc-500 font-medium flex items-center h-full text-lg"
                             >
                                 {status === 'success' ? '¡Todo completado!' : 'No quedan más términos. ¡Comprueba tu respuesta!'}
@@ -370,15 +368,15 @@ export default function CompletarEnunciado() {
                                 exit={{ opacity: 0, y: -20 }}
                                 onClick={handleCheck}
                                 disabled={Object.keys(filledBlanks).length === 0 || sessionFinished}
-                                className="group relative inline-flex items-center justify-center gap-3 overflow-hidden rounded-2xl bg-indigo-600 px-10 py-5 font-bold text-white transition-all hover:bg-indigo-500 hover:scale-[1.02] active:scale-95 disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:scale-100 shadow-[0_0_40px_rgba(79,70,229,0.3)]"
+                                className="group relative inline-flex items-center justify-center gap-3 overflow-hidden rounded-2xl bg-blue-600 px-10 py-5 font-bold text-white transition-all hover:bg-blue-500 hover:scale-[1.02] active:scale-95 disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:scale-100 shadow-[0_0_40px_rgba(59,130,246,0.3)]"
                             >
                                 <span className="relative z-10 flex items-center gap-3 text-lg">
                                     Comprobar Respuesta <CheckCircle2 className="w-6 h-6" />
                                 </span>
-                                <div className="absolute inset-0 z-0 bg-linear-to-r from-indigo-500 to-purple-600 opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+                                <div className="absolute inset-0 z-0 bg-linear-to-r from-blue-500 to-cyan-600 opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
                             </motion.button>
                         ) : (
-                            <motion.div 
+                            <motion.div
                                 key="success-state"
                                 initial={{ opacity: 0, scale: 0.9 }}
                                 animate={{ opacity: 1, scale: 1 }}
@@ -393,7 +391,7 @@ export default function CompletarEnunciado() {
                                     disabled={sessionFinished}
                                     className="group flex items-center gap-2 text-zinc-400 font-medium hover:text-white transition-colors disabled:cursor-not-allowed disabled:opacity-40"
                                 >
-                                    <RotateCcw className="w-5 h-5 transition-transform group-hover:-rotate-180 duration-500" /> 
+                                    <RotateCcw className="w-5 h-5 transition-transform group-hover:-rotate-180 duration-500" />
                                     <span className="underline underline-offset-4 decoration-zinc-700 group-hover:decoration-white/50">Volver a jugar</span>
                                 </button>
                             </motion.div>
@@ -421,20 +419,20 @@ export default function CompletarEnunciado() {
 
 function BlankDropzone({ blankId, filledOptionId, options, onDrop, onDragOver, onDragStart, onDragEnd, status, correctAnswer }) {
     const filledOption = filledOptionId ? options.find(o => o.id === filledOptionId) : null;
-    
+
     let stateStyles = "border-dashed border-zinc-700 bg-black/20 text-transparent";
-    
+
     if (filledOption) {
-        stateStyles = "border-solid border-indigo-500/50 bg-indigo-500/10 text-indigo-200 shadow-[0_0_20px_rgba(99,102,241,0.15)]";
-        
+        stateStyles = "border-solid border-blue-500/50 bg-blue-500/10 text-blue-200 shadow-[0_0_20px_rgba(59,130,246,0.15)]";
+
         if (status === 'success') {
-             stateStyles = "border-solid border-emerald-500/50 bg-emerald-500/10 text-emerald-200 shadow-[0_0_20px_rgba(16,185,129,0.15)]";
+            stateStyles = "border-solid border-emerald-500/50 bg-emerald-500/10 text-emerald-200 shadow-[0_0_20px_rgba(16,185,129,0.15)]";
         } else if (status === 'error') {
-             if (filledOptionId === correctAnswer) {
-                 stateStyles = "border-solid border-emerald-500/50 bg-emerald-500/10 text-emerald-200 shadow-[0_0_20px_rgba(16,185,129,0.15)]";
-             } else {
-                 stateStyles = "border-solid border-rose-500/50 bg-rose-500/10 text-rose-200 shadow-[0_0_20px_rgba(244,63,94,0.15)]";
-             }
+            if (filledOptionId === correctAnswer) {
+                stateStyles = "border-solid border-emerald-500/50 bg-emerald-500/10 text-emerald-200 shadow-[0_0_20px_rgba(16,185,129,0.15)]";
+            } else {
+                stateStyles = "border-solid border-rose-500/50 bg-rose-500/10 text-rose-200 shadow-[0_0_20px_rgba(244,63,94,0.15)]";
+            }
         }
     }
 
@@ -444,10 +442,10 @@ function BlankDropzone({ blankId, filledOptionId, options, onDrop, onDragOver, o
             onDragOver={onDragOver}
             className={`
                 relative inline-flex items-center justify-center
-                mx-3 min-w-40 px-5 py-2 align-middle
+                mx-3 min-w-44 h-12 px-6 align-middle
                 border-2 rounded-xl transition-all duration-300
                 ${stateStyles}
-                ${!filledOption && status !== 'success' ? "hover:border-indigo-500/50 hover:bg-white/3" : ""}
+                ${!filledOption && status !== 'success' ? "hover:border-blue-500/50 hover:bg-white/3" : ""}
             `}
         >
             {filledOption ? (
@@ -456,14 +454,14 @@ function BlankDropzone({ blankId, filledOptionId, options, onDrop, onDragOver, o
                     onDragStart={(e) => onDragStart(e, filledOption.id, blankId)}
                     onDragEnd={onDragEnd}
                     className={`
-                        absolute inset-0 flex items-center justify-center font-bold tracking-wide w-full h-full rounded-xl
-                        ${status !== 'success' ? 'cursor-grab active:cursor-grabbing hover:bg-white/5' : ''}
+                        flex items-center justify-center font-bold tracking-wide text-xl text-center select-none w-full h-full rounded-xl
+                        ${status !== 'success' ? 'cursor-grab active:cursor-grabbing hover:text-white transition-colors' : ''}
                     `}
                 >
                     {filledOption.text}
                 </span>
             ) : (
-                <span className="invisible text-lg">_</span>
+                <span className="invisible text-lg select-none">_</span>
             )}
         </span>
     );
@@ -482,9 +480,9 @@ function DraggableOption({ option, onDragStart, onDragEnd, disabled }) {
             onDragEnd={onDragEnd}
             className={`
                 px-7 py-3.5 rounded-xl font-bold tracking-wide text-lg shadow-xl
-                ${disabled 
-                    ? 'opacity-50 cursor-not-allowed bg-zinc-800/80 text-zinc-500 border border-zinc-700/50' 
-                    : 'cursor-grab active:cursor-grabbing border border-indigo-400/30 bg-linear-to-br from-indigo-500 to-violet-600 text-white transition-transform hover:-translate-y-1 hover:scale-105 hover:shadow-[0_10px_20px_rgba(99,102,241,0.3)]'}
+                ${disabled
+                    ? 'opacity-50 cursor-not-allowed bg-zinc-800/80 text-zinc-500 border border-zinc-700/50'
+                    : 'cursor-grab active:cursor-grabbing border border-blue-400/30 bg-linear-to-br from-blue-500 to-cyan-600 text-white transition-transform hover:-translate-y-1 hover:scale-105 hover:shadow-[0_10px_20px_rgba(59,130,246,0.3)]'}
             `}
         >
             {option.text}
