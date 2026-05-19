@@ -11,7 +11,9 @@ import { OrbitControls, Environment, ContactShadows, Grid } from '@react-three/d
 export default function RoomCanvas({
   children,
   cameraPosition = [0, 2, 8],
-  fov = 45
+  fov = 45,
+  orbitTarget = [0, 0, 0],
+  showGrid = true
 }) {
   return (
     // Es vital que este div tenga tamaño (w-full h-full) para que el Canvas ocupe espacio
@@ -40,14 +42,16 @@ export default function RoomCanvas({
 
         {/* El Suelo y la Cuadrícula */}
         <group position={[0, -2, 0]}>
-          <Grid
-            infiniteGrid
-            fadeDistance={25}
-            sectionColor="#3f3f46"
-            cellColor="#18181b"
-            cellSize={0.5}
-            sectionSize={2}
-          />
+          {showGrid && (
+            <Grid
+              infiniteGrid
+              fadeDistance={25}
+              sectionColor="#3f3f46"
+              cellColor="#18181b"
+              cellSize={0.5}
+              sectionSize={2}
+            />
+          )}
           {/* Sombras de contacto para anclar los objetos al suelo de forma realista */}
           <ContactShadows position={[0, 0.01, 0]} resolution={1024} scale={20} blur={2} opacity={0.6} />
         </group>
@@ -65,6 +69,7 @@ export default function RoomCanvas({
           maxDistance={20}
           maxPolarAngle={Math.PI / 2 - 0.05}
           dampingFactor={0.05}
+          target={orbitTarget}
         />
       </Canvas>
     </div>

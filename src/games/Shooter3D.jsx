@@ -11,6 +11,7 @@ import { GameExitButton, GameSessionFinishedOverlay, useGameSessionUi } from '@/
 import { useSessionGame } from '@/hooks/useSessionGame';
 import { validateGameContent } from '@/games/shared/gameContentValidation';
 import { EnemyBot } from '@/components/canvas3D/meshes/characters/EnemyBot';
+import { Room } from '@/components/canvas3D/meshes/environments/room';
 
 function resolveShootingContent(gameContent) {
   const questions = Array.isArray(gameContent?.questions)
@@ -62,7 +63,7 @@ const EnemyBoss = ({ health, maxHealth, isComputing, tookDamage, isEntering, isD
   const healthPercent = health / maxHealth;
 
   return (
-    <group position={[0, 2.0, -7]}>
+    <group position={[-3.0, 2.0, -7]}>
       <group ref={meshRef} position={[0, -2.4, 0]} rotation={[0, 0, 0]} scale={0.75}>
         <Suspense fallback={null}>
           <EnemyBot
@@ -314,10 +315,10 @@ export default function Shooter3D() {
 
   // Posiciones de los "objetivos" (las 4 respuestas) en la escena
   const targetPositions = [
-    [-4, 3, -4],
-    [4, 3, -4],
-    [-2, 1, -2],
-    [2, 1, -2]
+    [-7, 3, -4],
+    [1, 3, -4],
+    [-5, 1, -2],
+    [-1, 1, -2]
   ];
 
   const currentQ = questions[qIndex];
@@ -391,7 +392,7 @@ export default function Shooter3D() {
       {/* 3D Canvas */}
       <main className="flex-1 w-full h-full">
         {/* We reuse RoomCanvas but adjust styling or pass children directly */}
-        <RoomCanvas cameraPosition={[0, 2.2, 9.5]}>
+        <RoomCanvas cameraPosition={[-3.0, 1.5, 8.5]} orbitTarget={[-3.0, 1.5, 0]}>
           {/* Escena dinámica */}
           <ambientLight intensity={0.4} />
           <pointLight position={[0, 10, 0]} intensity={1.5} color="#4f46e5" />
@@ -404,6 +405,11 @@ export default function Shooter3D() {
             isEntering={isEntering}
             isDying={isDying}
           />
+
+          {/* Fondo 3D de la sala/garaje que envuelve toda la escena */}
+          <Suspense fallback={null}>
+            <Room position={[-3.4, -1.5, 1.6]} scale={[2.2, 2.2, 2.2]} rotation={[0, Math.PI / 2, 0]} />
+          </Suspense>
 
           {gameState === 'playing' && !isComputing && currentQ.answers.map((ans, idx) => (
             <AnswerTarget
