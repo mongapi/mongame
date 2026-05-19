@@ -4,6 +4,7 @@ import { AlertCircle, ArrowDownUp, BookOpen, CopyPlus, Eye, Filter, Pencil, Play
 import { GameTypePreview, getGameTypeVisualMeta } from '@/components/gameTypes/GameTypeVisual';
 import { useGameLibraryView } from '@/hooks/useGameLibraryView';
 import { SessionModeDialog } from '@/components/organisms/SessionModeSelector';
+import PaginationControls from '@/components/ui/PaginationControls';
 import { formatDate } from '@/lib/formatters';
 import LoadingScreen from '@/components/ui/LoadingScreen';
 import blurBg from '../public/images/blur01.jpg';
@@ -32,36 +33,6 @@ const itemVariants = {
         }
     }
 };
-
-function PaginationControls({ page, totalPages, onPageChange, label }) {
-    if (totalPages <= 1) {
-        return null;
-    }
-
-    return (
-        <div className="mt-6 flex flex-wrap items-center justify-between gap-3 px-2">
-            <p className="text-sm text-zinc-400"> Página {page} de {totalPages}</p>
-            <div className="flex items-center gap-3">
-                <button
-                    type="button"
-                    onClick={() => onPageChange(page - 1)}
-                    disabled={page === 1}
-                    className="rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-sm font-semibold text-white transition hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-40"
-                >
-                    Anterior
-                </button>
-                <button
-                    type="button"
-                    onClick={() => onPageChange(page + 1)}
-                    disabled={page === totalPages}
-                    className="rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-sm font-semibold text-white transition hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-40"
-                >
-                    Siguiente
-                </button>
-            </div>
-        </div>
-    );
-}
 
 function TypeBadge({ game }) {
     const label = game?.game_type?.name ?? 'Sin tipo';
@@ -736,7 +707,6 @@ export default function GameLibraryView() {
                             page={lessonPlansPage}
                             totalPages={totalLessonPlanPages}
                             onPageChange={setLessonPlansPage}
-                            label="Paginación de lesson plans"
                         />
                     </div>
                 ) : null}

@@ -7,6 +7,7 @@ import {
 import { useTeacherDashboard } from '@/hooks/useTeacherDashboard';
 import { formatDateTime, formatElapsed } from '@/lib/formatters';
 import LoadingScreen from '@/components/ui/LoadingScreen';
+import PaginationControls from '@/components/ui/PaginationControls';
 import blurBg from '../public/images/as05.jpg';
 
 
@@ -182,29 +183,11 @@ export default function TeacherDashboard() {
                         })}
                     </div>
 
-                    {totalRecentSessionsPages > 1 ? (
-                        <div className="mt-6 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-white/10 bg-white/5 px-4 py-3">
-                            <p className="text-sm text-zinc-400">Página {recentSessionsPage} de {totalRecentSessionsPages}</p>
-                            <div className="flex items-center gap-3">
-                                <button
-                                    type="button"
-                                    onClick={() => setRecentSessionsPage((page) => Math.max(1, page - 1))}
-                                    disabled={recentSessionsPage === 1}
-                                    className="rounded-xl border border-white/10 bg-black/20 px-4 py-2 text-sm font-semibold text-white transition hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-40"
-                                >
-                                    Anterior
-                                </button>
-                                <button
-                                    type="button"
-                                    onClick={() => setRecentSessionsPage((page) => Math.min(totalRecentSessionsPages, page + 1))}
-                                    disabled={recentSessionsPage === totalRecentSessionsPages}
-                                    className="rounded-xl border border-white/10 bg-black/20 px-4 py-2 text-sm font-semibold text-white transition hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-40"
-                                >
-                                    Siguiente
-                                </button>
-                            </div>
-                        </div>
-                    ) : null}
+                    <PaginationControls
+                        page={recentSessionsPage}
+                        totalPages={totalRecentSessionsPages}
+                        onPageChange={setRecentSessionsPage}
+                    />
                 </div>
             </div>
         );

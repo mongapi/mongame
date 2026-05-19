@@ -1,5 +1,5 @@
 import { motion } from 'motion/react';
-import { LayoutDashboard, Users, Gamepad2, Image, Power } from 'lucide-react';
+import { LayoutDashboard, Users, Gamepad2, Power } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { authAPI } from '@/api/api';
 import monlauLogo from '../../public/images/monlau_logo.png';
@@ -47,11 +47,10 @@ export default function AdminNavbar() {
                     className="w-12 h-12 object-contain filter drop-shadow-[0_0_12px_rgba(16,185,129,0.8)]"
                 />
             </div>
-            <div className="grid flex-1 w-full grid-cols-5 gap-2 md:block md:px-4 md:space-y-4 md:gap-0">
+            <div className="grid flex-1 w-full grid-cols-4 gap-2 md:block md:px-4 md:space-y-4 md:gap-0">
                 <NavItem icon={LayoutDashboard} label="DASHBOARD"   path="/admin/dashboard" />
                 <NavItem icon={Users}           label="USUARIOS"    path="/admin/users" />
                 <NavItem icon={Gamepad2}        label="TIPOS JUEGO" path="/admin/game-types" />
-                <NavItem icon={Image}           label="MEDIA"       path="/admin/media" />
                 <motion.button
                     whileHover={{ scale: 1.1, x: 5 }}
                     whileTap={{ scale: 0.95 }}

@@ -1,4 +1,5 @@
-import { Activity, Boxes, Database, Users } from 'lucide-react';
+import { Activity, ArrowRight, Boxes, Database, Users } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { useAdminDashboard } from '@/hooks/useAdminDashboard';
 import { formatDateTime } from '@/lib/formatters';
 import LoadingScreen from '@/components/ui/LoadingScreen';
@@ -47,9 +48,7 @@ export default function AdminDashboardView() {
             <div className="mx-auto max-w-7xl space-y-8">
                 <div>
                     <h1 className="font-['Orbitron'] text-3xl font-black sm:text-4xl">PANEL DE ADMINISTRACIÓN</h1>
-                    <p className="mt-3 max-w-3xl text-sm leading-6 text-zinc-400">
-                        Vista operativa del sistema: volumen de usuarios, recursos, sesiones recientes, actividad y salud técnica básica.
-                    </p>
+                    <p className="mt-3 max-w-3xl text-sm leading-6 text-zinc-400">Resumen general del sistema.</p>
                 </div>
 
                 <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-4">
@@ -86,22 +85,22 @@ export default function AdminDashboardView() {
                     <div className="rounded-3xl border border-white/10 bg-black/30 p-6 backdrop-blur-xl">
                         <div className="mb-5">
                             <h2 className="font-['Orbitron'] text-xl font-black text-white">Salud del sistema</h2>
-                            <p className="mt-2 text-sm text-zinc-500">Chequeo rápido de API, websocket y colas.</p>
+                            <p className="mt-2 text-sm text-zinc-500">Estado general.</p>
                         </div>
                         <div className="space-y-4">
                             <div className="rounded-2xl border border-emerald-400/20 bg-emerald-400/10 p-4">
-                                <p className="text-xs font-bold uppercase tracking-[0.18em] text-emerald-200/80">API</p>
+                                <p className="text-xs font-bold uppercase tracking-[0.18em] text-emerald-200/80">Servicio</p>
                                 <p className="mt-2 font-semibold text-white">{dashboard.health.api.label}</p>
                             </div>
                             <div className="rounded-2xl border border-cyan-400/20 bg-cyan-400/10 p-4">
-                                <p className="text-xs font-bold uppercase tracking-[0.18em] text-cyan-200/80">Websocket / Reverb</p>
-                                <p className="mt-2 font-semibold text-white">Driver: {dashboard.health.websocket.driver}</p>
-                                <p className="mt-1 text-sm text-zinc-300">{dashboard.health.websocket.configured ? `Configurado en ${dashboard.health.websocket.host}:${dashboard.health.websocket.port}` : 'No configurado todavía.'}</p>
+                                <p className="text-xs font-bold uppercase tracking-[0.18em] text-cyan-200/80">Tiempo real</p>
+                                <p className="mt-2 font-semibold text-white">{dashboard.health.websocket.driver}</p>
+                                <p className="mt-1 text-sm text-zinc-300">{dashboard.health.websocket.configured ? `${dashboard.health.websocket.host}:${dashboard.health.websocket.port}` : 'Sin configurar.'}</p>
                             </div>
                             <div className="rounded-2xl border border-amber-400/20 bg-amber-400/10 p-4">
-                                <p className="text-xs font-bold uppercase tracking-[0.18em] text-amber-200/80">Colas</p>
-                                <p className="mt-2 font-semibold text-white">Driver: {dashboard.health.queue.driver}</p>
-                                <p className="mt-1 text-sm text-zinc-300">{dashboard.health.queue.in_use ? 'Hay infraestructura de colas activa.' : 'Ahora mismo el sistema trabaja sin colas dedicadas.'}</p>
+                                <p className="text-xs font-bold uppercase tracking-[0.18em] text-amber-200/80">Procesos</p>
+                                <p className="mt-2 font-semibold text-white">{dashboard.health.queue.driver}</p>
+                                <p className="mt-1 text-sm text-zinc-300">{dashboard.health.queue.in_use ? 'Activos.' : 'Modo simple.'}</p>
                             </div>
                         </div>
                     </div>
@@ -161,20 +160,24 @@ export default function AdminDashboardView() {
                 <div className="rounded-3xl border border-white/10 bg-black/30 p-6 backdrop-blur-xl">
                     <div className="mb-5">
                         <h2 className="font-['Orbitron'] text-xl font-black text-white">Accesos rápidos</h2>
-                        <p className="mt-2 text-sm text-zinc-500">Bloques previstos del panel admin. Los módulos se pueden ir activando uno a uno.</p>
+                        <p className="mt-2 text-sm text-zinc-500">Acceso directo a las secciones activas.</p>
                     </div>
-                    <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+                    <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
                         {quickActions.map((action) => (
-                            <div
+                            <Link
                                 key={action.title}
-                                className="rounded-2xl border border-white/10 bg-white/5 p-5 text-left"
+                                to={action.path}
+                                className="rounded-2xl border border-white/10 bg-white/5 p-5 text-left transition hover:border-emerald-400/30 hover:bg-white/10"
                             >
                                 <div className="flex items-center justify-between gap-3">
                                     <p className="font-bold text-white">{action.title}</p>
-                                    <span className="rounded-full border border-white/10 bg-black/20 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-400">Próximo</span>
+                                    <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-black/20 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-400">
+                                        Abrir
+                                        <ArrowRight className="h-3.5 w-3.5" />
+                                    </span>
                                 </div>
                                 <p className="mt-2 text-sm leading-6 text-zinc-500">{action.description}</p>
-                            </div>
+                            </Link>
                         ))}
                     </div>
                 </div>

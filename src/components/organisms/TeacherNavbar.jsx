@@ -4,6 +4,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { authAPI } from '@/api/api';
 import monlauLogo from '../../public/images/monlau_logo.png';
 import { cn } from '@/lib/utils';
+import { ROUTE_PATHS } from '@/router/paths';
 
 const NavItem = ({ icon: Icon, label, path }) => {
     const navigate = useNavigate();
@@ -40,7 +41,7 @@ export default function TeacherNavbar() {
 
     return (
         <motion.nav className="fixed inset-x-0 bottom-0 z-50 flex items-center gap-2 border-t border-white/10 bg-zinc-950/90 px-3 py-3 backdrop-blur-xl md:left-0 md:top-0 md:bottom-0 md:h-screen md:w-20 md:flex-col md:items-center md:gap-0 md:border-r md:border-t-0 md:px-0 md:py-8 md:hover:w-64 md:transition-all md:duration-500 md:ease-out group">
-            <div className="hidden w-full cursor-pointer justify-center md:mb-12 md:flex" onClick={() => navigate('/dashboard')}>
+            <div className="hidden w-full cursor-pointer justify-center md:mb-12 md:flex" onClick={() => navigate(ROUTE_PATHS.dashboard)}>
                 <img
                     src={monlauLogo}
                     alt="Monlau Logo"
@@ -48,11 +49,11 @@ export default function TeacherNavbar() {
                 />
             </div>
             <div className="grid flex-1 w-full grid-cols-6 gap-2 md:block md:px-4 md:space-y-4 md:gap-0">
-                <NavItem icon={Home}     label="INICIO"      path="/" />
-                <NavItem icon={Activity} label="DASHBOARD"   path="/dashboard" />
-                <NavItem icon={Library}  label="BIBLIOTECA"  path="/games" />
-                <NavItem icon={Gamepad2} label="CREAR SESIÓN" path="/sessions/create" />
-                <NavItem icon={Settings} label="CONFIG"      path="/config" />
+                <NavItem icon={Home}     label="INICIO"      path={ROUTE_PATHS.dashboard} />
+                <NavItem icon={Activity} label="DASHBOARD"   path={ROUTE_PATHS.dashboard} />
+                <NavItem icon={Library}  label="BIBLIOTECA"  path={ROUTE_PATHS.games} />
+                <NavItem icon={Gamepad2} label="CREAR SESIÓN" path={ROUTE_PATHS.sessionsCreate} />
+                <NavItem icon={Settings} label="CONFIG"      path={ROUTE_PATHS.config} />
                 <motion.button
                     whileHover={{ scale: 1.1, x: 5 }}
                     whileTap={{ scale: 0.95 }}
