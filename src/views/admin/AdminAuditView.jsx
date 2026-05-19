@@ -1,9 +1,12 @@
-import { Activity, History, Search, ShieldAlert } from 'lucide-react';
-import { useMemo, useState } from 'react';
+import { Activity, Search, ShieldAlert } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import LoadingScreen from '@/components/ui/LoadingScreen';
+import PaginationControls from '@/components/ui/PaginationControls';
 import { useAdminAuditView } from '@/hooks/useAdminAuditView';
 import { formatDateTime } from '@/lib/formatters';
+
+const EVENTS_PER_PAGE = 10;
 
 export default function AdminAuditView() {
     const { events, metrics, loading, error } = useAdminAuditView();
@@ -18,6 +21,25 @@ export default function AdminAuditView() {
 
         return events.filter((event) => `${event.title} ${event.subtitle} ${event.detail} ${event.kind} ${event.action}`.toLowerCase().includes(normalized));
     }, [events, query]);
+
+    const [page, setPage] = useState(1);
+
+    const totalPages = useMemo(() => Math.max(1, Math.ceil(filteredEvents.length / EVENTS_PER_PAGE)), [filteredEvents.length]);
+
+    const paginatedEvents = useMemo(() => {
+        const startIndex = (page - 1) * EVENTS_PER_PAGE;
+        return filteredEvents.slice(startIndex, startIndex + EVENTS_PER_PAGE);
+    }, [filteredEvents, page]);
+
+    useEffect(() => {
+        setPage(1);
+    }, [query]);
+
+    useEffect(() => {
+        if (page > totalPages) {
+            setPage(totalPages);
+        }
+    }, [page, totalPages]);
 
     if (loading) {
         return <LoadingScreen title="Cargando actividad admin..." />;
@@ -35,7 +57,7 @@ export default function AdminAuditView() {
                         <div>
                             <div className="inline-flex items-center gap-2 rounded-full border border-emerald-400/20 bg-emerald-400/10 px-3 py-2 text-[11px] font-bold uppercase tracking-[0.22em] text-emerald-200">Admin / Auditoría</div>
                             <h1 className="mt-5 font-['Orbitron'] text-3xl font-black text-white sm:text-4xl">Actividad del sistema</h1>
-                            <p className="mt-3 max-w-3xl text-sm leading-6 text-zinc-400">Timeline consolidado del admin.</p>
+                            <p className="mt-3 max-w-3xl text-sm leading-6 text-zinc-400">Actividad reciente.</p>
                         </div>
 
                         <div className="flex flex-wrap gap-3">
@@ -57,7 +79,7 @@ export default function AdminAuditView() {
                         <div className="mb-5 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                             <div>
                                 <h2 className="font-['Orbitron'] text-xl font-black text-white">Timeline</h2>
-                                <p className="mt-2 text-sm text-zinc-500">Historial reciente de actividad consolidada.</p>
+                                <p className="mt-2 text-sm text-zinc-500">Historial reciente.</p>
                             </div>
                             <div className="relative w-full sm:max-w-sm">
                                 <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-500" />
@@ -66,7 +88,7 @@ export default function AdminAuditView() {
                         </div>
 
                         <div className="space-y-3">
-                            {filteredEvents.map((event) => (
+                            {paginatedEvents.map((event) => (
                                 <div key={event.id} className="rounded-2xl border border-white/10 bg-white/5 p-4">
                                     <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                                         <div className="min-w-0">
@@ -87,11 +109,20 @@ export default function AdminAuditView() {
 
                             {filteredEvents.length === 0 ? <div className="rounded-2xl border border-dashed border-white/10 bg-white/5 px-4 py-10 text-center text-sm text-zinc-500">No hay eventos que coincidan con el filtro.</div> : null}
                         </div>
+
+                        <PaginationControls
+                            page={page}
+                            totalPages={totalPages}
+                            totalItems={filteredEvents.length}
+                            pageSize={EVENTS_PER_PAGE}
+                            onPageChange={setPage}
+                            itemLabel="eventos"
+                        />
                     </section>
 
                     <div className="space-y-6">
                         <section className="rounded-3xl border border-white/10 bg-black/30 p-6 backdrop-blur-xl">
-                            <div className="mb-5 flex items-center justify-between gap-4"><div><h2 className="font-['Orbitron'] text-xl font-black text-white">Lectura rápida</h2><p className="mt-2 text-sm text-zinc-500">Qué está generando más movimiento en el sistema.</p></div><div className="rounded-2xl border border-emerald-400/20 bg-emerald-400/10 p-3 text-emerald-200"><Activity className="h-5 w-5" /></div></div>
+                            <div className="mb-5 flex items-center justify-between gap-4"><div><h2 className="font-['Orbitron'] text-xl font-black text-white">Lectura rápida</h2><p className="mt-2 text-sm text-zinc-500">Movimiento reciente.</p></div><div className="rounded-2xl border border-emerald-400/20 bg-emerald-400/10 p-3 text-emerald-200"><Activity className="h-5 w-5" /></div></div>
                             <div className="space-y-3">
                                 <div className="rounded-2xl border border-white/10 bg-white/5 p-4"><p className="font-semibold text-white">Usuarios</p><p className="mt-2 text-sm text-zinc-400">{metrics.users_last_7_days} altas en siete días.</p></div>
                                 <div className="rounded-2xl border border-white/10 bg-white/5 p-4"><p className="font-semibold text-white">Juegos</p><p className="mt-2 text-sm text-zinc-400">{metrics.games_last_7_days} nuevos en siete días.</p></div>

@@ -1,9 +1,12 @@
 import { AlertTriangle, Search, ShieldCheck, Trash2, UserCog, Users } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
+import PaginationControls from '@/components/ui/PaginationControls';
 import LoadingScreen from '@/components/ui/LoadingScreen';
 import { useAdminUsersView } from '@/hooks/useAdminUsersView';
 import { formatDateTime } from '@/lib/formatters';
+
+const USERS_PER_PAGE = 8;
 
 const ROLE_OPTIONS = [
     { value: 'admin', label: 'Admin' },
@@ -14,6 +17,7 @@ const ROLE_OPTIONS = [
 export default function AdminUsersView() {
     const { users, metrics, loading, error, pendingUserId, changeUserRole, removeUser } = useAdminUsersView();
     const [query, setQuery] = useState('');
+    const [page, setPage] = useState(1);
     const [selectedUserId, setSelectedUserId] = useState(null);
     const [feedback, setFeedback] = useState({ type: '', message: '' });
 
@@ -30,15 +34,41 @@ export default function AdminUsersView() {
         });
     }, [users, query]);
 
+    const totalPages = useMemo(() => Math.max(1, Math.ceil(filteredUsers.length / USERS_PER_PAGE)), [filteredUsers.length]);
+
+    const paginatedUsers = useMemo(() => {
+        const startIndex = (page - 1) * USERS_PER_PAGE;
+        return filteredUsers.slice(startIndex, startIndex + USERS_PER_PAGE);
+    }, [filteredUsers, page]);
+
     const selectedUser = useMemo(() => {
         return filteredUsers.find((user) => user.id === selectedUserId) ?? filteredUsers[0] ?? null;
     }, [filteredUsers, selectedUserId]);
 
     useEffect(() => {
-        if (!selectedUser && filteredUsers[0]) {
-            setSelectedUserId(filteredUsers[0].id);
+        setPage(1);
+    }, [query]);
+
+    useEffect(() => {
+        if (page > totalPages) {
+            setPage(totalPages);
         }
-    }, [filteredUsers, selectedUser]);
+    }, [page, totalPages]);
+
+    useEffect(() => {
+        if (!paginatedUsers.length) {
+            if (selectedUserId !== null) {
+                setSelectedUserId(null);
+            }
+            return;
+        }
+
+        const selectedUserIsVisible = paginatedUsers.some((user) => user.id === selectedUser?.id);
+
+        if (!selectedUserIsVisible) {
+            setSelectedUserId(paginatedUsers[0].id);
+        }
+    }, [paginatedUsers, selectedUser, selectedUserId]);
 
     async function handleRoleChange(userId, role) {
         setFeedback({ type: '', message: '' });
@@ -83,7 +113,7 @@ export default function AdminUsersView() {
                                 Admin / Usuarios
                             </div>
                             <h1 className="mt-5 font-['Orbitron'] text-3xl font-black text-white sm:text-4xl">Gestión de usuarios</h1>
-                            <p className="mt-3 max-w-3xl text-sm leading-6 text-zinc-400">Cambio de rol y eliminación.</p>
+                            <p className="mt-3 max-w-3xl text-sm leading-6 text-zinc-400">Roles, búsqueda y acciones rápidas.</p>
                         </div>
 
                         <div className="flex flex-wrap gap-3">
@@ -120,7 +150,7 @@ export default function AdminUsersView() {
                         </div>
 
                         <div className="space-y-3">
-                            {filteredUsers.map((user) => (
+                            {paginatedUsers.map((user) => (
                                 <button
                                     key={user.id}
                                     type="button"
@@ -144,14 +174,23 @@ export default function AdminUsersView() {
                                 <div className="rounded-2xl border border-dashed border-white/10 bg-white/5 px-4 py-10 text-center text-sm text-zinc-500">No hay usuarios que coincidan con la búsqueda.</div>
                             ) : null}
                         </div>
+
+                        <PaginationControls
+                            page={page}
+                            totalPages={totalPages}
+                            totalItems={filteredUsers.length}
+                            pageSize={USERS_PER_PAGE}
+                            onPageChange={setPage}
+                            itemLabel="usuarios"
+                        />
                     </section>
 
                     <div className="space-y-6">
                         <section className="rounded-3xl border border-white/10 bg-black/30 p-6 backdrop-blur-xl">
                             <div className="mb-5 flex items-center justify-between gap-4">
                                 <div>
-                                    <h2 className="font-['Orbitron'] text-xl font-black text-white">Panel de gestión</h2>
-                                    <p className="mt-2 text-sm text-zinc-500">Acciones sobre la cuenta seleccionada.</p>
+                                    <h2 className="font-['Orbitron'] text-xl font-black text-white">Acciones</h2>
+                                    <p className="mt-2 text-sm text-zinc-500">Cuenta seleccionada.</p>
                                 </div>
                                 <div className="rounded-2xl border border-cyan-400/20 bg-cyan-400/10 p-3 text-cyan-200"><UserCog className="h-5 w-5" /></div>
                             </div>
@@ -188,7 +227,7 @@ export default function AdminUsersView() {
                                             <AlertTriangle className="mt-0.5 h-5 w-5 text-red-300" />
                                             <div>
                                                 <p className="font-semibold text-white">Eliminar usuario</p>
-                                                <p className="mt-2 text-sm text-red-100/80">La cuenta se borra solo si backend lo permite.</p>
+                                                <p className="mt-2 text-sm text-red-100/80">Acción permanente.</p>
                                             </div>
                                         </div>
                                         <button

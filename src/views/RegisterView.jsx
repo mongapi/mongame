@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { motion } from 'motion/react';
 import { useNavigate } from 'react-router-dom';
-import { Mail, Lock, User, ArrowRight, UserPlus, AlertCircle, Loader } from 'lucide-react';
+import { Mail, Lock, User, ArrowLeft, ArrowRight, AlertCircle, Loader } from 'lucide-react';
 import { authAPI } from '@/api/api';
 import monlauLogo from '../public/images/monlau_logo.png';
 import blurBg from '../public/images/blur03.jpg';
@@ -11,6 +11,15 @@ export default function RegisterView() {
     const [formData, setFormData] = useState({ name: '', email: '', password: '', password_confirmation: '' });
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState('');
+
+    const handleGoBack = () => {
+        if (window.history.length > 1) {
+            navigate(-1);
+            return;
+        }
+
+        navigate('/');
+    };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -59,6 +68,15 @@ export default function RegisterView() {
                     transition={{ duration: 0.6, ease: "easeOut" }}
                     className="relative z-10 w-full glass-card p-8 sm:p-10 rounded-3xl overflow-hidden border border-white/10 shadow-2xl"
                 >
+                    <button
+                        type="button"
+                        onClick={handleGoBack}
+                        className="mb-6 inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-sm font-semibold text-zinc-200 transition hover:bg-white/10"
+                    >
+                        <ArrowLeft className="h-4 w-4" />
+                        Volver
+                    </button>
+
                     <div className="mb-8 text-center relative">
                         <img
                             src={monlauLogo}
@@ -76,7 +94,7 @@ export default function RegisterView() {
                                 animate={{ opacity: 1, y: 0 }}
                                 className="flex items-center gap-2 p-3 bg-red-500/20 border border-red-500/40 rounded-xl text-red-200 backdrop-blur-md"
                             >
-                                <AlertCircle className="h-4 w-4 flex-shrink-0 text-red-400" />
+                                <AlertCircle className="h-4 w-4 shrink-0 text-red-400" />
                                 <span className="text-sm font-medium">{error}</span>
                             </motion.div>
                         )}

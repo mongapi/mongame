@@ -1,12 +1,16 @@
 import { Boxes, Puzzle, Search, Sparkles } from 'lucide-react';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
+import PaginationControls from '@/components/ui/PaginationControls';
 import LoadingScreen from '@/components/ui/LoadingScreen';
 import { useAdminGameTypesView } from '@/hooks/useAdminGameTypesView';
+
+const GAME_TYPES_PER_PAGE = 6;
 
 export default function AdminGameTypesView() {
     const { types, metrics, loading, error } = useAdminGameTypesView();
     const [query, setQuery] = useState('');
+    const [page, setPage] = useState(1);
 
     const filteredTypes = useMemo(() => {
         const normalized = query.trim().toLowerCase();
@@ -17,6 +21,23 @@ export default function AdminGameTypesView() {
 
         return types.filter((type) => `${type.name} ${type.code} ${type.description || ''}`.toLowerCase().includes(normalized));
     }, [types, query]);
+
+    const totalPages = useMemo(() => Math.max(1, Math.ceil(filteredTypes.length / GAME_TYPES_PER_PAGE)), [filteredTypes.length]);
+
+    const paginatedTypes = useMemo(() => {
+        const startIndex = (page - 1) * GAME_TYPES_PER_PAGE;
+        return filteredTypes.slice(startIndex, startIndex + GAME_TYPES_PER_PAGE);
+    }, [filteredTypes, page]);
+
+    useEffect(() => {
+        setPage(1);
+    }, [query]);
+
+    useEffect(() => {
+        if (page > totalPages) {
+            setPage(totalPages);
+        }
+    }, [page, totalPages]);
 
     if (loading) {
         return <LoadingScreen title="Cargando tipos de juego..." />;
@@ -34,7 +55,7 @@ export default function AdminGameTypesView() {
                         <div>
                             <div className="inline-flex items-center gap-2 rounded-full border border-purple-400/20 bg-purple-400/10 px-3 py-2 text-[11px] font-bold uppercase tracking-[0.22em] text-purple-200">Admin / Tipos de juego</div>
                             <h1 className="mt-5 font-['Orbitron'] text-3xl font-black text-white sm:text-4xl">Catálogo operativo</h1>
-                            <p className="mt-3 max-w-3xl text-sm leading-6 text-zinc-400">Estado y uso de cada mecánica.</p>
+                            <p className="mt-3 max-w-3xl text-sm leading-6 text-zinc-400">Vista general del catálogo.</p>
                         </div>
 
                         <div className="flex flex-wrap gap-3">
@@ -56,7 +77,7 @@ export default function AdminGameTypesView() {
                         <div className="mb-5 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                             <div>
                                 <h2 className="font-['Orbitron'] text-xl font-black text-white">Mecánicas registradas</h2>
-                                <p className="mt-2 text-sm text-zinc-500">Buscador por nombre, código o descripción.</p>
+                                <p className="mt-2 text-sm text-zinc-500">Busca por nombre, código o descripción.</p>
                             </div>
                             <div className="relative w-full sm:max-w-sm">
                                 <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-500" />
@@ -65,7 +86,7 @@ export default function AdminGameTypesView() {
                         </div>
 
                         <div className="grid gap-4 md:grid-cols-2">
-                            {filteredTypes.map((type) => (
+                            {paginatedTypes.map((type) => (
                                 <div key={type.id} className="rounded-2xl border border-white/10 bg-white/5 p-5">
                                     <div className="flex items-start justify-between gap-4">
                                         <div>
@@ -83,12 +104,25 @@ export default function AdminGameTypesView() {
                                     </div>
                                 </div>
                             ))}
+
+                            {filteredTypes.length === 0 ? (
+                                <div className="md:col-span-2 rounded-2xl border border-dashed border-white/10 bg-white/5 px-4 py-10 text-center text-sm text-zinc-500">No hay tipos que coincidan con la búsqueda.</div>
+                            ) : null}
                         </div>
+
+                        <PaginationControls
+                            page={page}
+                            totalPages={totalPages}
+                            totalItems={filteredTypes.length}
+                            pageSize={GAME_TYPES_PER_PAGE}
+                            onPageChange={setPage}
+                            itemLabel="tipos"
+                        />
                     </section>
 
                     <div className="space-y-6">
                         <section className="rounded-3xl border border-white/10 bg-black/30 p-6 backdrop-blur-xl">
-                            <div className="mb-5 flex items-center justify-between gap-4"><div><h2 className="font-['Orbitron'] text-xl font-black text-white">Estado del catálogo</h2><p className="mt-2 text-sm text-zinc-500">Lectura rápida de adopción y disponibilidad.</p></div><div className="rounded-2xl border border-purple-400/20 bg-purple-400/10 p-3 text-purple-200"><Puzzle className="h-5 w-5" /></div></div>
+                            <div className="mb-5 flex items-center justify-between gap-4"><div><h2 className="font-['Orbitron'] text-xl font-black text-white">Estado del catálogo</h2><p className="mt-2 text-sm text-zinc-500">Resumen rápido.</p></div><div className="rounded-2xl border border-purple-400/20 bg-purple-400/10 p-3 text-purple-200"><Puzzle className="h-5 w-5" /></div></div>
                             <div className="space-y-3">
                                 <div className="rounded-2xl border border-white/10 bg-white/5 p-4"><p className="font-semibold text-white">Activos</p><p className="mt-2 text-sm text-zinc-400">{metrics.active} disponibles.</p></div>
                                 <div className="rounded-2xl border border-white/10 bg-white/5 p-4"><p className="font-semibold text-white">Juegos</p><p className="mt-2 text-sm text-zinc-400">{metrics.games_total} asociados.</p></div>
@@ -97,7 +131,7 @@ export default function AdminGameTypesView() {
                         </section>
 
                         <section className="rounded-3xl border border-white/10 bg-black/30 p-6 backdrop-blur-xl">
-                            <div className="mb-5 flex items-center justify-between gap-4"><div><h2 className="font-['Orbitron'] text-xl font-black text-white">Top en uso</h2><p className="mt-2 text-sm text-zinc-500">Más juegos publicados.</p></div><div className="rounded-2xl border border-cyan-400/20 bg-cyan-400/10 p-3 text-cyan-200"><Sparkles className="h-5 w-5" /></div></div>
+                            <div className="mb-5 flex items-center justify-between gap-4"><div><h2 className="font-['Orbitron'] text-xl font-black text-white">Top en uso</h2><p className="mt-2 text-sm text-zinc-500">Más usados.</p></div><div className="rounded-2xl border border-cyan-400/20 bg-cyan-400/10 p-3 text-cyan-200"><Sparkles className="h-5 w-5" /></div></div>
                             <div className="space-y-3">
                                 {[...types].sort((left, right) => right.games_total - left.games_total).slice(0, 4).map((type) => (
                                     <div key={type.id} className="flex items-center justify-between rounded-2xl border border-white/10 bg-white/5 px-4 py-3">
