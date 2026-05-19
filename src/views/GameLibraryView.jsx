@@ -7,7 +7,6 @@ import { SessionModeDialog } from '@/components/organisms/SessionModeSelector';
 import { formatDate } from '@/lib/formatters';
 import LoadingScreen from '@/components/ui/LoadingScreen';
 import blurBg from '../public/images/blur01.jpg';
-import cardBg from '../public/images/as04.jpg';
 
 
 
@@ -563,15 +562,8 @@ export default function GameLibraryView() {
                                     transition={{ delay: index * 0.04 }}
                                     className="relative rounded-3xl border border-white/10 bg-zinc-900/40 p-6 backdrop-blur-xl flex flex-col h-full justify-between overflow-hidden z-10 shadow-2xl"
                                 >
-                                    {/* Inner card textured background */}
-                                    <div className="absolute inset-0 -z-10 pointer-events-none overflow-hidden select-none">
-                                        <img
-                                            src={cardBg}
-                                            alt="Card Texture"
-                                            className="w-full h-full object-cover opacity-[0.12] mix-blend-color-dodge scale-110 filter brightness-125"
-                                        />
-                                        <div className="absolute inset-0 bg-zinc-900/60" />
-                                    </div>
+                                    {/* Inner card gradient background */}
+                                    <div className="absolute inset-0 -z-10 bg-gradient-to-b from-slate-800/15 to-zinc-950/70 pointer-events-none overflow-hidden select-none" />
 
                                     <div className="mb-5 relative">
                                         <GameTypePreview type={getGameTypeVisualMeta(game?.game_type?.code).previewType} />

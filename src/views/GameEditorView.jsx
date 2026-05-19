@@ -5,7 +5,6 @@ import { validateGameContent } from '@/games/shared/gameContentValidation';
 import { useGameEditor } from '@/hooks/useGameEditor';
 import LoadingScreen from '@/components/ui/LoadingScreen';
 import blurBg from '../public/images/as05.jpg';
-import cardBg from '../public/images/as04.jpg';
 
 
 export default function GameEditorView() {
@@ -121,17 +120,10 @@ export default function GameEditorView() {
                         </motion.div>
                     )}
 
-                    <div className="grid gap-6 lg:grid-cols-2">
+                    <div className="space-y-6">
                         <div className="relative rounded-3xl border border-white/10 bg-zinc-900/40 p-6 backdrop-blur-xl overflow-hidden z-10 shadow-2xl">
-                            {/* Inner card textured background */}
-                            <div className="absolute inset-0 -z-10 pointer-events-none overflow-hidden select-none">
-                                <img 
-                                    src={cardBg} 
-                                    alt="Card Texture" 
-                                    className="w-full h-full object-cover opacity-[0.12] mix-blend-color-dodge scale-110 filter brightness-125"
-                                />
-                                <div className="absolute inset-0 bg-zinc-900/60" />
-                            </div>
+                            {/* Inner card gradient background */}
+                            <div className="absolute inset-0 -z-10 bg-gradient-to-b from-slate-800/15 to-zinc-950/70 pointer-events-none overflow-hidden select-none" />
 
                             <label className="mb-2 block text-sm font-medium text-zinc-300">Nombre</label>
                             <input
@@ -153,7 +145,7 @@ export default function GameEditorView() {
                                     required
                                     value={form.game_type_id}
                                     onChange={(event) => updateGameType(event.target.value)}
-                                    className="mb-2 w-full rounded-2xl border border-white/10 bg-zinc-950 px-4 py-3 text-white outline-none transition focus:border-cyan-400"
+                                    className="mb-2 w-full rounded-2xl border border-white/10 bg-zinc-950 pl-4 pr-12 py-3 text-white outline-none transition focus:border-cyan-400 appearance-none cursor-pointer bg-[url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23a1a1aa%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E')] bg-[size:12px_12px] bg-[position:right_1.25rem_center] bg-no-repeat"
                                 >
                                     <option value="" className="bg-white text-zinc-950">Selecciona un tipo</option>
                                     {gameTypes.map((gameType) => (
@@ -190,15 +182,8 @@ export default function GameEditorView() {
                         </div>
 
                         <div className="relative space-y-4 rounded-3xl border border-white/10 bg-zinc-900/40 p-6 backdrop-blur-xl overflow-hidden z-10 shadow-2xl">
-                            {/* Inner card textured background */}
-                            <div className="absolute inset-0 -z-10 pointer-events-none overflow-hidden select-none">
-                                <img 
-                                    src={cardBg} 
-                                    alt="Card Texture" 
-                                    className="w-full h-full object-cover opacity-[0.12] mix-blend-color-dodge scale-110 filter brightness-125"
-                                />
-                                <div className="absolute inset-0 bg-zinc-900/60" />
-                            </div>
+                            {/* Inner card gradient background */}
+                            <div className="absolute inset-0 -z-10 bg-gradient-to-b from-slate-800/15 to-zinc-950/70 pointer-events-none overflow-hidden select-none" />
 
                             <div className="flex items-center justify-between gap-4">
                                 <div>

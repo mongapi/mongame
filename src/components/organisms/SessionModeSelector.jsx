@@ -45,8 +45,8 @@ export function SessionModeCards({ value, onChange, compact = false }) {
                         type="button"
                         onClick={() => onChange(option.value)}
                         className={`rounded-3xl border p-5 text-left transition flex flex-col justify-start w-full ${isActive
-                                ? 'border-cyan-400/30 bg-cyan-400/10 text-white shadow-[0_0_30px_rgba(34,211,238,0.12)]'
-                                : 'border-white/10 bg-white/5 text-zinc-300 hover:bg-white/10'
+                            ? 'border-cyan-400/30 bg-cyan-400/10 text-white shadow-[0_0_30px_rgba(34,211,238,0.12)]'
+                            : 'border-white/10 bg-white/5 text-zinc-300 hover:bg-white/10'
                             }`}
                     >
                         <div className="mb-4 flex items-center justify-between gap-3 w-full">

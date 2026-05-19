@@ -47,9 +47,9 @@ export default function ConfigView() {
 
             <div className="relative z-10 mx-auto max-w-7xl space-y-4">
                 <div className="h-48 animate-pulse rounded-[2rem] bg-white/4" />
-                <div className="grid gap-4 xl:grid-cols-[1.15fr_0.85fr]">
-                    <div className="h-96 animate-pulse rounded-[2rem] bg-white/4" />
-                    <div className="space-y-4">
+                <div className="grid gap-4 xl:grid-cols-3">
+                    <div className="xl:col-span-2 h-96 animate-pulse rounded-[2rem] bg-white/4" />
+                    <div className="xl:col-span-1 space-y-4">
                         <div className="h-44 animate-pulse rounded-[2rem] bg-white/4" />
                         <div className="h-44 animate-pulse rounded-[2rem] bg-white/4" />
                     </div>
@@ -135,10 +135,10 @@ export default function ConfigView() {
                 </motion.section>
 
                 {/* ── Cuerpo ── */}
-                <div className="grid gap-5 xl:grid-cols-[1.35fr_0.65fr]">
+                <div className="grid gap-5 xl:grid-cols-3">
 
                     {/* ── Preferencias ── */}
-                    <motion.div {...fadeUp(0.06)} className="rounded-[2rem] border border-white/10 bg-zinc-950/55 p-5 backdrop-blur-xl sm:p-6 lg:p-7">
+                    <motion.div {...fadeUp(0.06)} className="xl:col-span-2 rounded-[2rem] border border-white/10 bg-zinc-950/55 p-5 backdrop-blur-xl sm:p-6 lg:p-7">
                         <div className="mb-5 flex items-center justify-between gap-3">
                             <h2 className="font-['Orbitron'] text-xl font-black text-white">Preferencias</h2>
                             <div className="rounded-xl border border-cyan-300/15 bg-cyan-300/8 p-2 text-cyan-200">
@@ -203,7 +203,7 @@ export default function ConfigView() {
                     </motion.div>
 
                     {/* ── Columna derecha ── */}
-                    <div className="space-y-5">
+                    <div className="xl:col-span-1 space-y-5">
 
                         {/* Accesos rápidos */}
                         <motion.div {...fadeUp(0.1)} className="rounded-[2rem] border border-white/10 bg-zinc-950/55 p-5 backdrop-blur-xl sm:p-6">
@@ -243,12 +243,30 @@ export default function ConfigView() {
                                             ? `${recentSessions.length} recientes`
                                             : 'Sin historial aún',
                                     },
-                                ].map(({ label, value }) => (
-                                    <div key={label} className="flex flex-col gap-2 rounded-xl border border-white/6 bg-white/3 px-4 py-3 sm:flex-row sm:items-baseline sm:justify-between sm:gap-4">
-                                        <span className="shrink-0 text-[10px] font-bold uppercase tracking-[0.18em] text-zinc-500">{label}</span>
-                                        <span className="truncate text-left text-sm font-semibold text-white sm:text-right">{value}</span>
-                                    </div>
-                                ))}
+                                ].map(({ label, value }) => {
+                                    const isActivity = label === 'Actividad';
+                                    return (
+                                        <div 
+                                            key={label} 
+                                            className={`flex flex-col gap-2 rounded-xl border border-white/6 bg-white/3 px-4 py-3 ${
+                                                isActivity 
+                                                    ? 'items-start' 
+                                                    : 'sm:flex-row sm:items-baseline sm:justify-between sm:gap-4'
+                                            }`}
+                                        >
+                                            <span className="shrink-0 text-[10px] font-bold uppercase tracking-[0.18em] text-zinc-500">
+                                                {label}
+                                            </span>
+                                            <span className={`text-left text-sm font-semibold text-white ${
+                                                isActivity 
+                                                    ? 'leading-relaxed break-words w-full' 
+                                                    : 'truncate sm:text-right'
+                                            }`}>
+                                                {value}
+                                            </span>
+                                        </div>
+                                    );
+                                })}
                             </div>
                         </motion.div>
 

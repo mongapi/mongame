@@ -113,7 +113,7 @@ function Panel({ title, description, children }) {
 function Field({ label, hint, children }) {
     return (
         <label className="block space-y-2">
-            <span className="block text-sm font-medium text-zinc-300">{label}</span>
+            <span className="block text-sm font-medium text-zinc-300 h-[38px] flex items-end pb-1.5">{label}</span>
             {children}
             {hint ? <span className="block text-xs text-zinc-500">{hint}</span> : null}
         </label>
@@ -555,11 +555,17 @@ function FillingBlanksForm({ value, onChange }) {
                         className={textInputClassName()}
                     />
                 </Field>
-                <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-zinc-400">
-                    {hiddenWords.length > 0
-                        ? `${hiddenWords.length} palabra${hiddenWords.length === 1 ? '' : 's'} oculta${hiddenWords.length === 1 ? '' : 's'} configurada${hiddenWords.length === 1 ? '' : 's'}.`
-                        : 'Todavía no has añadido palabras ocultas.'}
-                </div>
+                <Field label="Palabras configuradas">
+                    <div className="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm flex items-center min-h-[48px] box-border">
+                        {hiddenWords.length > 0 ? (
+                            <span className="text-cyan-400 font-semibold">
+                                {hiddenWords.length} palabra{hiddenWords.length === 1 ? '' : 's'} oculta{hiddenWords.length === 1 ? '' : 's'} configurada{hiddenWords.length === 1 ? '' : 's'}.
+                            </span>
+                        ) : (
+                            <span className="text-zinc-500">Todavía no has añadido palabras ocultas.</span>
+                        )}
+                    </div>
+                </Field>
             </div>
 
             <div className="space-y-3">
@@ -774,7 +780,7 @@ function OrbitalOrderForm({ value, onChange }) {
                                     />
                                 </Field>
                             </div>
-                            <div className="grid gap-4 md:grid-cols-3">
+                            <div className="grid gap-4 md:grid-cols-[110px_110px_1fr]">
                                 <Field label="Radio">
                                     <input
                                         type="number"
@@ -796,13 +802,25 @@ function OrbitalOrderForm({ value, onChange }) {
                                     />
                                 </Field>
                                 <Field label="Color">
-                                    <input
-                                        type="text"
-                                        value={orbit.color ?? '#60a5fa'}
-                                        onChange={(event) => updateOrbit(orbitIndex, (current) => ({ ...current, color: event.target.value }))}
-                                        className={textInputClassName()}
-                                        placeholder="#60a5fa"
-                                    />
+                                    <div className="flex items-center gap-3 w-full">
+                                        {/* Color picker bubble */}
+                                        <div className="relative w-12 h-12 rounded-2xl border border-white/10 bg-white/5 flex items-center justify-center overflow-hidden shrink-0 cursor-pointer hover:border-cyan-400/40 transition-colors shadow-lg">
+                                            <input
+                                                type="color"
+                                                value={orbit.color ?? '#60a5fa'}
+                                                onChange={(event) => updateOrbit(orbitIndex, (current) => ({ ...current, color: event.target.value }))}
+                                                className="absolute inset-0 w-[200%] h-[200%] -translate-x-1/4 -translate-y-1/4 cursor-pointer opacity-100 bg-transparent border-none p-0 [appearance:none] [&::-webkit-color-swatch-wrapper]:p-0 [&::-webkit-color-swatch]:border-none [&::-moz-color-swatch]:border-none"
+                                            />
+                                        </div>
+                                        {/* Hex text input */}
+                                        <input
+                                            type="text"
+                                            value={orbit.color ?? '#60a5fa'}
+                                            onChange={(event) => updateOrbit(orbitIndex, (current) => ({ ...current, color: event.target.value }))}
+                                            className="flex-grow min-w-0 w-full rounded-2xl border border-white/10 bg-white/5 px-2.5 py-3 text-white outline-none transition focus:border-cyan-400 font-mono text-sm uppercase"
+                                            placeholder="#60a5fa"
+                                        />
+                                    </div>
                                 </Field>
                             </div>
                         </QuestionCard>

@@ -6,7 +6,6 @@ import { GameTypeIconBadge, GameTypePreview } from '@/components/gameTypes/GameT
 import { useGameChooserView } from '@/hooks/useGameChooserView';
 import LoadingScreen from '@/components/ui/LoadingScreen';
 import blurBg from '../public/images/as05.jpg';
-import cardBg from '../public/images/as04.jpg';
 
 
 /* ─────────────────────────────────────────────────────────────────
@@ -166,15 +165,8 @@ export default function GameChooserView() {
                                     onClick={() => openGameType(gameType.code)}
                                 >
                                     <Card className="relative h-full overflow-hidden border-zinc-800/80 bg-zinc-900/40 backdrop-blur-xl transition-all duration-300 hover:border-cyan-500/40 hover:shadow-[0_0_28px_rgba(34,211,238,0.14)] flex flex-col z-10 shadow-2xl">
-                                        {/* Inner card textured background */}
-                                        <div className="absolute inset-0 -z-10 pointer-events-none overflow-hidden select-none">
-                                            <img 
-                                                src={cardBg} 
-                                                alt="Card Texture" 
-                                                className="w-full h-full object-cover opacity-[0.12] mix-blend-color-dodge scale-110 filter brightness-125"
-                                            />
-                                            <div className="absolute inset-0 bg-zinc-900/60" />
-                                        </div>
+                                        {/* Inner card gradient background */}
+                                        <div className="absolute inset-0 -z-10 bg-gradient-to-b from-slate-800/15 to-zinc-950/70 pointer-events-none overflow-hidden select-none" />
 
                                         {/* Hover gradient wash */}
                                         <div className="pointer-events-none absolute inset-0 bg-linear-to-br from-cyan-500/0 to-purple-500/0 transition-all duration-500 group-hover:from-cyan-500/8 group-hover:to-purple-500/8" />
