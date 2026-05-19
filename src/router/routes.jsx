@@ -21,9 +21,9 @@ import LessonPlanEditorView from "@/views/LessonPlanEditorView";
 
 
 import AdminDashboardView from "@/views/admin/AdminDashboardView";
-// import AdminUsersView from "@/views/admin/AdminUsersView";
-// import AdminGameTypesView from "@/views/admin/AdminGameTypesView";
-// import AdminMediaView from "@/views/admin/AdminMediaView";
+import AdminUsersView from "@/views/admin/AdminUsersView";
+import AdminGameTypesView from "@/views/admin/AdminGameTypesView";
+import AdminAuditView from "@/views/admin/AdminAuditView";
 
 // Juegos
 import MemoryGame from "@/games/MemoryGame";
@@ -62,13 +62,14 @@ export default function AppRoutes() {
                 <Route path={ROUTE_PATHS.sessionCreateByType} element={<GameEditorView />} />
             </Route>
 
-            {/* Admin - descomentar cuando tengamos las vistas */}
-             <Route element={<AdminLayout />}>
-                <Route path={ROUTE_PATHS.adminDashboard} element={<AdminDashboardView />} />
-                {/* <Route path="/admin/users" element={<AdminUsersView />} /> */}
-                {/* <Route path="/admin/game-types" element={<AdminGameTypesView />} /> */}
-                {/* <Route path="/admin/media" element={<AdminMediaView />} /> */}
-             </Route> 
+            {/* Admin */}
+            <Route element={<AdminLayout />}>
+                <Route path="/admin" element={<AdminDashboardView />} />
+                <Route path="/admin/dashboard" element={<AdminDashboardView />} />
+                <Route path="/admin/users" element={<AdminUsersView />} />
+                <Route path="/admin/game-types" element={<AdminGameTypesView />} />
+                <Route path="/admin/audit" element={<AdminAuditView />} />
+            </Route>
 
             {/* Juegos */}
             <Route element={<GameLayout />}>

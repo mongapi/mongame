@@ -1,4 +1,5 @@
-import { Activity, Boxes, Database, Users } from 'lucide-react';
+import { Activity, ArrowRight, Boxes, Database, Users } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { useAdminDashboard } from '@/hooks/useAdminDashboard';
 import { formatDateTime } from '@/lib/formatters';
 import LoadingScreen from '@/components/ui/LoadingScreen';
@@ -47,9 +48,7 @@ export default function AdminDashboardView() {
             <div className="mx-auto max-w-7xl space-y-8">
                 <div>
                     <h1 className="font-['Orbitron'] text-3xl font-black sm:text-4xl">PANEL DE ADMINISTRACIÓN</h1>
-                    <p className="mt-3 max-w-3xl text-sm leading-6 text-zinc-400">
-                        Vista operativa del sistema: volumen de usuarios, recursos, sesiones recientes, actividad y salud técnica básica.
-                    </p>
+                    <p className="mt-3 max-w-3xl text-sm leading-6 text-zinc-400">Usuarios, sesiones, actividad y estado del sistema.</p>
                 </div>
 
                 <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-4">
@@ -161,20 +160,24 @@ export default function AdminDashboardView() {
                 <div className="rounded-3xl border border-white/10 bg-black/30 p-6 backdrop-blur-xl">
                     <div className="mb-5">
                         <h2 className="font-['Orbitron'] text-xl font-black text-white">Accesos rápidos</h2>
-                        <p className="mt-2 text-sm text-zinc-500">Bloques previstos del panel admin. Los módulos se pueden ir activando uno a uno.</p>
+                        <p className="mt-2 text-sm text-zinc-500">Acceso directo a las secciones activas.</p>
                     </div>
-                    <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+                    <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
                         {quickActions.map((action) => (
-                            <div
+                            <Link
                                 key={action.title}
-                                className="rounded-2xl border border-white/10 bg-white/5 p-5 text-left"
+                                to={action.path}
+                                className="rounded-2xl border border-white/10 bg-white/5 p-5 text-left transition hover:border-emerald-400/30 hover:bg-white/10"
                             >
                                 <div className="flex items-center justify-between gap-3">
                                     <p className="font-bold text-white">{action.title}</p>
-                                    <span className="rounded-full border border-white/10 bg-black/20 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-400">Próximo</span>
+                                    <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-black/20 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-400">
+                                        Abrir
+                                        <ArrowRight className="h-3.5 w-3.5" />
+                                    </span>
                                 </div>
                                 <p className="mt-2 text-sm leading-6 text-zinc-500">{action.description}</p>
-                            </div>
+                            </Link>
                         ))}
                     </div>
                 </div>

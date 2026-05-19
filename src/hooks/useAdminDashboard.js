@@ -33,10 +33,9 @@ export function useAdminDashboard() {
     }, []);
 
     const quickActions = useMemo(() => ([
-        { title: 'Gestionar usuarios', description: 'Próximo módulo para altas, roles y bloqueos.', path: '/admin/users' },
-        { title: 'Tipos de juego', description: 'Alta y mantenimiento de mecánicas activas.', path: '/admin/game-types' },
-        { title: 'Media', description: 'Biblioteca de recursos multimedia compartidos.', path: '/admin/media' },
-        { title: 'Auditoría', description: 'Seguimiento de actividad y cambios del sistema.', path: '/admin/audit' },
+        { title: 'Usuarios', description: 'Cuentas y roles.', path: '/admin/users' },
+        { title: 'Tipos de juego', description: 'Catálogo y uso.', path: '/admin/game-types' },
+        { title: 'Auditoría', description: 'Actividad reciente.', path: '/admin/audit' },
     ]), []);
 
     return {
