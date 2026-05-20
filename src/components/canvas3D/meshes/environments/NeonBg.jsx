@@ -10,9 +10,10 @@ Title: Scifi Tron Studio | Baked
 
 import React from 'react'
 import { useGLTF } from '@react-three/drei'
+import modelUrl from './neonBg.glb'
 
-export function Model(props) {
-  const { nodes, materials } = useGLTF('/scene-transformed.glb')
+export function NeonBg(props) {
+  const { nodes, materials } = useGLTF(modelUrl)
   return (
     <group {...props} dispose={null}>
       <mesh geometry={nodes.house_house_0.geometry} material={materials.house} position={[0.451, 3.409, 0]} rotation={[-Math.PI / 2, 0, 0]} scale={[44.56, 44.56, 3.411]} />
@@ -39,4 +40,4 @@ export function Model(props) {
   )
 }
 
-useGLTF.preload('/scene-transformed.glb')
+useGLTF.preload(modelUrl)

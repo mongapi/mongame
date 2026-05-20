@@ -10,8 +10,8 @@ import { GameErrorState, GameLoadingState } from '@/games/shared/GameScreenShell
 import { GameExitButton, GameSessionFinishedOverlay, useGameSessionUi } from '@/games/shared/GameSessionActions';
 import { useSessionGame } from '@/hooks/useSessionGame';
 import { validateGameContent } from '@/games/shared/gameContentValidation';
-import questionMarkGlbUrl from '@/public/3d-meshes/question_mark/scene-transformed.glb';
-import { NeonBg } from '@/public/3d-meshes/neon_background/NeonBg';
+import questionMarkGlbUrl from '@/components/canvas3D/meshes/characters/questionMark.glb';
+import { NeonBg } from '@/components/canvas3D/meshes/environments/NeonBg';
 
 const INTER_FONT = 'https://fonts.gstatic.com/s/inter/v12/UcCO3FwrK3iLTeHuS_fvQtMwCp50KnMw2boKoduKmMEVuLyeMZhrib2Bg-4.ttf';
 const INTER_BOLD_FONT = 'https://fonts.gstatic.com/s/inter/v12/UcCO3FwrK3iLTeHuS_fvQtMwCp50KnMw2boKoduKmMEVuFuYMZhrib2Bg-4.ttf';

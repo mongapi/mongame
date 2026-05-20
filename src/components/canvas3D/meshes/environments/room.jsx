@@ -10,7 +10,7 @@ Title: car garage
 
 import React from 'react'
 import { useGLTF } from '@react-three/drei'
-import modelUrl from '@/public/3d-meshes/car_garage/scene-transformed.glb'
+import modelUrl from './room.glb'
 
 export function Room(props) {
   const { nodes, materials } = useGLTF(modelUrl)

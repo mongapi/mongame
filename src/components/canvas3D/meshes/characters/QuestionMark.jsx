@@ -10,9 +10,9 @@ Title: question mark
 
 import React from 'react'
 import { useGLTF } from '@react-three/drei'
-import questionMarkGlbUrl from '@/public/3d-meshes/question_mark/scene-transformed.glb'
+import questionMarkGlbUrl from './questionMark.glb'
 
-export function Model(props) {
+export function QuestionMark(props) {
   const { nodes, materials } = useGLTF(questionMarkGlbUrl)
   return (
     <group {...props} dispose={null}>
