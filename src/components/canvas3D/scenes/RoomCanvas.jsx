@@ -13,17 +13,18 @@ export default function RoomCanvas({
   cameraPosition = [0, 2, 8],
   fov = 45,
   orbitTarget = [0, 0, 0],
-  showGrid = true
+  showGrid = true,
+  transparentBg = false
 }) {
   return (
     // Es vital que este div tenga tamaño (w-full h-full) para que el Canvas ocupe espacio
-    <div className="w-full h-full relative bg-zinc-950" style={{ minHeight: '60vh' }}>
+    <div className={`w-full h-full relative ${transparentBg ? 'bg-transparent' : 'bg-zinc-950'}`} style={{ minHeight: '60vh' }}>
       <Canvas shadows camera={{ position: cameraPosition, fov }}>
         {/* Color de fondo para que fluya bien con el bg de la web */}
-        <color attach="background" args={['#09090b']} />
+        {!transparentBg && <color attach="background" args={['#09090b']} />}
 
         {/* Añadimos un poco de 'fog' (niebla) para que el fondo se desvanezca elegantemente */}
-        <fog attach="fog" args={['#09090b', 5, 30]} />
+        {!transparentBg && <fog attach="fog" args={['#09090b', 5, 30]} />}
 
         {/* Iluminación base y direccional */}
         <ambientLight intensity={0.5} />

@@ -98,6 +98,10 @@ export function validateGameContent(typeCode, gameContent) {
         if (!gameContent?.answer || !Array.isArray(gameContent?.clues) || gameContent.clues.length === 0) {
             return 'Adivina qué necesita una respuesta y al menos una pista.';
         }
+        
+        if (!Array.isArray(gameContent?.options) || gameContent.options.length === 0) {
+            return 'Adivina qué necesita al menos una opción falsa para las cartas.';
+        }
 
         return '';
     }

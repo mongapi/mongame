@@ -3,7 +3,7 @@ import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { Text, Float } from '@react-three/drei';
 import * as THREE from 'three';
 import { motion, AnimatePresence } from 'motion/react';
-import { CheckCircle2, AlertTriangle, ArrowDown, ArrowLeft, ArrowRight, ArrowUp, Play, ShieldAlert } from 'lucide-react';
+import { CheckCircle2, AlertTriangle, Play, ShieldAlert } from 'lucide-react';
 import { sessionAPI } from '@/api/api';
 import { GameErrorState, GameLoadingState } from '@/games/shared/GameScreenShell';
 import { GameExitButton, GameSessionFinishedOverlay, useGameSessionUi } from '@/games/shared/GameSessionActions';
@@ -112,12 +112,12 @@ function Hito({ data, idx, isCurrent, isSolved, onSelect }) {
     return (
         <group position={[xPos, 0, zPos]} rotation={[0, yRotation, 0]}>
             <Float floatIntensity={1.5} speed={2} rotationIntensity={0.2}>
-                <mesh 
-                    ref={groupRef} 
-                    position={[0, 1, 0]} 
-                    onClick={(e) => { 
-                        e.stopPropagation(); 
-                        if (!isSolved) onSelect(idx); 
+                <mesh
+                    ref={groupRef}
+                    position={[0, 1, 0]}
+                    onClick={(e) => {
+                        e.stopPropagation();
+                        if (!isSolved) onSelect(idx);
                     }}
                     onPointerOver={() => document.body.style.cursor = isSolved ? 'default' : 'pointer'}
                     onPointerOut={() => document.body.style.cursor = 'default'}
@@ -212,7 +212,7 @@ const MainScene = ({ gameState, setGameState, isFail, timeline, solvedHitos, cur
             if (controls.backward) {
                 setMovementZ(prev => Math.min(prev + speed * dt, 80)); // Limit backwards movement
             }
-            
+
             // Side movement
             if (controls.left) {
                 camera.position.x = THREE.MathUtils.lerp(camera.position.x, -8, dt * 5);
@@ -221,7 +221,7 @@ const MainScene = ({ gameState, setGameState, isFail, timeline, solvedHitos, cur
             } else {
                 camera.position.x = THREE.MathUtils.lerp(camera.position.x, 0, dt * 5);
             }
-            
+
             camera.position.z = movementZ;
         }
 
@@ -262,21 +262,155 @@ const MainScene = ({ gameState, setGameState, isFail, timeline, solvedHitos, cur
     );
 }
 
-function TouchControlButton({ icon: Icon, label, onPressStart, onPressEnd, className }) {
+function JoystickControl({ onChange }) {
+    const baseRef = useRef(null);
+    const [position, setPosition] = useState({ x: 0, y: 0 });
+    const [isDragging, setIsDragging] = useState(false);
+
+    const handlePointerDown = (e) => {
+        setIsDragging(true);
+        e.currentTarget.setPointerCapture(e.pointerId);
+        updateJoystick(e);
+    };
+
+    const handlePointerMove = (e) => {
+        if (!isDragging) return;
+        updateJoystick(e);
+    };
+
+    const handlePointerUp = (e) => {
+        setIsDragging(false);
+        setPosition({ x: 0, y: 0 });
+        if (onChange) {
+            onChange({ forward: false, backward: false, left: false, right: false });
+        }
+    };
+
+    const updateJoystick = (e) => {
+        if (!baseRef.current) return;
+        const rect = baseRef.current.getBoundingClientRect();
+        const centerX = rect.left + rect.width / 2;
+        const centerY = rect.top + rect.height / 2;
+        const dx = e.clientX - centerX;
+        const dy = e.clientY - centerY;
+        const distance = Math.sqrt(dx * dx + dy * dy);
+        const maxRadius = 40; // max distance for the knob to move in pixels
+
+        let x = dx;
+        let y = dy;
+        if (distance > maxRadius) {
+            x = (dx / distance) * maxRadius;
+            y = (dy / distance) * maxRadius;
+        }
+
+        setPosition({ x, y });
+
+        // Calculate directions with threshold
+        const threshold = 12;
+        const forward = y < -threshold;
+        const backward = y > threshold;
+        const left = x < -threshold;
+        const right = x > threshold;
+
+        if (onChange) {
+            onChange({ forward, backward, left, right });
+        }
+    };
+
     return (
-        <button
-            type="button"
-            aria-label={label}
-            onPointerDown={onPressStart}
-            onPointerUp={onPressEnd}
-            onPointerCancel={onPressEnd}
-            onPointerLeave={onPressEnd}
-            className={`flex h-16 w-16 items-center justify-center rounded-2xl border border-white/10 bg-black/65 text-white shadow-[0_10px_30px_rgba(0,0,0,0.35)] backdrop-blur-xl transition active:scale-95 active:bg-indigo-500/50 ${className}`}
+        <div
+            ref={baseRef}
+            onPointerDown={handlePointerDown}
+            onPointerMove={handlePointerMove}
+            onPointerUp={handlePointerUp}
+            onPointerCancel={handlePointerUp}
+            className="w-28 h-28 rounded-full border border-white/10 bg-black/45 backdrop-blur-xl relative flex items-center justify-center shadow-[0_20px_50px_rgba(0,0,0,0.35)] touch-none select-none cursor-grab active:cursor-grabbing"
         >
-            <Icon className="h-7 w-7" />
-        </button>
+            {/* Compass indicators */}
+            <div className="absolute top-1.5 text-indigo-200/20 text-[10px] select-none">▲</div>
+            <div className="absolute bottom-1.5 text-indigo-200/20 text-[10px] select-none">▼</div>
+            <div className="absolute left-1.5 text-indigo-200/20 text-[10px] select-none">◀</div>
+            <div className="absolute right-1.5 text-indigo-200/20 text-[10px] select-none">▶</div>
+
+            {/* Center target ring */}
+            <div className="w-14 h-14 rounded-full border border-white/5 absolute" />
+
+            {/* Joystick Knob */}
+            <div
+                className="w-10 h-10 rounded-full bg-linear-to-br from-indigo-500 to-indigo-600 border border-white/20 shadow-lg flex items-center justify-center transition-transform duration-75 ease-out relative animate-none"
+                style={{
+                    transform: `translate3d(${position.x}px, ${position.y}px, 0)`,
+                    boxShadow: isDragging ? '0 0 15px rgba(99, 102, 241, 0.5)' : 'none'
+                }}
+            >
+                {/* Knob inner core */}
+                <div className="w-3.5 h-3.5 rounded-full bg-white/90 shadow-[inset_0_1px_3px_rgba(0,0,0,0.4)]" />
+            </div>
+        </div>
     );
 }
+
+
+function VisorCard({ children, isFail }) {
+    return (
+        <div className="relative w-full max-w-4xl flex items-center justify-center p-6 md:p-12 lg:p-14 select-none pointer-events-none">
+            {/* SVG Visor Background */}
+            <div className="absolute inset-0 z-0 pointer-events-none drop-shadow-[0_10px_45px_rgba(139,92,246,0.3)]">
+                <svg
+                    viewBox="0 0 1000 650"
+                    fill="none"
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="w-full h-full filter backdrop-blur-xl"
+                    preserveAspectRatio="none"
+                >
+                    <defs>
+                        {/* Violet Glass Gradient */}
+                        <linearGradient id="visor-glass" x1="0%" y1="0%" x2="100%" y2="100%">
+                            <stop offset="0%" stopColor="#110a24" stopOpacity="0.82" />
+                            <stop offset="50%" stopColor="#1b0e38" stopOpacity="0.86" />
+                            <stop offset="100%" stopColor="#0a0714" stopOpacity="0.9" />
+                        </linearGradient>
+                        {/* Violet Glow Filter */}
+                        <filter id="violet-glow" x="-10%" y="-10%" width="120%" height="120%">
+                            <feGaussianBlur stdDeviation="5" result="blur" />
+                            <feComposite in="SourceGraphic" in2="blur" operator="over" />
+                        </filter>
+                    </defs>
+                    {/* Outer Glow & Border Path */}
+                    <path
+                        d="M 120,40 L 880,40 C 930,40 960,70 960,120 L 960,410 C 960,460 940,510 880,570 C 850,600 820,600 720,600 C 690,600 660,570 640,520 L 620,480 C 600,440 570,420 530,420 L 470,420 C 430,420 400,440 380,480 L 360,520 C 340,570 310,600 280,600 C 180,600 150,600 120,570 C 60,510 40,460 40,410 L 40,120 C 40,70 70,40 120,40 Z"
+                        fill="url(#visor-glass)"
+                        stroke={isFail ? "#ef4444" : "#a78bfa"}
+                        strokeWidth="3"
+                        strokeOpacity="0.75"
+                        filter="url(#violet-glow)"
+                    />
+                    {/* High-tech accent lines */}
+                    <path
+                        d="M 140,65 L 220,65"
+                        stroke="#d8b4fe"
+                        strokeWidth="1.5"
+                        strokeOpacity="0.45"
+                    />
+                    <path
+                        d="M 780,65 L 860,65"
+                        stroke="#d8b4fe"
+                        strokeWidth="1.5"
+                        strokeOpacity="0.45"
+                    />
+                    <circle cx="235" cy="65" r="2" fill="#d8b4fe" fillOpacity="0.6" />
+                    <circle cx="765" cy="65" r="2" fill="#d8b4fe" fillOpacity="0.6" />
+                </svg>
+            </div>
+
+            {/* Content Overlay */}
+            <div className="relative z-10 w-full h-full flex flex-col justify-between pointer-events-auto px-6 md:px-14 lg:px-20 pt-8 pb-14">
+                {children}
+            </div>
+        </div>
+    );
+}
+
 
 export default function OrdenarCronologias() {
     const {
@@ -293,7 +427,7 @@ export default function OrdenarCronologias() {
     });
     const { sessionFinished, handleExit, exitLabel, finishActionLabel } = useGameSessionUi({ session, sessionId, isPreview: false });
     // START, EXPLORING, QUESTION, END
-    const [gameState, setGameState] = useState('START'); 
+    const [gameState, setGameState] = useState('START');
     const [currentHito, setCurrentHito] = useState(null);
     const [solvedHitos, setSolvedHitos] = useState([]);
     const [isFail, setIsFail] = useState(false);
@@ -326,18 +460,7 @@ export default function OrdenarCronologias() {
         }
     }, [gameState]);
 
-    const setTouchDirection = (direction, isActive) => {
-        setTouchControls((current) => {
-            if (current[direction] === isActive) {
-                return current;
-            }
 
-            return {
-                ...current,
-                [direction]: isActive,
-            };
-        });
-    };
 
     const handleAnswer = async (optionIdx) => {
         if (sessionFinished) return;
@@ -374,7 +497,7 @@ export default function OrdenarCronologias() {
             setIsFail(false);
             const newSolved = [...solvedHitos, currentHitoData.id];
             setSolvedHitos(newSolved);
-            
+
             if (newSolved.length === timeline.items.length) {
                 setGameState('END');
             } else {
@@ -445,40 +568,11 @@ export default function OrdenarCronologias() {
                 </div>
 
                 {gameState === 'EXPLORING' && !sessionFinished ? (
-                    <div className="absolute inset-x-0 bottom-6 z-20 flex justify-center px-4 pointer-events-none">
-                        <div className="pointer-events-auto rounded-[2rem] border border-white/10 bg-black/45 p-4 backdrop-blur-xl shadow-[0_20px_50px_rgba(0,0,0,0.35)]">
-                            <p className="mb-3 text-center text-xs font-bold uppercase tracking-[0.28em] text-indigo-200/80">
-                                Control táctil
-                            </p>
-                            <div className="grid grid-cols-3 gap-3">
-                                <div />
-                                <TouchControlButton
-                                    icon={ArrowUp}
-                                    label="Avanzar"
-                                    onPressStart={() => setTouchDirection('forward', true)}
-                                    onPressEnd={() => setTouchDirection('forward', false)}
-                                />
-                                <div />
-                                <TouchControlButton
-                                    icon={ArrowLeft}
-                                    label="Mover a la izquierda"
-                                    onPressStart={() => setTouchDirection('left', true)}
-                                    onPressEnd={() => setTouchDirection('left', false)}
-                                />
-                                <TouchControlButton
-                                    icon={ArrowDown}
-                                    label="Retroceder"
-                                    onPressStart={() => setTouchDirection('backward', true)}
-                                    onPressEnd={() => setTouchDirection('backward', false)}
-                                />
-                                <TouchControlButton
-                                    icon={ArrowRight}
-                                    label="Mover a la derecha"
-                                    onPressStart={() => setTouchDirection('right', true)}
-                                    onPressEnd={() => setTouchDirection('right', false)}
-                                />
-                            </div>
-                        </div>
+                    <div className="absolute right-6 bottom-6 md:right-10 md:bottom-10 z-20 pointer-events-auto flex flex-col items-center">
+                        <p className="mb-2 text-center text-xs font-bold uppercase tracking-[0.2em] text-indigo-200/50 select-none">
+                            Control táctil
+                        </p>
+                        <JoystickControl onChange={setTouchControls} />
                     </div>
                 ) : null}
 
@@ -518,17 +612,16 @@ export default function OrdenarCronologias() {
                             exit={{ opacity: 0, scale: 1.05, filter: 'blur(10px)' }}
                             className="pointer-events-auto w-full max-w-4xl p-4 md:p-8 flex flex-col justify-center items-center mt-20"
                         >
-                            <div className={`w-full bg-zinc-900/90 border-t-[6px] ${isFail ? 'border-red-500 shadow-[0_0_60px_rgba(239,68,68,0.3)]' : 'border-indigo-500 shadow-[0_0_60px_rgba(79,70,229,0.3)]'} p-8 md:p-12 rounded-[2.5rem] backdrop-blur-3xl transition-all duration-300 relative`}>
-                                
-                                <button 
+                            <VisorCard isFail={isFail}>
+                                <button
                                     onClick={() => { setGameState('EXPLORING'); setCurrentHito(null); }}
-                                    className="absolute top-6 right-6 text-zinc-400 hover:text-white bg-white/5 hover:bg-white/10 p-2 rounded-full transition-colors"
+                                    className="absolute top-8 right-10 md:right-14 text-violet-300 hover:text-white bg-white/5 hover:bg-white/15 p-2 rounded-full transition-all duration-300 shadow-[0_0_15px_rgba(139,92,246,0.3)] pointer-events-auto"
                                 >
                                     ✕
                                 </button>
 
                                 <div className="flex flex-col md:flex-row md:items-center gap-4 mb-6">
-                                    <div className="inline-block px-5 py-2 rounded-full bg-indigo-500/10 text-indigo-400 font-bold font-mono tracking-widest text-sm border border-indigo-500/20 shadow-inner w-max">
+                                    <div className="inline-block px-5 py-2 rounded-full bg-violet-500/15 text-violet-300 font-bold font-mono tracking-widest text-sm border border-violet-500/30 shadow-inner w-max">
                                         ÉPOCA: {currentHitoData.date}
                                     </div>
                                 </div>
@@ -537,15 +630,12 @@ export default function OrdenarCronologias() {
                                     {currentHitoData.text}
                                 </h2>
 
-                                <p className="text-zinc-300 text-xl mb-10 leading-relaxed font-medium">
+                                <p className="text-zinc-200 text-xl mb-10 leading-relaxed font-medium">
                                     {currentHitoData.info}
                                 </p>
 
-                                <div className="bg-black/50 rounded-3xl p-6 md:p-8 border border-white/5 space-y-6 shadow-inner relative overflow-hidden">
-                                    <div className="absolute top-0 left-0 h-1 w-full bg-linear-to-r from-transparent via-emerald-500/50 to-transparent"></div>
-                                    <h3 className="text-2xl font-extrabold text-emerald-400 flex items-center gap-3">
-                                        <CheckCircle2 className="w-7 h-7" /> Protocolo de Paso:
-                                    </h3>
+                                <div className="bg-violet-950/20 rounded-3xl p-6 md:p-8 border border-violet-500/10 space-y-6 shadow-inner relative overflow-hidden">
+                                    <div className="absolute top-0 left-0 h-1 w-full bg-linear-to-r from-transparent via-violet-500/30 to-transparent"></div>
                                     <p className="text-white text-xl font-semibold mb-2">{currentHitoData.question}</p>
 
                                     {error ? (
@@ -560,12 +650,12 @@ export default function OrdenarCronologias() {
                                                 key={i}
                                                 onClick={() => handleAnswer(i)}
                                                 disabled={isSubmitting || sessionFinished}
-                                                className={`w-full text-left p-5 rounded-2xl font-bold text-lg md:text-xl transition-all duration-200 outline-none
-                                                   bg-zinc-800/80 hover:bg-indigo-600 text-zinc-100 hover:text-white
-                                                   border border-white/5 hover:border-indigo-400 focus:ring-4 focus:ring-indigo-500/50 hover:-translate-y-1 hover:shadow-xl disabled:cursor-not-allowed disabled:opacity-50
+                                                className={`w-full text-left p-5 rounded-2xl font-bold text-lg md:text-xl transition-all duration-300 outline-none
+                                                   bg-violet-950/40 hover:bg-violet-600/80 text-violet-100 hover:text-white
+                                                   border border-violet-500/20 hover:border-violet-400 focus:ring-4 focus:ring-violet-500/30 hover:-translate-y-0.5 hover:shadow-[0_0_20px_rgba(139,92,246,0.3)] disabled:cursor-not-allowed disabled:opacity-50
                                                `}
                                             >
-                                                <span className="opacity-50 mr-4 font-mono text-base bg-black/30 px-3 py-1 rounded-lg">[{i + 1}]</span>
+                                                <span className="opacity-60 mr-4 font-mono text-base bg-violet-900/50 px-3 py-1 rounded-lg">[{i + 1}]</span>
                                                 {opt}
                                             </button>
                                         ))}
@@ -586,7 +676,7 @@ export default function OrdenarCronologias() {
                                         </motion.div>
                                     )}
                                 </AnimatePresence>
-                            </div>
+                            </VisorCard>
                         </motion.div>
                     )}
 

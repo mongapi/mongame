@@ -44,7 +44,12 @@ export const templatesByCode = {
     },
     guess_who: {
         answer: 'Elemento secreto',
-        clues: ['Pista 1', 'Pista 2'],
+        options: ['Opcion falsa 1', 'Opcion falsa 2', 'Opcion falsa 3'],
+        clues: [
+            { text: '¿Es de color rojo?', isTrue: true },
+            { text: '¿Es un animal?', isTrue: false }
+        ],
+        maxAttempts: 5,
     },
     shooting: {
         questions: [
@@ -643,50 +648,118 @@ function FillingBlanksForm({ value, onChange }) {
 
 function GuessWhoForm({ value, onChange }) {
     const clues = value.clues ?? [];
+    const options = value.options ?? [];
 
     return (
-        <Panel title="Adivina qué" description="Define la respuesta oculta y la secuencia de pistas para el alumnado.">
-            <Field label="Respuesta correcta">
-                <input
-                    type="text"
-                    value={value.answer ?? ''}
-                    onChange={(event) => onChange({ ...value, answer: event.target.value })}
-                    className={textInputClassName()}
-                />
-            </Field>
-
-            <div className="space-y-3">
-                <div className="flex items-center justify-between gap-3">
-                    <span className="text-sm font-medium text-zinc-300">Pistas</span>
-                    <button
-                        type="button"
-                        onClick={() => onChange({ ...value, clues: [...clues, `Pista ${clues.length + 1}`] })}
-                        className="inline-flex items-center gap-2 rounded-xl border border-cyan-400/20 bg-cyan-400/10 px-3 py-2 text-xs font-semibold text-cyan-200 transition hover:bg-cyan-400/20"
-                    >
-                        <Plus className="h-4 w-4" />
-                        Añadir pista
-                    </button>
-                </div>
-
-                {clues.map((clue, clueIndex) => (
-                    <div key={`clue-${clueIndex}`} className="flex items-center gap-3">
+        <div className="space-y-5">
+            <Panel title="Adivina qué" description="Define la respuesta correcta, opciones falsas y las preguntas/pistas.">
+                <div className="grid gap-4 md:grid-cols-2">
+                    <Field label="Respuesta correcta">
                         <input
                             type="text"
-                            value={clue}
-                            onChange={(event) => onChange({ ...value, clues: updateList(clues, clueIndex, event.target.value) })}
+                            value={value.answer ?? ''}
+                            onChange={(event) => onChange({ ...value, answer: event.target.value })}
                             className={textInputClassName()}
                         />
+                    </Field>
+                    <Field label="Límite de pistas">
+                        <input
+                            type="number"
+                            min="1"
+                            value={value.maxAttempts ?? 5}
+                            onChange={(event) => onChange({ ...value, maxAttempts: Number(event.target.value) || 5 })}
+                            className={textInputClassName()}
+                        />
+                    </Field>
+                </div>
+
+                <div className="space-y-3">
+                    <div className="flex items-center justify-between gap-3">
+                        <span className="text-sm font-medium text-zinc-300">Opciones incorrectas (Cartas)</span>
                         <button
                             type="button"
-                            onClick={() => onChange({ ...value, clues: clues.filter((_, index) => index !== clueIndex) })}
-                            className="rounded-xl border border-red-500/20 bg-red-500/10 p-3 text-red-200 transition hover:bg-red-500/20"
+                            onClick={() => onChange({ ...value, options: [...options, `Opción ${options.length + 1}`] })}
+                            className="inline-flex items-center gap-2 rounded-xl border border-cyan-400/20 bg-cyan-400/10 px-3 py-2 text-xs font-semibold text-cyan-200 transition hover:bg-cyan-400/20"
                         >
-                            <Trash2 className="h-4 w-4" />
+                            <Plus className="h-4 w-4" />
+                            Añadir opción
                         </button>
                     </div>
-                ))}
-            </div>
-        </Panel>
+
+                    {options.map((option, index) => (
+                        <div key={`gw-option-${index}`} className="flex items-center gap-3">
+                            <input
+                                type="text"
+                                value={option}
+                                onChange={(event) => onChange({ ...value, options: updateList(options, index, event.target.value) })}
+                                className={textInputClassName()}
+                            />
+                            <button
+                                type="button"
+                                onClick={() => onChange({ ...value, options: options.filter((_, i) => i !== index) })}
+                                className="rounded-xl border border-red-500/20 bg-red-500/10 p-3 text-red-200 transition hover:bg-red-500/20"
+                            >
+                                <Trash2 className="h-4 w-4" />
+                            </button>
+                        </div>
+                    ))}
+                </div>
+
+                <div className="space-y-3">
+                    <div className="flex items-center justify-between gap-3">
+                        <span className="text-sm font-medium text-zinc-300">Preguntas / Pistas</span>
+                        <button
+                            type="button"
+                            onClick={() => onChange({ ...value, clues: [...clues, { text: `Pregunta ${clues.length + 1}`, isTrue: true }] })}
+                            className="inline-flex items-center gap-2 rounded-xl border border-cyan-400/20 bg-cyan-400/10 px-3 py-2 text-xs font-semibold text-cyan-200 transition hover:bg-cyan-400/20"
+                        >
+                            <Plus className="h-4 w-4" />
+                            Añadir pregunta
+                        </button>
+                    </div>
+
+                    {clues.map((clue, index) => {
+                        const clueObj = typeof clue === 'string' ? { text: clue, isTrue: true } : clue;
+                        return (
+                            <div key={`gw-clue-${index}`} className="flex items-center gap-3">
+                                <div className="flex-1 flex items-center gap-3 rounded-xl border border-white/10 bg-white/5 p-2">
+                                    <input
+                                        type="text"
+                                        value={clueObj.text}
+                                        onChange={(event) => {
+                                            const nextClues = [...clues];
+                                            nextClues[index] = { ...clueObj, text: event.target.value };
+                                            onChange({ ...value, clues: nextClues });
+                                        }}
+                                        className="flex-1 bg-transparent px-2 py-1 text-sm text-white outline-none"
+                                    />
+                                    <label className="flex items-center gap-2 pr-2 text-xs text-zinc-300">
+                                        <input
+                                            type="checkbox"
+                                            checked={clueObj.isTrue}
+                                            onChange={(event) => {
+                                                const nextClues = [...clues];
+                                                nextClues[index] = { ...clueObj, isTrue: event.target.checked };
+                                                onChange({ ...value, clues: nextClues });
+                                            }}
+                                            className="rounded border-white/20 bg-black/50"
+                                        />
+                                        ¿Es verdad?
+                                    </label>
+                                </div>
+                                <button
+                                    type="button"
+                                    onClick={() => onChange({ ...value, clues: clues.filter((_, i) => i !== index) })}
+                                    className="rounded-xl border border-red-500/20 bg-red-500/10 p-3 text-red-200 transition hover:bg-red-500/20"
+                                >
+                                    <Trash2 className="h-4 w-4" />
+                                </button>
+                            </div>
+                        );
+                    })}
+                </div>
+            </Panel>
+        </div>
     );
 }
 
