@@ -1,11 +1,9 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useJoinByPin } from '@/hooks/useJoinByPin';
 import { ROUTE_PATHS } from '@/router/paths';
 
 export function useHomeView() {
     const navigate = useNavigate();
-    const { join, loading, error, clearError } = useJoinByPin();
     const [pin, setPin] = useState('');
     const [mouse, setMouse] = useState({ x: 0, y: 0 });
     const [ready, setReady] = useState(false);
@@ -30,20 +28,17 @@ export function useHomeView() {
         transition: 'transform 0.14s linear',
     });
 
-    const handlePinSubmit = async (event) => {
+    const handlePinSubmit = (event) => {
         event.preventDefault();
-        await join({ pin });
+        navigate(`${ROUTE_PATHS.join}?pin=${pin}`);
     };
 
     const handlePinChange = (value) => {
-        clearError();
         setPin(value.replace(/\D/g, '').slice(0, 6));
     };
 
     return {
         pin,
-        loading,
-        error,
         ready,
         getParallaxStyle,
         handlePinSubmit,

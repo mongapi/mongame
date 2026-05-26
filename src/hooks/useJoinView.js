@@ -1,8 +1,11 @@
 import { useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useJoinByPin } from '@/hooks/useJoinByPin';
 
 export function useJoinView() {
-    const [pin, setPin] = useState('');
+    const [searchParams] = useSearchParams();
+    const pinFromUrl = searchParams.get('pin') ?? '';
+    const [pin, setPin] = useState(pinFromUrl.replace(/\D/g, '').slice(0, 6));
     const [playerName, setPlayerName] = useState(localStorage.getItem('player_name') || '');
     const { join, loading, error, clearError } = useJoinByPin();
 
