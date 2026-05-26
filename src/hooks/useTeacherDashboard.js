@@ -77,6 +77,22 @@ export function useTeacherDashboard() {
         setResultsData(result.data);
     }, [session?.id]);
 
+    const loadRecentSessions = useCallback(async () => {
+        setLoading(true);
+        setEmptyStateError('');
+        const result = await sessionAPI.list();
+        if (!result.success) {
+            setEmptyStateError(result.error);
+            setLoading(false);
+            return result;
+        }
+
+        setRecentSessions(result.data ?? []);
+        setRecentSessionsPage(1);
+        setLoading(false);
+        return result;
+    }, []);
+
     const refreshSession = useCallback(async () => {
         if (!session?.id) {
             return;
@@ -94,19 +110,7 @@ export function useTeacherDashboard() {
 
     useEffect(() => {
         if (!sessionId) {
-            sessionAPI.list()
-                .then((result) => {
-                    if (!result.success) {
-                        setEmptyStateError(result.error);
-                        setLoading(false);
-                        return;
-                    }
-
-                    setRecentSessions(result.data ?? []);
-                    setRecentSessionsPage(1);
-                    setLoading(false);
-                })
-                .catch(() => setLoading(false));
+            loadRecentSessions().catch(() => setLoading(false));
             return;
         }
 
@@ -263,15 +267,14 @@ export function useTeacherDashboard() {
         }
 
         pushAlert('success', 'Sesión eliminada con éxito.');
+        setRecentSessions((prev) => prev.filter((sessionItem) => String(sessionItem.id) !== String(targetSessionId)));
 
         if (sessionId && String(sessionId) === String(targetSessionId)) {
             navigate(ROUTE_PATHS.dashboard, { state: { deletedSession: true } });
         } else {
-            const listResult = await sessionAPI.list();
-            if (listResult.success) {
-                setRecentSessions(listResult.data ?? []);
-            } else {
-                pushAlert('error', listResult.error);
+            const listResult = await loadRecentSessions();
+            if (!listResult?.success) {
+                pushAlert('error', listResult?.error || 'No se pudo actualizar la lista de sesiones.');
             }
         }
         return result;

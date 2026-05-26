@@ -277,22 +277,22 @@ export default function TeacherDashboard() {
                                 <div
                                     key={recentSession.id}
                                     onClick={() => openRecentSession(recentSession.id)}
-                                    className="grid w-full gap-3 rounded-2xl border border-white/10 bg-white/5 px-4 py-4 text-left transition hover:bg-white/10 sm:px-5 md:grid-cols-[110px_minmax(0,1.2fr)] md:items-center xl:grid-cols-[110px_minmax(0,1.2fr)_160px_210px_140px_80px] xl:gap-4 cursor-pointer relative group"
+                                    className="grid w-full gap-3 rounded-2xl border border-white/10 bg-white/5 px-4 py-4 text-left transition hover:bg-white/10 sm:px-5 md:grid-cols-[110px_minmax(0,1.2fr)] md:items-center xl:grid-cols-[110px_minmax(0,1.2fr)_120px_160px_120px_80px] xl:gap-4 cursor-pointer relative group"
                                 >
-                                    <span className="font-['Orbitron'] text-lg font-black text-white">#{recentSession.id}</span>
+                                    <span className="min-w-0 font-['Orbitron'] text-lg font-black text-white">#{recentSession.id}</span>
                                     <div className="min-w-0">
                                         <p className="truncate font-bold text-white">{recentSession.lesson_plan?.name || recentSession.game?.name || 'Sesión sin título'}</p>
                                         <p className="truncate text-sm text-zinc-500">{sessionTypeLabel}</p>
                                     </div>
-                                    <span className="text-sm uppercase text-zinc-400 xl:text-left">{recentSession.status}</span>
-                                    <div className="text-sm text-zinc-500">
-                                        <p>Creada: {formatDateTime(recentSession.created_at)}</p>
-                                        <p>Actualizada: {formatDateTime(recentSession.updated_at)}</p>
+                                    <span className="min-w-0 text-sm uppercase text-zinc-400 xl:text-left">{recentSession.status}</span>
+                                    <div className="min-w-0 text-sm text-zinc-500">
+                                        <p className="truncate">Creada: {formatDateTime(recentSession.created_at)}</p>
+                                        <p className="truncate">Actualizada: {formatDateTime(recentSession.updated_at)}</p>
                                     </div>
-                                    <div className="text-sm text-zinc-400 xl:text-right">
-                                        <p className="font-semibold text-white">PIN {recentSession.pin}</p>
-                                        <p>Fase {Number(recentSession.current_phase_index ?? 0) + 1}/{recentSession.total_phases ?? 1}</p>
-                                        <p>{recentSession.sessionModeShortLabel}</p>
+                                    <div className="min-w-0 text-sm text-zinc-400 xl:text-right">
+                                        <p className="truncate font-semibold text-white">PIN {recentSession.pin}</p>
+                                        <p className="truncate">Fase {Number(recentSession.current_phase_index ?? 0) + 1}/{recentSession.total_phases ?? 1}</p>
+                                        <p className="truncate">{recentSession.sessionModeShortLabel}</p>
                                     </div>
                                     <div className="flex items-center justify-start xl:justify-end">
                                         <button
