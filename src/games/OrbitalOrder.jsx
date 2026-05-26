@@ -576,7 +576,7 @@ export default function OrbitalOrder() {
             <div className="absolute inset-0 z-0 cursor-default">
                 <Canvas camera={{ position: [0, 8, 20], fov: 60 }}>
                     <ambientLight intensity={0.4} />
-                    <pointLight position={[0, 0, 0]} intensity={3} color="#fcd34d" distance={60} />
+                    <pointLight position={[0, 0, 0]} intensity={4} color="#fcd34d" distance={75} />
 
                     {/* Background */}
                     <Suspense fallback={null}>
@@ -597,34 +597,43 @@ export default function OrbitalOrder() {
                     <Suspense fallback={null}>
                         {/* THE CORE */}
                         <Float speed={2} rotationIntensity={0.5} floatIntensity={1}>
-                            <group scale={0.0030}>
+                            <group scale={0.0045}>
                                 <Sun />
                             </group>
 
                             {/* Corona / Glow effects */}
-                            <Sphere args={[0.5, 32, 32]} position={[0, 0, 0]}>
+                            <Sphere args={[0.7, 32, 32]} position={[0, 0, 0]}>
                                 <meshBasicMaterial
                                     color="#fbbf24"
                                     transparent
-                                    opacity={0.6}
+                                    opacity={0.75}
                                     blending={THREE.AdditiveBlending}
                                     depthWrite={false}
                                 />
                             </Sphere>
-                            <Sphere args={[0.8, 32, 32]} position={[0, 0, 0]}>
+                            <Sphere args={[1.1, 32, 32]} position={[0, 0, 0]}>
                                 <meshBasicMaterial
                                     color="#f59e0b"
                                     transparent
-                                    opacity={0.3}
+                                    opacity={0.45}
                                     blending={THREE.AdditiveBlending}
                                     depthWrite={false}
                                 />
                             </Sphere>
-                            <Sphere args={[2.0, 32, 32]} position={[0, 0, 0]}>
+                            <Sphere args={[2.4, 32, 32]} position={[0, 0, 0]}>
                                 <meshBasicMaterial
                                     color="#ea580c"
                                     transparent
-                                    opacity={0.25}
+                                    opacity={0.28}
+                                    blending={THREE.AdditiveBlending}
+                                    depthWrite={false}
+                                />
+                            </Sphere>
+                            <Sphere args={[3.2, 32, 32]} position={[0, 0, 0]}>
+                                <meshBasicMaterial
+                                    color="#fbbf24"
+                                    transparent
+                                    opacity={0.18}
                                     blending={THREE.AdditiveBlending}
                                     depthWrite={false}
                                 />

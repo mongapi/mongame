@@ -294,7 +294,7 @@ function JoystickControl({ onChange }) {
         const dx = e.clientX - centerX;
         const dy = e.clientY - centerY;
         const distance = Math.sqrt(dx * dx + dy * dy);
-        const maxRadius = 40; // max distance for the knob to move in pixels
+        const maxRadius = 48; 
 
         let x = dx;
         let y = dy;
@@ -324,7 +324,7 @@ function JoystickControl({ onChange }) {
             onPointerMove={handlePointerMove}
             onPointerUp={handlePointerUp}
             onPointerCancel={handlePointerUp}
-            className="w-28 h-28 rounded-full border border-white/10 bg-black/45 backdrop-blur-xl relative flex items-center justify-center shadow-[0_20px_50px_rgba(0,0,0,0.35)] touch-none select-none cursor-grab active:cursor-grabbing"
+            className="w-32 h-32 rounded-full border border-white/10 bg-black/45 backdrop-blur-xl relative flex items-center justify-center shadow-[0_20px_50px_rgba(0,0,0,0.35)] touch-none select-none cursor-grab active:cursor-grabbing"
         >
             {/* Compass indicators */}
             <div className="absolute top-1.5 text-indigo-200/20 text-[10px] select-none">▲</div>
@@ -333,11 +333,11 @@ function JoystickControl({ onChange }) {
             <div className="absolute right-1.5 text-indigo-200/20 text-[10px] select-none">▶</div>
 
             {/* Center target ring */}
-            <div className="w-14 h-14 rounded-full border border-white/5 absolute" />
+            <div className="w-16 h-16 rounded-full border border-white/5 absolute" />
 
             {/* Joystick Knob */}
             <div
-                className="w-10 h-10 rounded-full bg-linear-to-br from-indigo-500 to-indigo-600 border border-white/20 shadow-lg flex items-center justify-center transition-transform duration-75 ease-out relative animate-none"
+                className="w-12 h-12 rounded-full bg-linear-to-br from-indigo-500 to-indigo-600 border border-white/20 shadow-lg flex items-center justify-center transition-transform duration-75 ease-out relative animate-none"
                 style={{
                     transform: `translate3d(${position.x}px, ${position.y}px, 0)`,
                     boxShadow: isDragging ? '0 0 15px rgba(99, 102, 241, 0.5)' : 'none'
@@ -378,7 +378,7 @@ function VisorCard({ children, isFail }) {
                     </defs>
                     {/* Outer Glow & Border Path */}
                     <path
-                        d="M 120,40 L 880,40 C 930,40 960,70 960,120 L 960,410 C 960,460 940,510 880,570 C 850,600 820,600 720,600 C 690,600 660,570 640,520 L 620,480 C 600,440 570,420 530,420 L 470,420 C 430,420 400,440 380,480 L 360,520 C 340,570 310,600 280,600 C 180,600 150,600 120,570 C 60,510 40,460 40,410 L 40,120 C 40,70 70,40 120,40 Z"
+                        d="M 120,40 L 880,40 C 930,40 960,70 960,120 L 960,410 C 960,455 940,500 880,540 C 850,570 820,580 720,580 C 690,580 660,560 640,540 L 620,520 C 600,500 570,490 530,490 L 470,490 C 430,490 400,500 380,520 L 360,540 C 340,560 310,570 280,570 C 180,570 150,570 120,540 C 60,500 40,455 40,410 L 40,120 C 40,70 70,40 120,40 Z"
                         fill="url(#visor-glass)"
                         stroke={isFail ? "#ef4444" : "#a78bfa"}
                         strokeWidth="3"
@@ -569,7 +569,7 @@ export default function OrdenarCronologias() {
 
                 {gameState === 'EXPLORING' && !sessionFinished ? (
                     <div className="absolute right-6 bottom-6 md:right-10 md:bottom-10 z-20 pointer-events-auto flex flex-col items-center">
-                        <p className="mb-2 text-center text-xs font-bold uppercase tracking-[0.2em] text-indigo-200/50 select-none">
+                        <p className="mb-2 text-center text-xs font-semibold uppercase tracking-[0.2em] text-indigo-200/70 select-none">
                             Control táctil
                         </p>
                         <JoystickControl onChange={setTouchControls} />
@@ -610,7 +610,7 @@ export default function OrdenarCronologias() {
                             initial={{ opacity: 0, scale: 0.95, y: 20 }}
                             animate={{ opacity: 1, scale: 1, y: 0 }}
                             exit={{ opacity: 0, scale: 1.05, filter: 'blur(10px)' }}
-                            className="pointer-events-auto w-full max-w-4xl p-4 md:p-8 flex flex-col justify-center items-center mt-20"
+                            className="pointer-events-auto w-full max-w-4xl p-3 md:p-6 flex flex-col justify-center items-center mt-14"
                         >
                             <VisorCard isFail={isFail}>
                                 <button
@@ -626,36 +626,29 @@ export default function OrdenarCronologias() {
                                     </div>
                                 </div>
 
-                                <h2 className="text-4xl md:text-5xl font-black text-white tracking-tight mb-6 leading-tight">
+                                <h2 className="text-xl md:text-2xl font-semibold text-white tracking-tight mb-4 leading-snug break-words max-w-full">
                                     {currentHitoData.text}
                                 </h2>
 
-                                <p className="text-zinc-200 text-xl mb-10 leading-relaxed font-medium">
-                                    {currentHitoData.info}
-                                </p>
-
-                                <div className="bg-violet-950/20 rounded-3xl p-6 md:p-8 border border-violet-500/10 space-y-6 shadow-inner relative overflow-hidden">
-                                    <div className="absolute top-0 left-0 h-1 w-full bg-linear-to-r from-transparent via-violet-500/30 to-transparent"></div>
-                                    <p className="text-white text-xl font-semibold mb-2">{currentHitoData.question}</p>
-
+                                <div className="w-full space-y-4">
                                     {error ? (
-                                        <div className="rounded-2xl border border-red-500/30 bg-red-500/10 p-4 text-sm text-red-200">
+                                        <div className="rounded-2xl border border-red-500/30 bg-red-500/10 p-3 text-sm text-red-200">
                                             {error}
                                         </div>
                                     ) : null}
 
-                                    <div className="grid grid-cols-1 md:grid-cols-1 gap-4 mt-6">
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 mt-2">
                                         {currentHitoData.options.map((opt, i) => (
                                             <button
                                                 key={i}
                                                 onClick={() => handleAnswer(i)}
                                                 disabled={isSubmitting || sessionFinished}
-                                                className={`w-full text-left p-5 rounded-2xl font-bold text-lg md:text-xl transition-all duration-300 outline-none
+                                                className={`w-full text-left p-3 rounded-2xl font-semibold text-sm md:text-base transition-all duration-300 outline-none
                                                    bg-violet-950/40 hover:bg-violet-600/80 text-violet-100 hover:text-white
-                                                   border border-violet-500/20 hover:border-violet-400 focus:ring-4 focus:ring-violet-500/30 hover:-translate-y-0.5 hover:shadow-[0_0_20px_rgba(139,92,246,0.3)] disabled:cursor-not-allowed disabled:opacity-50
+                                                   border border-violet-500/20 hover:border-violet-400 focus:ring-4 focus:ring-violet-500/20 hover:-translate-y-0.5 hover:shadow-[0_0_14px_rgba(139,92,246,0.22)] disabled:cursor-not-allowed disabled:opacity-50
                                                `}
                                             >
-                                                <span className="opacity-60 mr-4 font-mono text-base bg-violet-900/50 px-3 py-1 rounded-lg">[{i + 1}]</span>
+                                                <span className="opacity-70 mr-3 font-sans text-xs md:text-sm bg-violet-900/50 px-2 py-1 rounded-lg">{i + 1}.</span>
                                                 {opt}
                                             </button>
                                         ))}
@@ -688,18 +681,18 @@ export default function OrdenarCronologias() {
                             animate={{ opacity: 1, scale: 1 }}
                             className="bg-black/80 w-full h-full flex flex-col justify-center items-center pointer-events-auto backdrop-blur-xl absolute inset-0"
                         >
-                            <h1 className="text-5xl md:text-7xl lg:text-9xl font-black text-transparent bg-clip-text bg-linear-to-br from-emerald-400 to-cyan-600 mb-8 drop-shadow-[0_0_50px_rgba(52,211,153,0.5)] text-center px-4 leading-tight">
-                                ¡Flujo Restaurado!
+                            <h1 className="text-4xl md:text-5xl font-semibold text-white mb-4 text-center px-4 leading-tight">
+                                ¡Flujo restaurado!
                             </h1>
-                            <p className="text-2xl md:text-3xl text-zinc-200 mb-14 max-w-3xl text-center px-6 leading-relaxed font-medium">
+                            <p className="text-xl md:text-2xl text-zinc-200 mb-10 max-w-3xl text-center px-6 leading-relaxed font-normal">
                                 Has navegado la historia de manera estelar. Toda anomalía ha sido erradicada con éxito.
                             </p>
                             <button
                                 onClick={resetGame}
                                 disabled={sessionFinished}
-                                className="group flex items-center gap-4 px-12 py-6 bg-linear-to-r from-emerald-500 to-cyan-600 text-2xl font-black rounded-full transition-all duration-300 hover:scale-105 text-white shadow-[0_0_60px_rgba(16,185,129,0.5)] hover:shadow-[0_0_80px_rgba(16,185,129,0.8)] cursor-pointer"
+                                className="group flex items-center gap-3 px-10 py-4 bg-indigo-600 text-lg font-semibold rounded-full transition-all duration-300 hover:scale-105 text-white shadow-[0_0_30px_rgba(79,70,229,0.4)] cursor-pointer"
                             >
-                                Reiniciar cronología <Play className="w-8 h-8 group-hover:translate-x-2 transition-transform" />
+                                Reiniciar cronología <Play className="w-6 h-6 group-hover:translate-x-1 transition-transform" />
                             </button>
                         </motion.div>
                     )}

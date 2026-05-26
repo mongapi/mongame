@@ -55,7 +55,7 @@ const EnemyBoss = ({ health, maxHealth, isComputing, tookDamage, isEntering, isD
     }
 
     // Scale physics
-    const baseScale = 0.75;
+    const baseScale = 1.3;
     const targetScale = tookDamage ? baseScale * 1.3 : (isComputing ? baseScale * 1.1 + Math.sin(state.clock.elapsedTime * 10) * 0.05 : baseScale);
     meshRef.current.scale.lerp(new THREE.Vector3(targetScale, targetScale, targetScale), 0.1);
   });
@@ -63,8 +63,8 @@ const EnemyBoss = ({ health, maxHealth, isComputing, tookDamage, isEntering, isD
   const healthPercent = health / maxHealth;
 
   return (
-    <group position={[-3.0, 2.0, -7]}>
-      <group ref={meshRef} position={[0, -2.4, 0]} rotation={[0, 0, 0]} scale={0.75}>
+    <group position={[-3.0, 1.5, -7]}>
+      <group ref={meshRef} position={[0, -2.0, 0]} rotation={[0, 0, 0]} scale={1.25}>
         <Suspense fallback={null}>
           <EnemyBot
             tookDamage={tookDamage}
@@ -80,20 +80,20 @@ const EnemyBoss = ({ health, maxHealth, isComputing, tookDamage, isEntering, isD
           />
         </Suspense>
       </group>
-      <Text position={[0, 2.2, 0.5]} fontSize={0.4} color="#cbd5e1" font={INTER_FONT} anchorX="center" anchorY="bottom">
+      <Text position={[0, 4.6, 0.5]} fontSize={0.42} color="#cbd5e1" font={INTER_FONT} anchorX="center" anchorY="bottom">
         SISTEMA CENTRAL
       </Text>
       {/* Enemy Health Bar */}
-      <mesh position={[0, 1.8, 0.5]}>
-        <planeGeometry args={[4, 0.15]} />
+      <mesh position={[0, 4.2, 0.5]}>
+        <planeGeometry args={[4.0, 0.28]} />
         <meshBasicMaterial color="#1e293b" />
       </mesh>
-      <mesh position={[-2 + (4 * healthPercent) / 2, 1.8, 0.51]}>
-        <planeGeometry args={[4 * healthPercent, 0.15]} />
+      <mesh position={[-2.0 + (4.0 * healthPercent) / 2, 4.2, 0.51]}>
+        <planeGeometry args={[4.0 * healthPercent, 0.28]} />
         <meshBasicMaterial color={tookDamage ? "#ef4444" : "#10b981"} />
       </mesh>
       {/* HP Numeric Text */}
-      <Text position={[0, 1.4, 0.5]} fontSize={0.22} color="#94a3b8" font={INTER_FONT} anchorX="center" anchorY="bottom">
+      <Text position={[0, 2.5, 0.5]} fontSize={0.24} color="#94a3b8" font={INTER_FONT} anchorX="center" anchorY="bottom">
         {`${health} / ${maxHealth} HP`}
       </Text>
 
@@ -129,24 +129,19 @@ const AnswerTarget = ({ answer, position, onClick, disabled }) => {
     >
       <Float speed={2} rotationIntensity={0.2} floatIntensity={0.5}>
         <mesh castShadow>
-          <boxGeometry args={[2.5, 0.9, 0.3]} />
+          <boxGeometry args={[2.8, 1.1, 0.35]} />
           <meshStandardMaterial
             color={color}
             emissive={color}
-            emissiveIntensity={hovered ? 0.6 : 0.2}
+            emissiveIntensity={hovered ? 0.7 : 0.25}
             roughness={0.2}
             metalness={0.8}
           />
         </mesh>
-        {/* Frontera de neón simulada */}
-        <mesh position={[0, 0, 0.01]}>
-          <boxGeometry args={[2.55, 0.95, 0.28]} />
-          <meshBasicMaterial color={hovered ? "#fbcfe8" : "#93c5fd"} wireframe transparent opacity={0.5} />
-        </mesh>
         <Text
-          position={[0, 0, 0.21]}
-          fontSize={0.22}
-          maxWidth={2.3}
+          position={[0, 0, 0.25]}
+          fontSize={0.28}
+          maxWidth={2.6}
           textAlign="center"
           color="white"
           anchorX="center"
@@ -281,11 +276,7 @@ export default function Shooter3D() {
         setIsComputing(false);
 
         if (isLastQuestion) {
-          if (nextScore > 0) {
-            setGameState('won');
-          } else {
-            setGameState('lost');
-          }
+          setGameState(isDefeated ? 'won' : 'lost');
         } else {
           setQIndex(prev => prev + 1);
         }
@@ -372,17 +363,17 @@ export default function Shooter3D() {
             key={qIndex}
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="bg-black/80 backdrop-blur-xl border border-indigo-500/40 shadow-[0_10px_40px_rgba(99,102,241,0.2)] max-w-2xl w-full mx-4 rounded-3xl p-6 text-center pointer-events-auto relative overflow-hidden"
+            className="bg-black/80 backdrop-blur-xl border border-indigo-500/40 shadow-[0_8px_30px_rgba(99,102,241,0.2)] max-w-3xl w-full mx-4 rounded-3xl px-5 py-4 md:px-6 md:py-5 text-center pointer-events-auto relative overflow-hidden"
           >
             <div className="absolute inset-0 bg-linear-to-b from-indigo-500/10 to-transparent pointer-events-none" />
             <h3 className="text-indigo-400 font-bold mb-2 uppercase tracking-widest text-xs flex items-center justify-center gap-2">
               <div className="w-2 h-2 rounded-full bg-indigo-400 animate-pulse" />
               Cargando Pregunta {qIndex + 1} de {questions.length}
             </h3>
-            <p className="text-xl md:text-2xl font-bold bg-clip-text text-transparent bg-linear-to-br from-white to-zinc-400 leading-tight">
+            <p className="text-lg md:text-xl font-bold text-white leading-snug">
               {currentQ.q}
             </p>
-            <p className="text-sm font-medium text-zinc-500 mt-4 bg-zinc-900 inline-block px-4 py-1.5 rounded-full border border-zinc-800">
+            <p className="text-xs md:text-sm font-medium text-zinc-500 mt-3 bg-zinc-900 inline-block px-4 py-1.5 rounded-full border border-zinc-800">
               Apunta y dispara a la respuesta correcta
             </p>
           </motion.div>
@@ -444,10 +435,10 @@ export default function Shooter3D() {
                 {gameState === 'won' ? <Award className="w-10 h-10" /> : <ShieldAlert className="w-10 h-10" />}
               </div>
 
-              <h2 className="text-3xl font-extrabold text-white mb-2">
+              <h2 className="text-3xl font-semibold text-white mb-3">
                 {gameState === 'won' ? '¡SISTEMA DERROTADO!' : '¡MISIÓN FALLIDA!'}
               </h2>
-              <p className="text-zinc-400 mb-8 font-medium">
+              <p className="text-zinc-400 mb-8 text-base leading-7 font-normal">
                 {gameState === 'won'
                   ? 'Has neutralizado al sistema enemigo respondiendo correctamente sus acertijos cibernéticos.'
                   : 'El sistema enemigo ha evadido tus respuestas. Tus conocimientos no fueron suficientes esta vez.'}
