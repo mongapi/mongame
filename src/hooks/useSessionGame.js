@@ -125,6 +125,7 @@ export function useSessionGame({ resolveContent, validateContent }) {
         const channel = echo.channel(`session.${sessionId}`);
 
         const syncSessionFromServer = async ({ shouldRedirect = false } = {}) => {
+            await new Promise((resolve) => window.setTimeout(resolve, 500));
             const result = await sessionAPI.get(sessionId);
 
             if (!result.success) {
