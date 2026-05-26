@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
-import { useLocation, useSearchParams } from 'react-router-dom';
+import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { sessionAPI } from '@/api/api';
+import echo from '@/lib/echo';
+import { resolvePlayRouteByGameType } from '@/router/paths';
 
 function getDefaultParticipantName(gameMode) {
     if (gameMode === 'table') {
@@ -16,6 +18,7 @@ function getDefaultParticipantName(gameMode) {
 
 export function useSessionGame({ resolveContent, validateContent }) {
     const location = useLocation();
+    const navigate = useNavigate();
     const [searchParams] = useSearchParams();
     const sessionId = searchParams.get('sessionId');
     const pin = searchParams.get('pin') || location.state?.session?.pin || null;
@@ -113,6 +116,74 @@ export function useSessionGame({ resolveContent, validateContent }) {
             window.clearInterval(intervalId);
         };
     }, [sessionId]);
+
+    useEffect(() => {
+        if (!sessionId || Boolean(preview)) {
+            return;
+        }
+
+        const channel = echo.channel(`session.${sessionId}`);
+
+        const syncSessionFromServer = async ({ shouldRedirect = false } = {}) => {
+            const result = await sessionAPI.get(sessionId);
+
+            if (!result.success) {
+                setError((current) => current || result.error);
+                return;
+            }
+
+            const nextSession = result.data;
+            setSession(nextSession);
+
+            if (!shouldRedirect) {
+                return;
+            }
+
+            const nextRoute = resolvePlayRouteByGameType(nextSession?.game?.game_type?.code);
+
+            if (!nextRoute) {
+                return;
+            }
+
+            const nextSearch = new URLSearchParams();
+            nextSearch.set('sessionId', String(sessionId));
+
+            if (pin) {
+                nextSearch.set('pin', pin);
+            }
+
+            const nextUrl = `${nextRoute}?${nextSearch.toString()}`;
+
+            navigate(nextUrl, {
+                replace: true,
+                state: {
+                    session: nextSession,
+                    playerName: participant.playerName,
+                    deviceId: participant.deviceId,
+                },
+            });
+        };
+
+        channel.listen('.session.state', ({ state, current_phase_index: nextPhaseIndex }) => {
+            const phaseChanged = state === 'phase_changed'
+                || Number(nextPhaseIndex ?? session?.current_phase_index ?? 0) !== Number(session?.current_phase_index ?? 0);
+
+            if (phaseChanged) {
+                void syncSessionFromServer({ shouldRedirect: true });
+                return;
+            }
+
+            setSession((current) => current ? ({
+                ...current,
+                status: state ?? current.status,
+                current_phase_index: nextPhaseIndex ?? current.current_phase_index,
+            }) : current);
+        });
+
+        return () => {
+            echo.leaveChannel(`session.${sessionId}`);
+        };
+    }, [navigate, participant.deviceId, participant.playerName, pin, preview, session?.current_phase_index, sessionId]);
 
     useEffect(() => {
         if (!sessionId || !pin) {
