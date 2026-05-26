@@ -21,7 +21,15 @@ export default function LoginView() {
             const result = await authAPI.login(formData);
             if (result.success) {
                 const role = result.data.user.role;
-                role === 'admin' ? navigate('/admin/dashboard') : navigate('/dashboard');
+                if (role === 'admin') {
+                    navigate('/admin/dashboard');
+                } else {
+                    const pref = localStorage.getItem('preferred_start_section');
+                    let target = '/dashboard';
+                    if (pref === 'library') target = '/games';
+                    else if (pref === 'create') target = '/sessions/create';
+                    navigate(target);
+                }
             } else {
                 setError(result.error);
             }

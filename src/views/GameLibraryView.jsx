@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion } from 'motion/react';
-import { AlertCircle, ArrowDownUp, BookOpen, CopyPlus, Eye, Filter, Pencil, PlayCircle, PlusCircle, Rows3, Search, Shapes, Users, ChevronDown, Settings } from 'lucide-react';
+import { AlertCircle, ArrowDownUp, BookOpen, CopyPlus, Eye, Filter, Pencil, PlayCircle, PlusCircle, Rows3, Search, Shapes, Users, ChevronDown, Settings, Trash2 } from 'lucide-react';
 import { GameTypePreview, getGameTypeVisualMeta } from '@/components/gameTypes/GameTypeVisual';
 import { useGameLibraryView } from '@/hooks/useGameLibraryView';
 import { SessionModeDialog } from '@/components/organisms/SessionModeSelector';
@@ -197,6 +197,7 @@ export default function GameLibraryView() {
         editGame,
         editLessonPlan,
         previewGame,
+        deleteGame,
     } = useGameLibraryView();
 
     const [isGameFiltersExpanded, setIsGameFiltersExpanded] = useState(false);
@@ -559,42 +560,53 @@ export default function GameLibraryView() {
                                         </div>
                                     </div>
 
-                                    <div className="mt-6 flex flex-wrap gap-3">
+                                    <div className="mt-6 grid grid-cols-2 gap-3">
                                         <button
                                             type="button"
                                             onClick={() => previewGame(game)}
-                                            className="inline-flex items-center gap-2 rounded-2xl border border-sky-400/30 bg-sky-400/15 px-4 py-3 font-bold text-sky-200 transition hover:bg-sky-400/25"
+                                            className="w-full flex items-center justify-center gap-2 rounded-2xl border border-sky-400/30 bg-sky-400/15 py-3 text-sm font-bold text-sky-200 transition hover:bg-sky-400/25 cursor-pointer"
                                         >
-                                            <Eye className="h-5 w-5" />
-                                            Ver preview
+                                            <Eye className="h-4 w-4 shrink-0" />
+                                            <span>Ver preview</span>
                                         </button>
                                         <button
                                             type="button"
                                             onClick={() => handleStartSession(game)}
                                             disabled={startingGameId === game.id}
-                                            className="inline-flex items-center gap-2 rounded-2xl border border-emerald-400/30 bg-emerald-400/15 px-4 py-3 font-bold text-emerald-200 transition hover:bg-emerald-400/25 disabled:cursor-not-allowed disabled:opacity-50"
+                                            className="w-full flex items-center justify-center gap-2 rounded-2xl border border-emerald-400/30 bg-emerald-400/15 py-3 text-sm font-bold text-emerald-200 transition hover:bg-emerald-400/25 disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer"
                                         >
-                                            <PlayCircle className="h-5 w-5" />
-                                            {startingGameId === game.id ? 'Creando...' : 'Crear sesión'}
+                                            <PlayCircle className="h-4 w-4 shrink-0" />
+                                            <span>{startingGameId === game.id ? 'Creando...' : 'Crear sesión'}</span>
                                         </button>
                                         {activeScope === 'mine' ? (
-                                            <button
-                                                type="button"
-                                                onClick={() => editGame(game.id)}
-                                                className="inline-flex items-center gap-2 rounded-2xl border border-white/10 bg-white/5 px-4 py-3 font-bold text-zinc-200 transition hover:bg-white/10"
-                                            >
-                                                <Pencil className="h-4 w-4" />
-                                                Editar
-                                            </button>
+                                            <>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => editGame(game.id)}
+                                                    className="w-full flex items-center justify-center gap-2 rounded-2xl border border-white/10 bg-white/5 py-3 text-sm font-bold text-zinc-200 transition hover:bg-white/10 cursor-pointer"
+                                                >
+                                                    <Pencil className="h-4 w-4 shrink-0" />
+                                                    <span>Editar</span>
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => deleteGame(game.id)}
+                                                    className="w-full flex items-center justify-center gap-2 rounded-2xl border border-red-500/30 bg-red-500/10 py-3 text-sm font-bold text-red-200 transition hover:bg-red-500/20 cursor-pointer"
+                                                    title="Eliminar juego permanentemente"
+                                                >
+                                                    <Trash2 className="h-4 w-4 shrink-0" />
+                                                    <span>Eliminar</span>
+                                                </button>
+                                            </>
                                         ) : (
                                             <button
                                                 type="button"
                                                 onClick={() => duplicateGame(game)}
                                                 disabled={startingGameId === game.id}
-                                                className="inline-flex items-center gap-2 rounded-2xl border border-cyan-400/30 bg-cyan-400/15 px-4 py-3 font-bold text-cyan-200 transition hover:bg-cyan-400/25 disabled:cursor-not-allowed disabled:opacity-50"
+                                                className="col-span-2 w-full flex items-center justify-center gap-2 rounded-2xl border border-cyan-400/30 bg-cyan-400/15 py-3 text-sm font-bold text-cyan-200 transition hover:bg-cyan-400/25 disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer"
                                             >
-                                                <CopyPlus className="h-4 w-4" />
-                                                {startingGameId === game.id ? 'Guardando...' : 'Guardar copia'}
+                                                <CopyPlus className="h-4 w-4 shrink-0" />
+                                                <span>{startingGameId === game.id ? 'Guardando...' : 'Guardar copia'}</span>
                                             </button>
                                         )}
                                     </div>
@@ -645,13 +657,10 @@ export default function GameLibraryView() {
                                                 <h2 className="truncate text-lg font-black text-white">{lessonPlan.name}</h2>
                                                 <p className="mt-2 text-sm text-zinc-400">{lessonPlan.description || 'Sin descripción todavía.'}</p>
                                             </div>
-                                            <div className="mt-4">
-                                                <LessonPlanPhasePreviewStrip games={gamesInPlan} />
-                                            </div>
                                             <div className="mt-3 flex flex-wrap gap-2">
-                                                {gamesInPlan.length > 0 ? gamesInPlan.map((game) => (
-                                                    <span key={game.id} className="rounded-full border border-white/10 bg-black/20 px-3 py-2 text-xs text-zinc-300">
-                                                        {game.name}
+                                                {gamesInPlan.length > 0 ? gamesInPlan.map((game, phaseIdx) => (
+                                                    <span key={game.id} className="rounded-full border border-white/15 bg-white/5 px-3 py-2 text-xs text-zinc-200 hover:border-cyan-400/30 transition-all duration-300">
+                                                        <span className="font-bold text-cyan-400 mr-1.5">{phaseIdx + 1}.</span> {game.name}
                                                     </span>
                                                 )) : (
                                                     <span className="text-sm text-zinc-500">Los juegos de este lesson plan no están cargados en la biblioteca actual.</span>
@@ -668,34 +677,34 @@ export default function GameLibraryView() {
                                             <p>Creado: {createdAtLabel}</p>
                                             <p>Última edición: {updatedAtLabel}</p>
                                         </div>
-                                        <div className="flex flex-wrap gap-3">
+                                        <div className="flex flex-col justify-center gap-2.5 h-full min-w-0">
                                             <button
                                                 type="button"
                                                 onClick={() => handleStartLessonPlanSession(lessonPlan)}
                                                 disabled={startingLessonPlanId === lessonPlan.id}
-                                                className="inline-flex items-center gap-2 rounded-2xl border border-emerald-400/30 bg-emerald-400/15 px-4 py-3 font-bold text-emerald-200 transition hover:bg-emerald-400/25 disabled:cursor-not-allowed disabled:opacity-50"
+                                                className="w-full flex items-center justify-center gap-2 rounded-2xl border border-emerald-400/30 bg-emerald-400/15 py-3 text-sm font-bold text-emerald-200 transition hover:bg-emerald-400/25 disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer"
                                             >
-                                                <PlayCircle className="h-5 w-5" />
-                                                {startingLessonPlanId === lessonPlan.id ? 'Creando...' : 'Crear sesión'}
+                                                <PlayCircle className="h-4 w-4 shrink-0" />
+                                                <span>{startingLessonPlanId === lessonPlan.id ? 'Creando...' : 'Crear sesión'}</span>
                                             </button>
                                             {activeScope === 'mine' ? (
                                                 <button
                                                     type="button"
                                                     onClick={() => editLessonPlan(lessonPlan.id)}
-                                                    className="inline-flex items-center gap-2 rounded-2xl border border-white/10 bg-white/5 px-4 py-3 font-bold text-zinc-200 transition hover:bg-white/10"
+                                                    className="w-full flex items-center justify-center gap-2 rounded-2xl border border-white/10 bg-white/5 py-3 text-sm font-bold text-zinc-200 transition hover:bg-white/10 cursor-pointer"
                                                 >
-                                                    <Pencil className="h-4 w-4" />
-                                                    Editar
+                                                    <Pencil className="h-4 w-4 shrink-0" />
+                                                    <span>Editar</span>
                                                 </button>
                                             ) : (
                                                 <button
                                                     type="button"
                                                     onClick={() => duplicateLessonPlan(lessonPlan)}
                                                     disabled={startingLessonPlanId === lessonPlan.id}
-                                                    className="inline-flex items-center gap-2 rounded-2xl border border-cyan-400/30 bg-cyan-400/15 px-4 py-3 font-bold text-cyan-200 transition hover:bg-cyan-400/25 disabled:cursor-not-allowed disabled:opacity-50"
+                                                    className="w-full flex items-center justify-center gap-2 rounded-2xl border border-cyan-400/30 bg-cyan-400/15 py-3 text-sm font-bold text-cyan-200 transition hover:bg-cyan-400/25 disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer"
                                                 >
-                                                    <CopyPlus className="h-4 w-4" />
-                                                    {startingLessonPlanId === lessonPlan.id ? 'Guardando...' : 'Guardar copia'}
+                                                    <CopyPlus className="h-4 w-4 shrink-0" />
+                                                    <span>{startingLessonPlanId === lessonPlan.id ? 'Guardando...' : 'Guardar copia'}</span>
                                                 </button>
                                             )}
                                         </div>

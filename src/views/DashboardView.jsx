@@ -1,8 +1,10 @@
+import { useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from "motion/react";
 import {
     Users, Play, Pause, SkipForward,
     AlertTriangle, ShieldAlert, CheckCircle2,
-    WifiOff, BrainCircuit, Activity, PlusCircle, Copy, X, Trophy, Medal, BarChart3, Download, RadioTower, PanelTop
+    WifiOff, BrainCircuit, Activity, PlusCircle, Copy, X, Trophy, Medal, BarChart3, Download, RadioTower, PanelTop, Trash2
 } from "lucide-react";
 import { useTeacherDashboard } from '@/hooks/useTeacherDashboard';
 import { formatDateTime, formatElapsed } from '@/lib/formatters';
@@ -78,10 +80,124 @@ export default function TeacherDashboard() {
         handleFinish,
         handleForceFinish,
         nextPhase,
+        deleteSession,
         goToSessionCreate,
         goToGames,
         openRecentSession,
     } = useTeacherDashboard();
+
+    const location = useLocation();
+    const [confirmDeleteSessionId, setConfirmDeleteSessionId] = useState(null);
+    const [isDeleting, setIsDeleting] = useState(false);
+    const [showSuccessModal, setShowSuccessModal] = useState(false);
+
+    useEffect(() => {
+        if (location.state?.deletedSession) {
+            setShowSuccessModal(true);
+            window.history.replaceState({}, document.title);
+        }
+    }, [location.state]);
+
+    const performDelete = async () => {
+        if (!confirmDeleteSessionId) return;
+        setIsDeleting(true);
+        const result = await deleteSession(confirmDeleteSessionId);
+        setIsDeleting(false);
+        setConfirmDeleteSessionId(null);
+        if (result && result.success) {
+            setShowSuccessModal(true);
+        }
+    };
+
+    const deletionModals = (
+        <AnimatePresence>
+            {confirmDeleteSessionId !== null && (
+                <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4 backdrop-blur-sm sm:px-6"
+                >
+                    <motion.div
+                        initial={{ opacity: 0, y: 20, scale: 0.96 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        exit={{ opacity: 0, y: 12, scale: 0.98 }}
+                        className="w-full max-w-md rounded-3xl border border-red-500/20 bg-zinc-950/95 p-6 text-white shadow-[0_20px_90px_rgba(0,0,0,0.45)] sm:p-8"
+                    >
+                        <div className="mb-6 flex items-start justify-between gap-4">
+                            <div>
+                                <p className="text-xs font-bold uppercase tracking-[0.24em] text-red-400">Peligro</p>
+                                <h2 className="mt-2 font-['Orbitron'] text-2xl font-black text-white">¿Eliminar sesión?</h2>
+                                <p className="mt-3 text-sm leading-6 text-zinc-400">
+                                    ¿Estás seguro de que deseas eliminar la sesión #{confirmDeleteSessionId} permanentemente?
+                                    Esta acción no se puede deshacer y se borrarán todos sus resultados guardados.
+                                </p>
+                            </div>
+                            <button
+                                type="button"
+                                onClick={() => setConfirmDeleteSessionId(null)}
+                                className="rounded-2xl border border-white/10 bg-white/5 p-3 text-zinc-300 transition hover:bg-white/10 cursor-pointer"
+                            >
+                                <X className="h-5 w-5" />
+                            </button>
+                        </div>
+
+                        <div className="flex justify-end gap-3">
+                            <button
+                                type="button"
+                                onClick={() => setConfirmDeleteSessionId(null)}
+                                disabled={isDeleting}
+                                className="rounded-2xl border border-white/10 bg-white/5 px-5 py-3 font-bold text-white transition hover:bg-white/10 disabled:opacity-50 cursor-pointer"
+                            >
+                                Cancelar
+                            </button>
+                            <button
+                                type="button"
+                                onClick={performDelete}
+                                disabled={isDeleting}
+                                className="inline-flex items-center justify-center gap-2 rounded-2xl border border-red-500/30 bg-red-500/15 px-5 py-3 font-bold text-red-200 transition hover:bg-red-500/25 disabled:opacity-50 cursor-pointer"
+                            >
+                                {isDeleting ? "Eliminando..." : "Eliminar"}
+                            </button>
+                        </div>
+                    </motion.div>
+                </motion.div>
+            )}
+
+            {showSuccessModal && (
+                <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4 backdrop-blur-sm sm:px-6"
+                >
+                    <motion.div
+                        initial={{ opacity: 0, y: 20, scale: 0.96 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        exit={{ opacity: 0, y: 12, scale: 0.98 }}
+                        className="w-full max-w-md rounded-3xl border border-emerald-400/20 bg-zinc-950/95 p-6 text-white shadow-[0_20px_90px_rgba(0,0,0,0.45)] text-center sm:p-8"
+                    >
+                        <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full border border-emerald-500/30 bg-emerald-500/10 text-emerald-300 mb-6">
+                            <CheckCircle2 className="h-8 w-8" />
+                        </div>
+                        <h2 className="font-['Orbitron'] text-2xl font-black text-white">¡Sesión eliminada!</h2>
+                        <p className="mt-3 text-sm leading-6 text-zinc-400">
+                            La sesión y todos sus datos relacionados han sido purgados con éxito de tu biblioteca.
+                        </p>
+                        <div className="mt-8 flex justify-center">
+                            <button
+                                type="button"
+                                onClick={() => setShowSuccessModal(false)}
+                                className="rounded-2xl border border-emerald-400/30 bg-emerald-400/15 px-8 py-3 font-bold text-emerald-200 transition hover:bg-emerald-400/25 cursor-pointer"
+                            >
+                                Entendido
+                            </button>
+                        </div>
+                    </motion.div>
+                </motion.div>
+            )}
+        </AnimatePresence>
+    );
 
     if (loading) return <LoadingScreen title="Cargando sesiones..." showLogo={false} />;
     if (!sessionId) {
@@ -115,6 +231,7 @@ export default function TeacherDashboard() {
                             </button>
                         </div>
                     </div>
+                    {deletionModals}
                 </div>
             );
         }
@@ -157,11 +274,10 @@ export default function TeacherDashboard() {
                                 : recentSession.game?.game_type?.name || 'Juego';
 
                             return (
-                                <button
+                                <div
                                     key={recentSession.id}
-                                    type="button"
                                     onClick={() => openRecentSession(recentSession.id)}
-                                    className="grid w-full gap-3 rounded-2xl border border-white/10 bg-white/5 px-4 py-4 text-left transition hover:bg-white/10 sm:px-5 md:grid-cols-[110px_minmax(0,1.2fr)] md:items-center xl:grid-cols-[110px_minmax(0,1.2fr)_160px_210px_140px] xl:gap-4"
+                                    className="grid w-full gap-3 rounded-2xl border border-white/10 bg-white/5 px-4 py-4 text-left transition hover:bg-white/10 sm:px-5 md:grid-cols-[110px_minmax(0,1.2fr)] md:items-center xl:grid-cols-[110px_minmax(0,1.2fr)_160px_210px_140px_80px] xl:gap-4 cursor-pointer relative group"
                                 >
                                     <span className="font-['Orbitron'] text-lg font-black text-white">#{recentSession.id}</span>
                                     <div className="min-w-0">
@@ -178,7 +294,20 @@ export default function TeacherDashboard() {
                                         <p>Fase {Number(recentSession.current_phase_index ?? 0) + 1}/{recentSession.total_phases ?? 1}</p>
                                         <p>{recentSession.sessionModeShortLabel}</p>
                                     </div>
-                                </button>
+                                    <div className="flex items-center justify-start xl:justify-end">
+                                        <button
+                                            type="button"
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                setConfirmDeleteSessionId(recentSession.id);
+                                            }}
+                                            className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-red-500/30 bg-red-500/10 text-red-200 hover:bg-red-500/25 transition cursor-pointer"
+                                            title="Eliminar sesión permanentemente"
+                                        >
+                                            <Trash2 className="h-4 w-4" />
+                                        </button>
+                                    </div>
+                                </div>
                             );
                         })}
                     </div>
@@ -189,6 +318,7 @@ export default function TeacherDashboard() {
                         onPageChange={setRecentSessionsPage}
                     />
                 </div>
+                {deletionModals}
             </div>
         );
     }
@@ -278,7 +408,7 @@ export default function TeacherDashboard() {
                 ) : null}
             </AnimatePresence>
 
-            <div className="fixed inset-0 overflow-hidden -z-10 pointer-events-none select-none">
+            <div className="fixed inset-0 overflow-hidden z-0 pointer-events-none select-none">
                 <img
                     src={blurBg}
                     alt="Background Blur"
@@ -288,231 +418,236 @@ export default function TeacherDashboard() {
                 <div className="absolute inset-0 bg-zinc-950/20" />
             </div>
 
+            <div className="relative z-10 flex flex-col gap-6 w-full">
+                <header className="rounded-[1.75rem] border border-white/10 bg-black/35 p-4 backdrop-blur-md sm:p-6">
+                    <div className="flex flex-col gap-5 xl:flex-row xl:items-end xl:justify-between">
+                        <div>
+                            <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-cyan-400/20 bg-cyan-400/10 px-3 py-2 text-[11px] font-bold uppercase tracking-[0.22em] text-cyan-200">
+                                <PanelTop className="h-4 w-4" />
+                                Sala de control
+                            </div>
+                            <h1 className="font-['Orbitron'] text-2xl font-black text-white sm:text-3xl">Operación en vivo</h1>
+                            <p className="mt-3 max-w-3xl text-sm leading-6 text-zinc-400">
+                                {sessionLabel}. Desde aquí diriges la sesión, vigilas participantes, mueves fases y exportas resultados.
+                            </p>
+                        </div>
 
-            <header className="rounded-[1.75rem] border border-white/10 bg-black/35 p-4 backdrop-blur-md sm:p-6">
-                <div className="flex flex-col gap-5 xl:flex-row xl:items-end xl:justify-between">
-                    <div>
-                        <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-cyan-400/20 bg-cyan-400/10 px-3 py-2 text-[11px] font-bold uppercase tracking-[0.22em] text-cyan-200">
-                            <PanelTop className="h-4 w-4" />
-                            Sala de control
-                        </div>
-                        <h1 className="font-['Orbitron'] text-2xl font-black text-white sm:text-3xl">Operación en vivo</h1>
-                        <p className="mt-3 max-w-3xl text-sm leading-6 text-zinc-400">
-                            {sessionLabel}. Desde aquí diriges la sesión, vigilas participantes, mueves fases y exportas resultados.
-                        </p>
-                    </div>
-
-                    <div className="grid w-full gap-3 sm:grid-cols-2 xl:min-w-105 xl:w-auto">
-                        <div className="rounded-2xl border border-white/10 bg-white/3 p-4">
-                            <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-zinc-500">Sesión</p>
-                            <p className="mt-2 font-['Orbitron'] text-2xl font-black text-white">#{session.id}</p>
-                            <p className="mt-1 text-xs uppercase tracking-[0.18em] text-zinc-500">{sessionModeMeta.label}</p>
-                        </div>
-                        <div className="rounded-2xl border border-white/10 bg-white/3 p-4">
-                            <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-zinc-500">Estado actual</p>
-                            <p className={`mt-2 font-['Orbitron'] text-2xl font-black uppercase ${session.status === 'playing' ? 'text-emerald-300' : session.status === 'paused' ? 'text-amber-300' : session.status === 'finished' ? 'text-zinc-300' : 'text-cyan-300'}`}>{session.status}</p>
-                            <p className="mt-1 text-xs uppercase tracking-[0.18em] text-zinc-500">Fase {Number(session.current_phase_index ?? 0) + 1}/{session.total_phases ?? 1}</p>
-                        </div>
-                    </div>
-                </div>
-
-                <div className="mt-5 flex flex-wrap items-center gap-3 text-xs font-bold uppercase tracking-[0.2em] text-zinc-500">
-                    <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/3 px-3 py-2 text-zinc-300"><Activity className="h-4 w-4 text-cyan-300" /> ID {session.id}</span>
-                    <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/3 px-3 py-2 text-zinc-300"><RadioTower className="h-4 w-4 text-emerald-300" /> Presencia en directo</span>
-                    <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/3 px-3 py-2 text-zinc-300"><BarChart3 className="h-4 w-4 text-amber-300" /> Resultados persistidos</span>
-                </div>
-            </header>
-
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-                <div className="lg:col-span-8 flex flex-col gap-6">
-                    <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-                        <div className="rounded-2xl border border-white/10 bg-black/30 p-5 backdrop-blur-md">
-                            <span className="text-zinc-500 text-[10px] font-bold tracking-[0.22em] uppercase">Estado operativo</span>
-                            <div className={`mt-3 text-2xl font-['Orbitron'] font-black uppercase ${session.status === 'playing' ? 'text-emerald-300' : session.status === 'paused' ? 'text-amber-300' : session.status === 'finished' ? 'text-zinc-300' : 'text-cyan-300'}`}>{session.status}</div>
-                            <p className="mt-2 text-sm text-zinc-400">Controla la sesión actual y sus transiciones.</p>
-                        </div>
-                        <div className="rounded-2xl border border-white/10 bg-black/30 p-5 backdrop-blur-md">
-                            <span className="text-zinc-500 text-[10px] font-bold tracking-[0.22em] uppercase">PIN activo</span>
-                            <button type="button" onClick={handleCopyPin} className="mt-3 block font-['Orbitron'] text-2xl font-black tracking-[0.18em] text-cyan-300 transition hover:text-cyan-200">
-                                {session.pin}
-                            </button>
-                            <p className="mt-2 text-sm text-zinc-400">Cópialo y compártelo con la clase.</p>
-                        </div>
-                        <div className="rounded-2xl border border-white/10 bg-black/30 p-5 backdrop-blur-md">
-                            <span className="text-zinc-500 text-[10px] font-bold tracking-[0.22em] uppercase">Conectados</span>
-                            <div className="mt-3 text-2xl font-['Orbitron'] font-black text-white">{activeParticipants.length}</div>
-                            <p className="mt-2 text-sm text-zinc-400">{sessionModeMeta.value === 'table' ? 'Mesas' : sessionModeMeta.value === 'shared' ? 'Puestos' : 'Alumnos'} detectados ahora mismo.</p>
-                        </div>
-                    </div>
-                    <div className="rounded-2xl border border-white/10 bg-black/30 p-4 backdrop-blur-md">
-                        <div className="mb-3 flex items-center justify-between gap-4">
-                            <div>
-                                <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-zinc-500">Comandos de sesión</p>
-                                <p className="mt-1 text-sm text-zinc-400">Acciones directas sobre el estado de la partida actual.</p>
+                        <div className="grid w-full gap-3 sm:grid-cols-2 xl:min-w-105 xl:w-auto">
+                            <div className="rounded-2xl border border-white/10 bg-white/3 p-4">
+                                <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-zinc-500">Sesión</p>
+                                <p className="mt-2 font-['Orbitron'] text-2xl font-black text-white">#{session.id}</p>
+                                <p className="mt-1 text-xs uppercase tracking-[0.18em] text-zinc-500">{sessionModeMeta.label}</p>
+                            </div>
+                            <div className="rounded-2xl border border-white/10 bg-white/3 p-4">
+                                <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-zinc-500">Estado actual</p>
+                                <p className={`mt-2 font-['Orbitron'] text-2xl font-black uppercase ${session.status === 'playing' ? 'text-emerald-300' : session.status === 'paused' ? 'text-amber-300' : session.status === 'finished' ? 'text-zinc-300' : 'text-cyan-300'}`}>{session.status}</p>
+                                <p className="mt-1 text-xs uppercase tracking-[0.18em] text-zinc-500">Fase {Number(session.current_phase_index ?? 0) + 1}/{session.total_phases ?? 1}</p>
                             </div>
                         </div>
-                        <div className="flex flex-wrap items-center justify-stretch gap-2 sm:justify-end">
-                            <button onClick={handlePauseResume}
-                                disabled={isFinished}
-                                className={`w-full rounded-xl p-3 transition-all sm:w-auto ${isPaused ? 'border border-yellow-500/50 bg-yellow-500/20 text-yellow-400' : 'border border-transparent bg-white/5 text-white hover:bg-white/10'}`}>
-                                {isPaused ? <Play className="w-5 h-5" /> : <Pause className="w-5 h-5" />}
-                            </button>
-                            <button onClick={handleFinish}
-                                disabled={isFinished}
-                                className="flex w-full items-center justify-center gap-2 rounded-xl border border-purple-500/50 bg-purple-500/20 p-3 text-sm font-bold text-purple-300 transition-all hover:bg-purple-500/40 sm:w-auto">
-                                FINALIZAR <SkipForward className="w-4 h-4" />
-                            </button>
-                            <button onClick={nextPhase}
-                                disabled={isFinished || (session.total_phases ?? 1) <= Number(session.current_phase_index ?? 0) + 1}
-                                className="flex w-full items-center justify-center gap-2 rounded-xl border border-cyan-500/50 bg-cyan-500/20 p-3 text-sm font-bold text-cyan-300 transition-all hover:bg-cyan-500/40 disabled:cursor-not-allowed disabled:opacity-40 sm:w-auto">
-                                SIGUIENTE FASE <SkipForward className="w-4 h-4" />
-                            </button>
-                        </div>
                     </div>
 
-                    <div className="bg-zinc-950/50 backdrop-blur-xl border border-white/10 rounded-2xl p-6 flex-1 flex flex-col">
-                        <div className="mb-4 flex items-center justify-between border-b border-white/5 pb-4">
-                            <h2 className="flex items-center gap-2 font-['Orbitron'] text-base font-bold tracking-wider sm:text-lg">
-                                <Users className="w-5 h-5 text-purple-400" />MAPA DE {sessionModeMeta.value === 'table' ? 'MESAS' : sessionModeMeta.value === 'shared' ? 'PUESTOS' : 'ALUMNOS'}
-                            </h2>
-                        </div>
-                        {scoreRows.length > 0 ? (
-                            <div className="space-y-3">
-                                {scoreRows.map((participant, index) => (
-                                    <StudentRow
-                                        key={participant.key}
-                                        index={index}
-                                        student={participant}
-                                    />
-                                ))}
-                            </div>
-                        ) : (
-                            <div className="text-center text-zinc-500 font-bold text-sm py-10">
-                                {sessionModeMeta.value === 'table'
-                                    ? 'Las mesas aparecerán aquí cuando se conecten a la sesión por PIN.'
-                                    : sessionModeMeta.value === 'shared'
-                                        ? 'Los puestos conectados aparecerán aquí cuando entren por PIN.'
-                                        : 'Los alumnos aparecerán aquí cuando se conecten a la sesión por PIN.'}
-                            </div>
-                        )}
+                    <div className="mt-5 flex flex-wrap items-center gap-3 text-xs font-bold uppercase tracking-[0.2em] text-zinc-500">
+                        <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/3 px-3 py-2 text-zinc-300"><Activity className="h-4 w-4 text-cyan-300" /> ID {session.id}</span>
+                        <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/3 px-3 py-2 text-zinc-300"><RadioTower className="h-4 w-4 text-emerald-300" /> Presencia en directo</span>
+                        <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/3 px-3 py-2 text-zinc-300"><BarChart3 className="h-4 w-4 text-amber-300" /> Resultados persistidos</span>
                     </div>
-                </div>
+                </header>
 
-                <div className="lg:col-span-4 flex flex-col gap-6">
-                    <div className="bg-zinc-950/50 backdrop-blur-xl border border-white/10 rounded-2xl p-6 flex flex-col gap-5">
-                        <div className="flex flex-col items-start justify-between gap-4 border-b border-white/5 pb-4 sm:flex-row sm:items-center">
-                            <div>
-                                <h2 className="text-lg font-bold font-['Orbitron'] tracking-wider flex items-center gap-2 text-amber-300">
-                                    <Trophy className="w-5 h-5" />RESULTADOS GUARDADOS
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                    <div className="lg:col-span-8 flex flex-col gap-6">
+                        <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+                            <div className="rounded-2xl border border-white/10 bg-black/30 p-5 backdrop-blur-md">
+                                <span className="text-zinc-500 text-[10px] font-bold tracking-[0.22em] uppercase">Estado operativo</span>
+                                <div className={`mt-3 text-2xl font-['Orbitron'] font-black uppercase ${session.status === 'playing' ? 'text-emerald-300' : session.status === 'paused' ? 'text-amber-300' : session.status === 'finished' ? 'text-zinc-300' : 'text-cyan-300'}`}>{session.status}</div>
+                                <p className="mt-2 text-sm text-zinc-400">Controla la sesión actual y sus transiciones.</p>
+                            </div>
+                            <div className="rounded-2xl border border-white/10 bg-black/30 p-5 backdrop-blur-md">
+                                <span className="text-zinc-500 text-[10px] font-bold tracking-[0.22em] uppercase">PIN activo</span>
+                                <button type="button" onClick={handleCopyPin} className="mt-3 block font-['Orbitron'] text-2xl font-black tracking-[0.18em] text-cyan-300 transition hover:text-cyan-200">
+                                    {session.pin}
+                                </button>
+                                <p className="mt-2 text-sm text-zinc-400">Cópialo y compártelo con la clase.</p>
+                            </div>
+                            <div className="rounded-2xl border border-white/10 bg-black/30 p-5 backdrop-blur-md">
+                                <span className="text-zinc-500 text-[10px] font-bold tracking-[0.22em] uppercase">Conectados</span>
+                                <div className="mt-3 text-2xl font-['Orbitron'] font-black text-white">{activeParticipants.length}</div>
+                                <p className="mt-2 text-sm text-zinc-400">{sessionModeMeta.value === 'table' ? 'Mesas' : sessionModeMeta.value === 'shared' ? 'Puestos' : 'Alumnos'} detectados ahora mismo.</p>
+                            </div>
+                        </div>
+                        <div className="rounded-2xl border border-white/10 bg-black/30 p-4 backdrop-blur-md">
+                            <div className="mb-3 flex items-center justify-between gap-4">
+                                <div>
+                                    <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-zinc-500">Comandos de sesión</p>
+                                    <p className="mt-1 text-sm text-zinc-400">Acciones directas sobre el estado de la partida actual.</p>
+                                </div>
+                            </div>
+                            <div className="flex flex-wrap items-center justify-stretch gap-2 sm:justify-end">
+                                <button onClick={handlePauseResume}
+                                    disabled={isFinished}
+                                    className={`w-full rounded-xl p-3 transition-all sm:w-auto ${isPaused ? 'border border-yellow-500/50 bg-yellow-500/20 text-yellow-400' : 'border border-transparent bg-white/5 text-white hover:bg-white/10'}`}>
+                                    {isPaused ? <Play className="w-5 h-5" /> : <Pause className="w-5 h-5" />}
+                                </button>
+                                <button onClick={handleFinish}
+                                    disabled={isFinished}
+                                    className="flex w-full items-center justify-center gap-2 rounded-xl border border-purple-500/50 bg-purple-500/20 p-3 text-sm font-bold text-purple-300 transition-all hover:bg-purple-500/40 sm:w-auto">
+                                    FINALIZAR <SkipForward className="w-4 h-4" />
+                                </button>
+                                <button onClick={nextPhase}
+                                    disabled={isFinished || (session.total_phases ?? 1) <= Number(session.current_phase_index ?? 0) + 1}
+                                    className="flex w-full items-center justify-center gap-2 rounded-xl border border-cyan-500/50 bg-cyan-500/20 p-3 text-sm font-bold text-cyan-300 transition-all hover:bg-cyan-500/40 disabled:cursor-not-allowed disabled:opacity-40 sm:w-auto">
+                                    SIGUIENTE FASE <SkipForward className="w-4 h-4" />
+                                </button>
+                            </div>
+                        </div>
+
+                        <div className="bg-zinc-950/50 backdrop-blur-xl border border-white/10 rounded-2xl p-6 flex-1 flex flex-col">
+                            <div className="mb-4 flex items-center justify-between border-b border-white/5 pb-4">
+                                <h2 className="flex items-center gap-2 font-['Orbitron'] text-base font-bold tracking-wider sm:text-lg">
+                                    <Users className="w-5 h-5 text-purple-400" />MAPA DE {sessionModeMeta.value === 'table' ? 'MESAS' : sessionModeMeta.value === 'shared' ? 'PUESTOS' : 'ALUMNOS'}
                                 </h2>
-                                <p className="mt-2 text-sm text-zinc-400">Se actualizan en vivo mientras juegan y siguen accesibles cuando la sesión termina.</p>
                             </div>
-                            <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto">
-                                <button
-                                    type="button"
-                                    onClick={() => refreshResults()}
-                                    className="w-full rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-xs font-bold uppercase tracking-[0.16em] text-zinc-200 transition hover:bg-white/10 sm:w-auto"
-                                >
-                                    Recargar
-                                </button>
-                                <button
-                                    type="button"
-                                    onClick={handleExportResults}
-                                    disabled={isExportingResults}
-                                    className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-amber-400/20 bg-amber-400/10 px-3 py-2 text-xs font-bold uppercase tracking-[0.16em] text-amber-100 transition hover:bg-amber-400/20 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
-                                >
-                                    <Download className="h-4 w-4" />
-                                    {isExportingResults ? 'Exportando' : 'Exportar CSV'}
-                                </button>
-                            </div>
-                        </div>
-
-                        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-                            <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
-                                <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-500">Con resultados</p>
-                                <p className="mt-2 font-['Orbitron'] text-2xl font-black text-white">{resultsData?.stats?.participants_with_results ?? 0}</p>
-                            </div>
-                            <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
-                                <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-500">Completados</p>
-                                <p className="mt-2 font-['Orbitron'] text-2xl font-black text-emerald-300">{resultsData?.stats?.completed_count ?? 0}</p>
-                            </div>
-                            <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
-                                <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-500">Media</p>
-                                <p className="mt-2 font-['Orbitron'] text-2xl font-black text-cyan-300">{resultsData?.stats?.average_score ?? 0}</p>
-                            </div>
-                        </div>
-
-                        {resultsData?.best_result ? (
-                            <div className="rounded-2xl border border-amber-400/20 bg-amber-400/10 p-4">
-                                <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-amber-200/80">Mejor resultado guardado</p>
-                                <div className="mt-3 flex flex-col items-start justify-between gap-3 sm:flex-row">
-                                    <div>
-                                        <p className="text-lg font-bold text-white">{resultsData.best_result.label}</p>
-                                        <p className="mt-1 text-sm text-amber-100/80">{formatElapsed(resultsData.best_result.time_seconds)} · {resultsData.best_result.answers_count} respuestas</p>
-                                    </div>
-                                    <div className="rounded-2xl bg-black/20 px-4 py-3 text-left sm:text-right">
-                                        <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-500">Puntos</p>
-                                        <p className="font-['Orbitron'] text-2xl font-black text-amber-200">{resultsData.best_result.score}</p>
-                                    </div>
+                            {scoreRows.length > 0 ? (
+                                <div className="space-y-3">
+                                    {scoreRows.map((participant, index) => (
+                                        <StudentRow
+                                            key={participant.key}
+                                            index={index}
+                                            student={participant}
+                                        />
+                                    ))}
                                 </div>
-                            </div>
-                        ) : (
-                            <div className="rounded-2xl border border-dashed border-white/10 bg-white/5 p-4 text-sm text-zinc-500">
-                                Todavía no hay resultados guardados en esta sesión.
-                            </div>
-                        )}
-
-                        <div className="space-y-3">
-                            {(resultsData?.results_summary ?? []).slice(0, 5).map((entry, index) => (
-                                <div key={entry.participant_key} className="flex flex-col gap-4 rounded-2xl border border-white/10 bg-white/5 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
-                                    <div className="flex min-w-0 items-center gap-3">
-                                        <div className={`flex h-10 w-10 items-center justify-center rounded-2xl border ${index === 0 ? 'border-amber-400/30 bg-amber-400/10 text-amber-200' : 'border-white/10 bg-black/20 text-zinc-300'}`}>
-                                            {index === 0 ? <Trophy className="h-4 w-4" /> : <Medal className="h-4 w-4" />}
-                                        </div>
-                                        <div className="min-w-0">
-                                            <p className="truncate font-semibold text-white">{entry.label}</p>
-                                            <p className="text-xs text-zinc-500">{formatElapsed(entry.time_seconds)} · {entry.completed ? 'Completado' : 'En curso'}</p>
-                                        </div>
-                                    </div>
-                                    <div className="text-left sm:text-right">
-                                        <p className="font-['Orbitron'] text-xl font-black text-cyan-200">{entry.score}</p>
-                                        <p className="text-xs text-zinc-500">{entry.correct_answers}/{entry.answers_count} aciertos</p>
-                                    </div>
-                                </div>
-                            ))}
-                            {(resultsData?.results_summary ?? []).length === 0 ? null : (
-                                <div className="flex items-center gap-2 text-xs uppercase tracking-[0.18em] text-zinc-500">
-                                    <BarChart3 className="h-4 w-4" />Persistido y disponible para reabrir esta sesión más tarde.
+                            ) : (
+                                <div className="text-center text-zinc-500 font-bold text-sm py-10">
+                                    {sessionModeMeta.value === 'table'
+                                        ? 'Las mesas aparecerán aquí cuando se conecten a la sesión por PIN.'
+                                        : sessionModeMeta.value === 'shared'
+                                            ? 'Los puestos conectados aparecerán aquí cuando entren por PIN.'
+                                            : 'Los alumnos aparecerán aquí cuando se conecten a la sesión por PIN.'}
                                 </div>
                             )}
                         </div>
                     </div>
 
-                    <div className="bg-zinc-950/50 backdrop-blur-xl border border-white/10 rounded-2xl p-6 flex-1 flex flex-col">
-                        <h2 className="text-lg font-bold font-['Orbitron'] tracking-wider flex items-center gap-2 mb-4 text-red-400">
-                            <ShieldAlert className="w-5 h-5" />NOTIFICACIONES EN VIVO
-                        </h2>
-                        <div className="space-y-3 flex-1 overflow-y-auto">
-                            <AnimatePresence>
-                                {alerts.map((alert) => (
-                                    <motion.div key={alert.id} initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }}
-                                        className={`p-4 rounded-xl border text-sm flex gap-3 ${alert.type === 'warning' || alert.type === 'error' ? 'bg-red-500/10 border-red-500/30 text-red-200' : 'bg-cyan-500/10 border-cyan-500/30 text-cyan-200'}`}>
-                                        <AlertTriangle className="w-5 h-5 shrink-0" />
-                                        <div><span className="font-bold block mb-1">{alert.message}</span><span className="text-xs opacity-50">{alert.time}</span></div>
-                                    </motion.div>
-                                ))}
-                            </AnimatePresence>
-                            {alerts.length === 0 && <div className="text-center text-zinc-600 font-bold text-sm py-10">Sin notificaciones aún.</div>}
-                        </div>
-                    </div>
+                    <div className="lg:col-span-4 flex flex-col gap-6">
+                        <div className="bg-zinc-950/50 backdrop-blur-xl border border-white/10 rounded-2xl p-6 flex flex-col gap-5">
+                            <div className="flex flex-col items-start justify-between gap-4 border-b border-white/5 pb-4 sm:flex-row sm:items-center">
+                                <div>
+                                    <h2 className="text-lg font-bold font-['Orbitron'] tracking-wider flex items-center gap-2 text-amber-300">
+                                        <Trophy className="w-5 h-5" />RESULTADOS GUARDADOS
+                                    </h2>
+                                    <p className="mt-2 text-sm text-zinc-400">Se actualizan en vivo mientras juegan y siguen accesibles cuando la sesión termina.</p>
+                                </div>
+                                <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto">
+                                    <button
+                                        type="button"
+                                        onClick={() => refreshResults()}
+                                        className="w-full rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-xs font-bold uppercase tracking-[0.16em] text-zinc-200 transition hover:bg-white/10 sm:w-auto"
+                                    >
+                                        Recargar
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={handleExportResults}
+                                        disabled={isExportingResults}
+                                        className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-amber-400/20 bg-amber-400/10 px-3 py-2 text-xs font-bold uppercase tracking-[0.16em] text-amber-100 transition hover:bg-amber-400/20 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
+                                    >
+                                        <Download className="h-4 w-4" />
+                                        {isExportingResults ? 'Exportando' : 'Exportar CSV'}
+                                    </button>
+                                </div>
+                            </div>
 
-                    <div className="p-6 bg-red-500/5 border border-red-500/20 rounded-2xl">
-                        <button onClick={handleForceFinish} className="w-full py-4 bg-red-600/80 hover:bg-red-500 text-white font-bold rounded-xl transition-all font-['Orbitron'] tracking-widest">
-                            FORZAR FIN DE FASE
-                        </button>
+                            <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+                                <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
+                                    <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-500">Con resultados</p>
+                                    <p className="mt-2 font-['Orbitron'] text-2xl font-black text-white">{resultsData?.stats?.participants_with_results ?? 0}</p>
+                                </div>
+                                <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
+                                    <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-500">Completados</p>
+                                    <p className="mt-2 font-['Orbitron'] text-2xl font-black text-emerald-300">{resultsData?.stats?.completed_count ?? 0}</p>
+                                </div>
+                                <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
+                                    <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-500">Media</p>
+                                    <p className="mt-2 font-['Orbitron'] text-2xl font-black text-cyan-300">{resultsData?.stats?.average_score ?? 0}</p>
+                                </div>
+                            </div>
+
+                            {resultsData?.best_result ? (
+                                <div className="rounded-2xl border border-amber-400/20 bg-amber-400/10 p-4">
+                                    <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-amber-200/80">Mejor resultado guardado</p>
+                                    <div className="mt-3 flex flex-col items-start justify-between gap-3 sm:flex-row">
+                                        <div>
+                                            <p className="text-lg font-bold text-white">{resultsData.best_result.label}</p>
+                                            <p className="mt-1 text-sm text-amber-100/80">{formatElapsed(resultsData.best_result.time_seconds)} · {resultsData.best_result.answers_count} respuestas</p>
+                                        </div>
+                                        <div className="rounded-2xl bg-black/20 px-4 py-3 text-left sm:text-right">
+                                            <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-500">Puntos</p>
+                                            <p className="font-['Orbitron'] text-2xl font-black text-amber-200">{resultsData.best_result.score}</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            ) : (
+                                <div className="rounded-2xl border border-dashed border-white/10 bg-white/5 p-4 text-sm text-zinc-500">
+                                    Todavía no hay resultados guardados en esta sesión.
+                                </div>
+                            )}
+
+                            <div className="space-y-3">
+                                {(resultsData?.results_summary ?? []).slice(0, 5).map((entry, index) => (
+                                    <div key={entry.participant_key} className="flex flex-col gap-4 rounded-2xl border border-white/10 bg-white/5 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+                                        <div className="flex min-w-0 items-center gap-3">
+                                            <div className={`flex h-10 w-10 items-center justify-center rounded-2xl border ${index === 0 ? 'border-amber-400/30 bg-amber-400/10 text-amber-200' : 'border-white/10 bg-black/20 text-zinc-300'}`}>
+                                                {index === 0 ? <Trophy className="h-4 w-4" /> : <Medal className="h-4 w-4" />}
+                                            </div>
+                                            <div className="min-w-0">
+                                                <p className="truncate font-semibold text-white">{entry.label}</p>
+                                                <p className="text-xs text-zinc-500">{formatElapsed(entry.time_seconds)} · {entry.completed ? 'Completado' : 'En curso'}</p>
+                                            </div>
+                                        </div>
+                                        <div className="text-left sm:text-right">
+                                            <p className="font-['Orbitron'] text-xl font-black text-cyan-200">{entry.score}</p>
+                                            <p className="text-xs text-zinc-500">{entry.correct_answers}/{entry.answers_count} aciertos</p>
+                                        </div>
+                                    </div>
+                                ))}
+                                {(resultsData?.results_summary ?? []).length === 0 ? null : (
+                                    <div className="flex items-center gap-2 text-xs uppercase tracking-[0.18em] text-zinc-500">
+                                        <BarChart3 className="h-4 w-4" />Persistido y disponible para reabrir esta sesión más tarde.
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+
+                        <div className="bg-zinc-950/50 backdrop-blur-xl border border-white/10 rounded-2xl p-6 flex-1 flex flex-col">
+                            <h2 className="text-lg font-bold font-['Orbitron'] tracking-wider flex items-center gap-2 mb-4 text-red-400">
+                                <ShieldAlert className="w-5 h-5" />NOTIFICACIONES EN VIVO
+                            </h2>
+                            <div className="space-y-3 flex-1 overflow-y-auto">
+                                <AnimatePresence>
+                                    {alerts.map((alert) => (
+                                        <motion.div key={alert.id} initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }}
+                                            className={`p-4 rounded-xl border text-sm flex gap-3 ${alert.type === 'warning' || alert.type === 'error' ? 'bg-red-500/10 border-red-500/30 text-red-200' : 'bg-cyan-500/10 border-cyan-500/30 text-cyan-200'}`}>
+                                            <AlertTriangle className="w-5 h-5 shrink-0" />
+                                            <div><span className="font-bold block mb-1">{alert.message}</span><span className="text-xs opacity-50">{alert.time}</span></div>
+                                        </motion.div>
+                                    ))}
+                                </AnimatePresence>
+                                {alerts.length === 0 && <div className="text-center text-zinc-600 font-bold text-sm py-10">Sin notificaciones aún.</div>}
+                            </div>
+                        </div>
+
+                        <div className="p-6 bg-red-500/5 border border-red-500/20 rounded-2xl flex flex-col gap-3">
+                            <button onClick={handleForceFinish} className="w-full py-4 bg-red-600/80 hover:bg-red-500 text-white font-bold rounded-xl transition-all font-['Orbitron'] tracking-widest cursor-pointer">
+                                FORZAR FIN DE FASE
+                            </button>
+                            <button onClick={() => setConfirmDeleteSessionId(session.id)} className="w-full py-4 bg-zinc-950 border border-red-500/40 hover:bg-red-500/10 text-red-200 font-bold rounded-xl transition-all font-['Orbitron'] tracking-widest cursor-pointer">
+                                ELIMINAR SESIÓN PERMANENTEMENTE
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>
+            {deletionModals}
         </div>
     );
 }

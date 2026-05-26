@@ -123,7 +123,7 @@ export default function ConfigView() {
                                 { label: 'Modo habitual', value: preferredModeMeta.label },
                                 { label: 'Juegos', value: games.length },
                                 { label: 'Lesson plans', value: lessonPlans.length },
-                                { label: 'Activas ahora', value: activeSessions.length },
+                                { label: 'Sesiones activas', value: activeSessions.length },
                             ].map(({ label, value }) => (
                                 <div key={label} className="rounded-2xl border border-white/8 bg-white/4 px-4 py-3">
                                     <p className="text-[9px] font-bold uppercase tracking-[0.2em] text-zinc-500">{label}</p>
@@ -243,30 +243,19 @@ export default function ConfigView() {
                                             ? `${recentSessions.length} recientes`
                                             : 'Sin historial aún',
                                     },
-                                ].map(({ label, value }) => {
-                                    const isActivity = label === 'Actividad';
-                                    return (
-                                        <div 
-                                            key={label} 
-                                            className={`flex flex-col gap-2 rounded-xl border border-white/6 bg-white/3 px-4 py-3 ${
-                                                isActivity 
-                                                    ? 'items-start' 
-                                                    : 'sm:flex-row sm:items-baseline sm:justify-between sm:gap-4'
-                                            }`}
-                                        >
-                                            <span className="shrink-0 text-[10px] font-bold uppercase tracking-[0.18em] text-zinc-500">
-                                                {label}
-                                            </span>
-                                            <span className={`text-left text-sm font-semibold text-white ${
-                                                isActivity 
-                                                    ? 'leading-relaxed break-words w-full' 
-                                                    : 'truncate sm:text-right'
-                                            }`}>
-                                                {value}
-                                            </span>
-                                        </div>
-                                    );
-                                })}
+                                ].map(({ label, value }) => (
+                                    <div
+                                        key={label}
+                                        className="flex flex-col gap-2 rounded-xl border border-white/6 bg-white/3 px-4 py-3 sm:flex-row sm:items-baseline sm:justify-between sm:gap-4"
+                                    >
+                                        <span className="shrink-0 text-[10px] font-bold uppercase tracking-[0.18em] text-zinc-500">
+                                            {label}
+                                        </span>
+                                        <span className="text-left text-sm font-semibold text-white sm:text-right leading-relaxed break-words">
+                                            {value}
+                                        </span>
+                                    </div>
+                                ))}
                             </div>
                         </motion.div>
 

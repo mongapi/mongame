@@ -16,11 +16,12 @@ export function useGameEditor() {
     const [isLoading, setIsLoading] = useState(true);
     const [isSaving, setIsSaving] = useState(false);
     const [isLaunching, setIsLaunching] = useState(false);
+    const [isDeleting, setIsDeleting] = useState(false);
     const [error, setError] = useState('');
     const [success, setSuccess] = useState('');
     const [showAdvancedJson, setShowAdvancedJson] = useState(false);
     const [jsonDraft, setJsonDraft] = useState('');
-    const [sessionMode, setSessionMode] = useState('individual');
+    const [sessionMode, setSessionMode] = useState(() => localStorage.getItem('preferred_session_mode') || 'individual');
     const [form, setForm] = useState({
         name: '',
         description: '',
@@ -255,6 +256,31 @@ export function useGameEditor() {
             },
         });
     };
+    const handleDelete = async () => {
+        if (!id) return;
+        if (!window.confirm('¿Estás seguro de que deseas eliminar esta plantilla de juego? Esta acción es irreversible.')) {
+            return;
+        }
+
+        setIsDeleting(true);
+        setError('');
+        setSuccess('');
+
+        const result = await gameAPI.delete(id);
+        setIsDeleting(false);
+
+        if (!result.success) {
+            setError(result.error);
+            return;
+        }
+
+        // Redirect back to games library page
+        navigate(ROUTE_PATHS.games, {
+            state: {
+                successMessage: 'Plantilla de juego eliminada con éxito.'
+            }
+        });
+    };
 
     return {
         GameContentForm,
@@ -264,6 +290,7 @@ export function useGameEditor() {
         isLoading,
         isSaving,
         isLaunching,
+        isDeleting,
         error,
         success,
         showAdvancedJson,
@@ -283,6 +310,7 @@ export function useGameEditor() {
         handleSubmit,
         handleCreateSession,
         handlePreview,
+        handleDelete,
         goBack: () => navigate(isEditing ? ROUTE_PATHS.games : ROUTE_PATHS.sessionsCreate),
     };
 }

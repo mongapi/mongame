@@ -255,6 +255,28 @@ export function useTeacherDashboard() {
         pushAlert('info', `Fase ${result.data.current_phase_index + 1} cargada`);
     };
 
+    const deleteSession = async (targetSessionId) => {
+        const result = await sessionAPI.delete(targetSessionId);
+        if (!result.success) {
+            pushAlert('error', result.error);
+            return result;
+        }
+
+        pushAlert('success', 'Sesión eliminada con éxito.');
+
+        if (sessionId && String(sessionId) === String(targetSessionId)) {
+            navigate(ROUTE_PATHS.dashboard, { state: { deletedSession: true } });
+        } else {
+            const listResult = await sessionAPI.list();
+            if (listResult.success) {
+                setRecentSessions(listResult.data ?? []);
+            } else {
+                pushAlert('error', listResult.error);
+            }
+        }
+        return result;
+    };
+
     return {
         sessionId,
         session,
@@ -283,6 +305,7 @@ export function useTeacherDashboard() {
         handleFinish: () => executeSessionAction('finish'),
         handleForceFinish: () => executeSessionAction('finish'),
         nextPhase,
+        deleteSession,
         goToSessionCreate: () => navigate(ROUTE_PATHS.sessionsCreate),
         goToGames: () => navigate(ROUTE_PATHS.games),
         openRecentSession: (id) => navigate(buildDashboardSessionPath(id)),
