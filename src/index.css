@@ -137,3 +137,9 @@
     border-color: rgba(59, 130, 246, 0.4);
   }
 }
+
+/* Hide default browser reveal eye and clear button in password inputs */
+input[type="password"]::-ms-reveal,
+input[type="password"]::-ms-clear {
+  display: none;
+}
