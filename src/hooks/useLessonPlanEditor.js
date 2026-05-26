@@ -1,12 +1,13 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { gameAPI, lessonPlanAPI, sessionAPI } from '@/api/api';
+import { authAPI, gameAPI, lessonPlanAPI, sessionAPI } from '@/api/api';
 import { ROUTE_PATHS, buildDashboardSessionPath, buildLessonPlanEditPath } from '@/router/paths';
 
 export function useLessonPlanEditor() {
     const navigate = useNavigate();
     const { id } = useParams();
     const isEditing = Boolean(id);
+    const currentUser = authAPI.getCurrentUser();
 
     const [games, setGames] = useState([]);
     const [form, setForm] = useState({
@@ -84,10 +85,22 @@ export function useLessonPlanEditor() {
         [form.game_ids, gamesById],
     );
 
-    const availableGames = useMemo(
-        () => games.filter((game) => !form.game_ids.includes(game.id)),
-        [form.game_ids, games],
-    );
+    const availableGames = useMemo(() => {
+        return games
+            .filter((game) => !form.game_ids.includes(game.id))
+            .filter((game) => game.is_active !== false)
+            .sort((left, right) => {
+                const leftIsOwn = currentUser?.id ? left.user_id === currentUser.id : false;
+                const rightIsOwn = currentUser?.id ? right.user_id === currentUser.id : false;
+
+                if (leftIsOwn !== rightIsOwn) {
+                    return leftIsOwn ? -1 : 1;
+                }
+
+                return new Date(right.updated_at ?? right.created_at ?? 0).getTime()
+                    - new Date(left.updated_at ?? left.created_at ?? 0).getTime();
+            });
+    }, [currentUser?.id, form.game_ids, games]);
 
     const updateField = (field, value) => {
         setForm((current) => ({ ...current, [field]: value }));

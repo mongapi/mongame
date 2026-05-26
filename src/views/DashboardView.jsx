@@ -83,7 +83,7 @@ export default function TeacherDashboard() {
         openRecentSession,
     } = useTeacherDashboard();
 
-    if (loading) return <LoadingScreen title="Cargando Sesión..." />;
+    if (loading) return <LoadingScreen title="Cargando sesiones..." showLogo={false} />;
     if (!sessionId) {
         if (recentSessions.length === 0) {
             return (

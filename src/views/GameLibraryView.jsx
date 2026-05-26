@@ -304,14 +304,14 @@ export default function GameLibraryView() {
                                             <div className="flex flex-wrap items-center gap-3">
                                                 <ScopeTab
                                                     icon={BookOpen}
-                                                    label="Mis recursos"
+                                                    label={activeCategory === 'games' ? 'Mi biblioteca' : 'Mis lesson plans'}
                                                     count={activeCategory === 'games' ? ownGames.length : ownLessonPlans.length}
                                                     isActive={activeScope === 'mine'}
                                                     onClick={() => setActiveScope('mine')}
                                                 />
                                                 <ScopeTab
                                                     icon={Users}
-                                                    label="Compartidos"
+                                                    label={activeCategory === 'games' ? 'Biblioteca compartida' : 'Lecciones compartidas'}
                                                     count={activeCategory === 'games' ? sharedGames.length : sharedLessonPlans.length}
                                                     isActive={activeScope === 'shared'}
                                                     onClick={() => setActiveScope('shared')}

@@ -51,7 +51,7 @@ export function useTeacherDashboard() {
         return createdSession;
     });
     const [alerts, setAlerts] = useState([]);
-    const [loading, setLoading] = useState(Boolean(sessionId) && !createdSession);
+    const [loading, setLoading] = useState(!createdSession);
     const [recentSessions, setRecentSessions] = useState([]);
     const [emptyStateError, setEmptyStateError] = useState('');
     const [recentSessionsPage, setRecentSessionsPage] = useState(1);

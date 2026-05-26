@@ -123,8 +123,8 @@ export default function LessonPlanEditorView() {
                             <div className="rounded-3xl border border-white/10 bg-black/30 p-6 backdrop-blur-xl">
                                 <div className="mb-4 flex items-center justify-between gap-3">
                                     <div>
-                                        <h2 className="text-lg font-bold text-white">Juegos disponibles</h2>
-                                        <p className="mt-1 text-xs text-zinc-500">Añade juegos para convertirlos en fases del lesson plan.</p>
+                                        <h2 className="text-lg font-bold text-white">Biblioteca de juegos</h2>
+                                        <p className="mt-1 text-xs text-zinc-500">Selecciona juegos de tu biblioteca y del catálogo compartido para montar las fases.</p>
                                     </div>
                                 </div>
 
@@ -147,7 +147,7 @@ export default function LessonPlanEditorView() {
                                         </div>
                                     )) : (
                                         <div className="rounded-2xl border border-dashed border-white/10 bg-white/5 p-4 text-sm text-zinc-500">
-                                            No quedan más juegos disponibles para añadir.
+                                            No quedan más juegos de biblioteca para añadir.
                                         </div>
                                     )}
                                 </div>
