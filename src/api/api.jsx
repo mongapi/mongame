@@ -194,8 +194,8 @@ export const sessionAPI = {
     async submitAnswer(sessionId, payload) {
         try {
             const response = await api.post(`/sessions/${sessionId}/answers`, {
-                pin: payload?.pin || readSessionPin(),
                 ...payload,
+                pin: payload?.pin || readSessionPin(),
             });
             return { success: true, data: response.data.data };
         } catch (error) {
