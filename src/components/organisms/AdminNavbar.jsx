@@ -18,7 +18,7 @@ const NavItem = ({ icon: Icon, label, path }) => {
             className={cn(
                 "relative flex w-full items-center justify-center gap-4 overflow-hidden rounded-xl p-3 transition-all duration-300 md:justify-start group",
                 isActive
-                    ? "bg-emerald-500/20 text-emerald-300 shadow-[0_0_15px_rgba(168,85,247,0.4)]"
+                    ? "bg-emerald-500/20 text-emerald-300 shadow-[0_0_15px_rgba(16,185,129,0.4)]"
                     : "text-zinc-500 hover:text-white hover:bg-white/5"
             )}
         >

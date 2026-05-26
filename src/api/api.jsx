@@ -545,6 +545,21 @@ export const adminAPI = {
     },
 
     /**
+     * Función que permite a un administrador crear un nuevo usuario
+     * @param {*} payload - Datos del usuario (name, email, password, role)
+     * @returns Objeto con éxito si es exitoso, o error si falla
+     */
+    async createUser(payload) {
+        try {
+            const response = await api.post('/admin/users', payload);
+            return { success: true, data: response.data.data };
+        } catch (error) {
+            const message = error.response?.data?.message || 'No se pudo crear el usuario';
+            return { success: false, error: message };
+        }
+    },
+
+    /**
      * Función que permite obtener el catálogo de tipos de juego
      * @returns Objeto con éxito si es exitoso, o error si falla
      */

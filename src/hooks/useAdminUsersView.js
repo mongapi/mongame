@@ -5,7 +5,6 @@ const EMPTY_METRICS = {
     total: 0,
     admins: 0,
     teachers: 0,
-    students: 0,
     new_last_7_days: 0,
 };
 
@@ -16,7 +15,6 @@ function buildMetrics(users) {
         total: users.length,
         admins: users.filter((user) => user.role === 'admin').length,
         teachers: users.filter((user) => user.role === 'teacher').length,
-        students: users.filter((user) => user.role === 'student').length,
         new_last_7_days: users.filter((user) => user.created_at && new Date(user.created_at).getTime() >= lastWeek).length,
     };
 }
@@ -97,6 +95,23 @@ export function useAdminUsersView() {
         return result;
     }
 
+    async function createUser(userData) {
+        const result = await adminAPI.createUser(userData);
+
+        if (!result.success) {
+            return result;
+        }
+
+        const newUser = result.data?.user || result.data || userData;
+        setUsers((currentUsers) => {
+            const nextUsers = [newUser, ...currentUsers];
+            setMetrics(buildMetrics(nextUsers));
+            return nextUsers;
+        });
+
+        return result;
+    }
+
     return {
         users,
         metrics,
@@ -105,5 +120,6 @@ export function useAdminUsersView() {
         pendingUserId,
         changeUserRole,
         removeUser,
+        createUser,
     };
 }
