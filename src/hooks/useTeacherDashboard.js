@@ -77,6 +77,22 @@ export function useTeacherDashboard() {
         setResultsData(result.data);
     }, [session?.id]);
 
+    const loadRecentSessions = useCallback(async () => {
+        setLoading(true);
+        setEmptyStateError('');
+        const result = await sessionAPI.list();
+        if (!result.success) {
+            setEmptyStateError(result.error);
+            setLoading(false);
+            return result;
+        }
+
+        setRecentSessions(result.data ?? []);
+        setRecentSessionsPage(1);
+        setLoading(false);
+        return result;
+    }, []);
+
     const refreshSession = useCallback(async () => {
         if (!session?.id) {
             return;
@@ -94,19 +110,7 @@ export function useTeacherDashboard() {
 
     useEffect(() => {
         if (!sessionId) {
-            sessionAPI.list()
-                .then((result) => {
-                    if (!result.success) {
-                        setEmptyStateError(result.error);
-                        setLoading(false);
-                        return;
-                    }
-
-                    setRecentSessions(result.data ?? []);
-                    setRecentSessionsPage(1);
-                    setLoading(false);
-                })
-                .catch(() => setLoading(false));
+            loadRecentSessions().catch(() => setLoading(false));
             return;
         }
 
@@ -255,6 +259,27 @@ export function useTeacherDashboard() {
         pushAlert('info', `Fase ${result.data.current_phase_index + 1} cargada`);
     };
 
+    const deleteSession = async (targetSessionId) => {
+        const result = await sessionAPI.delete(targetSessionId);
+        if (!result.success) {
+            pushAlert('error', result.error);
+            return result;
+        }
+
+        pushAlert('success', 'Sesión eliminada con éxito.');
+        setRecentSessions((prev) => prev.filter((sessionItem) => String(sessionItem.id) !== String(targetSessionId)));
+
+        if (sessionId && String(sessionId) === String(targetSessionId)) {
+            navigate(ROUTE_PATHS.dashboard, { state: { deletedSession: true } });
+        } else {
+            const listResult = await loadRecentSessions();
+            if (!listResult?.success) {
+                pushAlert('error', listResult?.error || 'No se pudo actualizar la lista de sesiones.');
+            }
+        }
+        return result;
+    };
+
     return {
         sessionId,
         session,
@@ -283,6 +308,7 @@ export function useTeacherDashboard() {
         handleFinish: () => executeSessionAction('finish'),
         handleForceFinish: () => executeSessionAction('finish'),
         nextPhase,
+        deleteSession,
         goToSessionCreate: () => navigate(ROUTE_PATHS.sessionsCreate),
         goToGames: () => navigate(ROUTE_PATHS.games),
         openRecentSession: (id) => navigate(buildDashboardSessionPath(id)),

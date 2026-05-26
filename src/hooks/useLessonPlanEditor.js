@@ -20,7 +20,7 @@ export function useLessonPlanEditor() {
     const [isLaunching, setIsLaunching] = useState(false);
     const [error, setError] = useState('');
     const [success, setSuccess] = useState('');
-    const [sessionMode, setSessionMode] = useState('individual');
+    const [sessionMode, setSessionMode] = useState(() => localStorage.getItem('preferred_session_mode') || 'individual');
 
     useEffect(() => {
         let mounted = true;

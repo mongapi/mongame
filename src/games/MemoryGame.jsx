@@ -77,6 +77,19 @@ export default function MemoryGame() {
         setIsSubmitting(false);
     };
 
+    const handleRetry = () => {
+        if (!content.pairs?.length) return;
+
+        setCards(shuffleCards(content.pairs));
+        setFlippedIndexes([]);
+        setMatchedPairs([]);
+        setMoves(0);
+        setIsLocked(false);
+        setGameWon(false);
+        setStartedAt(Date.now());
+        setError('');
+    };
+
     // Lógica de emparejamiento
     const handleCardClick = (index) => {
         // Evitar clics si está bloqueado, si ya está volteada o si ya está emparejada
@@ -213,16 +226,13 @@ export default function MemoryGame() {
                             className="absolute inset-0 z-50 flex items-center justify-center bg-zinc-950/80 backdrop-blur-sm"
                         >
                             <div className="bg-zinc-900 border border-green-500/50 p-10 rounded-3xl text-center shadow-[0_0_50px_rgba(34,197,94,0.2)] max-w-md w-full">
-                                <motion.div
-                                    animate={{ rotate: 360 }} transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
-                                    className="w-24 h-24 mx-auto mb-6 rounded-full border-4 border-dashed border-green-500 flex items-center justify-center"
-                                >
-                                    <ShieldCheck className="w-12 h-12 text-green-400" />
-                                </motion.div>
+                                <div className="w-24 h-24 mx-auto mb-6 rounded-full border-4 border-dashed border-green-500 flex items-center justify-center">
+                                    <div className="w-12 h-12 rounded-full bg-green-500/20" />
+                                </div>
                                 <h2 className="text-3xl font-black font-['Orbitron'] text-white mb-2 tracking-widest">SISTEMA VULNERADO</h2>
                                 <p className="text-zinc-400 mb-8 font-bold tracking-wider">Todos los nodos de datos han sido enlazados con éxito en {moves} movimientos.</p>
-                                <button className="w-full py-4 bg-green-500 hover:bg-green-400 text-zinc-950 font-black font-['Orbitron'] tracking-widest rounded-xl transition-all shadow-[0_0_15px_rgba(34,197,94,0.5)]">
-                                    CONTINUAR AL SIGUIENTE NIVEL
+                                <button onClick={handleRetry} className="w-full py-4 bg-green-500 hover:bg-green-400 text-zinc-950 font-black font-['Orbitron'] tracking-widest rounded-xl transition-all shadow-[0_0_15px_rgba(34,197,94,0.5)]">
+                                    VOLVER A INTENTAR
                                 </button>
                             </div>
                         </motion.div>

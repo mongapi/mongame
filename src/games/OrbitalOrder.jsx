@@ -48,25 +48,38 @@ function resolveOrbitalContent(gameContent) {
     const fallbackItems = DEFAULT_LEVEL_DATA.items;
 
     const orbits = Array.isArray(gameContent?.orbits) && gameContent.orbits.length > 0
-        ? gameContent.orbits.map((orbit, index) => ({
-            id: Number.isFinite(Number(orbit?.id)) ? Number(orbit.id) : index,
-            name: String(orbit?.name ?? `Órbita ${index + 1}`).trim() || `Órbita ${index + 1}`,
-            radius: 10.0 + (index * 15.0),
-            color: String(orbit?.color ?? fallbackOrbits[index]?.color ?? '#60a5fa'),
-            speed: Number(orbit?.speed) > 0 ? Number(orbit.speed) : fallbackOrbits[index]?.speed ?? 0.25,
-        }))
+        ? gameContent.orbits.map((orbit, index) => {
+            let orbitId = orbit?.id;
+            if (orbitId === undefined || orbitId === null) {
+                orbitId = index;
+            } else if (typeof orbitId === 'string' && orbitId.trim() === '') {
+                orbitId = index;
+            }
+            return {
+                id: orbitId,
+                name: String(orbit?.name ?? `Órbita ${index + 1}`).trim() || `Órbita ${index + 1}`,
+                radius: 10.0 + (index * 15.0),
+                color: String(orbit?.color ?? fallbackOrbits[index]?.color ?? '#60a5fa'),
+                speed: Number(orbit?.speed) > 0 ? Number(orbit.speed) : fallbackOrbits[index]?.speed ?? 0.25,
+            };
+        })
         : fallbackOrbits;
 
     const items = Array.isArray(gameContent?.items) && gameContent.items.length > 0
-        ? gameContent.items.map((item, index) => ({
-            id: String(item?.id ?? `item-${index + 1}`),
-            text: String(item?.text ?? item?.name ?? `Concepto ${index + 1}`).trim() || `Concepto ${index + 1}`,
-            correctOrbit: Number.isFinite(Number(item?.correctOrbit))
-                ? Number(item.correctOrbit)
-                : Number.isFinite(Number(item?.correct_orbit))
-                    ? Number(item.correct_orbit)
-                    : 0,
-        }))
+        ? gameContent.items.map((item, index) => {
+            let correct = item?.correctOrbit;
+            if (correct === undefined || correct === null) {
+                correct = item?.correct_orbit;
+            }
+            if (correct === undefined || correct === null) {
+                correct = 0;
+            }
+            return {
+                id: String(item?.id ?? `item-${index + 1}`),
+                text: String(item?.text ?? item?.name ?? `Concepto ${index + 1}`).trim() || `Concepto ${index + 1}`,
+                correctOrbit: correct,
+            };
+        })
         : fallbackItems;
 
     return {
@@ -86,13 +99,13 @@ function validateOrbitalContent(content) {
         return 'Orbital Order necesita al menos un concepto para ordenar.';
     }
 
-    const invalidOrbit = content.orbits.find((orbit) => !orbit?.name || !Number.isFinite(Number(orbit?.radius)));
+    const invalidOrbit = content.orbits.find((orbit) => !orbit?.name || orbit?.id === undefined || orbit?.id === null || !Number.isFinite(Number(orbit?.radius)));
     if (invalidOrbit) {
-        return 'Cada órbita debe tener nombre y radio válido.';
+        return 'Cada órbita debe tener nombre, ID y radio válido.';
     }
 
-    const validOrbitIds = new Set(content.orbits.map((orbit) => Number(orbit.id)));
-    const invalidItem = content.items.find((item) => !item?.text || !validOrbitIds.has(Number(item.correctOrbit)));
+    const validOrbitIds = new Set(content.orbits.map((orbit) => String(orbit.id).trim()));
+    const invalidItem = content.items.find((item) => !item?.text || !validOrbitIds.has(String(item.correctOrbit).trim()));
     if (invalidItem) {
         return 'Cada concepto debe tener texto y apuntar a una órbita existente.';
     }
@@ -126,6 +139,12 @@ function ConceptNode({ item, status, targetOrbit, isSelected, onClick, onEjected
     // Track physics values
     const velocity = useRef(new THREE.Vector3());
     const ejectionTimer = useRef(0);
+
+    useEffect(() => {
+        if (status === 'chaotic') {
+            velocity.current.set(0, 0, 0);
+        }
+    }, [status]);
 
     useFrame((state, delta) => {
         if (!meshRef.current) return;
@@ -182,31 +201,44 @@ function ConceptNode({ item, status, targetOrbit, isSelected, onClick, onEjected
 
             // Distance check
             const dist = pos.distanceTo(new THREE.Vector3(targetX, targetY, targetZ));
-            if (dist < 0.5) {
-                if (targetOrbit.id === item.correctOrbit) {
-                    onEjected(item.id, true, targetOrbit); // success
-                } else {
-                    onEjected(item.id, false, targetOrbit); // fail
-                }
+            if (dist < 2.5) {
+                onEjected(item.id, 'placed', targetOrbit);
             }
 
         } else if (status === 'rejected') {
-            // Smoothly fly back to chaotic roaming area instead of falling
+            ejectionTimer.current += delta;
+
+            // Set initial outward push velocity on the first frame of rejection
+            if (velocity.current.lengthSq() === 0) {
+                // Direction pointing away from the center of the solar system
+                const dir = new THREE.Vector3(pos.x, pos.y, pos.z).normalize();
+                // Apply a strong outward velocity
+                velocity.current.copy(dir).multiplyScalar(22);
+            }
+
+            // Decaying bounce velocity
+            velocity.current.multiplyScalar(0.92);
+
+            // Move position by velocity
+            pos.addScaledVector(velocity.current, delta);
+
+            // Gently pull the planet back to its chaotic target over time
             const t = time * 0.2 * rSpeed + rOffset;
             targetX = Math.cos(t) * baseDistance;
             targetZ = Math.sin(t) * baseDistance;
             targetY = Math.sin(time + rOffset) * 2 + heightOffset;
 
-            pos.x = THREE.MathUtils.lerp(pos.x, targetX, 0.05);
-            pos.y = THREE.MathUtils.lerp(pos.y, targetY, 0.05);
-            pos.z = THREE.MathUtils.lerp(pos.z, targetZ, 0.05);
+            const lerpFactor = Math.min(1, ejectionTimer.current / 2.0);
+            pos.x = THREE.MathUtils.lerp(pos.x, targetX, 0.03 * lerpFactor);
+            pos.y = THREE.MathUtils.lerp(pos.y, targetY, 0.03 * lerpFactor);
+            pos.z = THREE.MathUtils.lerp(pos.z, targetZ, 0.03 * lerpFactor);
+            
             targetCol = "#ef4444"; // keep red to indicate failure
 
-            ejectionTimer.current += delta;
-
-            if (ejectionTimer.current > 2) {
+            if (ejectionTimer.current > 2.2) {
                 ejectionTimer.current = 0;
-                onEjected(item.id, 'reset', null); // back to purely chaotic
+                velocity.current.set(0, 0, 0);
+                onEjected(item.id, 'reset', null);
             }
 
         } else if (status === 'orbiting' && targetOrbit) {
@@ -255,8 +287,14 @@ function ConceptNode({ item, status, targetOrbit, isSelected, onClick, onEjected
                     e.stopPropagation();
                     if (status === 'chaotic') onClick(item.id);
                 }}
+                onDoubleClick={(e) => {
+                    e.stopPropagation();
+                    if (status === 'orbiting') {
+                        onEjected(item.id, 'reset', null);
+                    }
+                }}
                 onPointerOver={() => {
-                    if (status === 'chaotic') document.body.style.cursor = 'pointer';
+                    if (status === 'chaotic' || status === 'orbiting') document.body.style.cursor = 'pointer';
                 }}
                 onPointerOut={() => {
                     document.body.style.cursor = 'auto';
@@ -372,7 +410,7 @@ export default function OrbitalOrder() {
         validateContent: validateOrbitalContent,
     });
     const { sessionFinished, handleExit, exitLabel, finishActionLabel } = useGameSessionUi({ session, sessionId, isPreview: false });
-    const [gameState, setGameState] = useState('playing'); // playing, won
+        const [gameState, setGameState] = useState('playing'); // playing, won
     const [itemsState, setItemsState] = useState(
         content.items.map(item => ({
             ...item,
@@ -381,8 +419,6 @@ export default function OrbitalOrder() {
         }))
     );
     const [selectedItemId, setSelectedItemId] = useState(null);
-    const [score, setScore] = useState(0);
-    const [errors, setErrors] = useState(0);
     const [startedAt, setStartedAt] = useState(() => Date.now());
     const [isSubmitting, setIsSubmitting] = useState(false);
     const resolvingItemsRef = useRef(new Set());
@@ -394,8 +430,6 @@ export default function OrbitalOrder() {
             targetOrbit: null,
         })));
         setSelectedItemId(null);
-        setScore(0);
-        setErrors(0);
         setGameState('playing');
         setStartedAt(Date.now());
         setError('');
@@ -436,10 +470,6 @@ export default function OrbitalOrder() {
     };
 
     const handleItemPhysicsResult = async (itemId, success, orbitObj) => {
-        if (resolvingItemsRef.current.has(itemId)) {
-            return;
-        }
-
         if (success === 'reset') {
             // Ejection animation finished
             setItemsState(prev => prev.map(item =>
@@ -449,51 +479,79 @@ export default function OrbitalOrder() {
             return;
         }
 
-        resolvingItemsRef.current.add(itemId);
-
-        const targetItem = itemsState.find((item) => item.id === itemId);
-        const nextSolvedCount = success
-            ? itemsState.filter((item) => item.status === 'orbiting').length + 1
-            : itemsState.filter((item) => item.status === 'orbiting').length;
-
-        if (sessionId && targetItem) {
-            setIsSubmitting(true);
-            const result = await sessionAPI.submitAnswer(sessionId, {
-                question_id: targetItem.id,
-                answer: orbitObj?.id ?? null,
-                device_id: participant.deviceId,
-                player_name: participant.playerName,
-                player_number: 1,
-                elapsed_seconds: Math.max(0, Math.round((Date.now() - startedAt) / 1000)),
-                completed: success && nextSolvedCount === content.items.length,
-            });
-
-            setIsSubmitting(false);
-
-            if (!result.success) {
-                setError(result.error);
-            }
-        }
-
-        if (success) {
-            setScore(s => s + 100);
-            setItemsState(prev => {
-                const newState = prev.map(item =>
-                    item.id === itemId ? { ...item, status: 'orbiting', targetOrbit: orbitObj } : item
-                );
-                // Check if all are orbiting
-                if (newState.every(i => i.status === 'orbiting')) {
-                    setGameState('won');
-                }
-                return newState;
-            });
-            resolvingItemsRef.current.delete(itemId);
-        } else {
-            setErrors(e => e + 1);
+        if (success === 'placed') {
+            // Placed into orbit (before verification)
             setItemsState(prev => prev.map(item =>
-                item.id === itemId ? { ...item, status: 'rejected', targetOrbit: null } : item
+                item.id === itemId ? { ...item, status: 'orbiting', targetOrbit: orbitObj } : item
             ));
+            resolvingItemsRef.current.delete(itemId);
+            return;
         }
+    };
+
+    const handleVerify = () => {
+        if (sessionFinished || gameState !== 'playing') return;
+        setError('');
+
+        const orbitingItems = itemsState.filter(item => item.status === 'orbiting');
+        if (orbitingItems.length === 0) {
+            return;
+        }
+
+        // We check all orbiting items
+        const results = orbitingItems.map(item => {
+            const isCorrect = String(item.targetOrbit.id).trim() === String(item.correctOrbit).trim();
+            return {
+                itemId: item.id,
+                isCorrect,
+                orbitObj: item.targetOrbit
+            };
+        });
+
+        // Determine if game is fully won (i.e. all level items are in their correct orbits)
+        const totalItemsCount = content.items.length;
+        const correctCount = results.filter(r => r.isCorrect).length;
+        const isFullyWon = correctCount === totalItemsCount;
+
+        // Submit verified answers to the backend in background
+        if (sessionId) {
+            Promise.all(results.map(r => 
+                sessionAPI.submitAnswer(sessionId, {
+                    question_id: r.itemId,
+                    answer: r.isCorrect ? r.orbitObj.id : null,
+                    device_id: participant.deviceId,
+                    player_name: participant.playerName,
+                    player_number: 1,
+                    elapsed_seconds: Math.max(0, Math.round((Date.now() - startedAt) / 1000)),
+                    completed: isFullyWon,
+                })
+            )).catch(err => {
+                console.error("Error submitting answer in background:", err);
+            });
+        }
+
+        // Apply physical changes to state
+        setItemsState(prev => {
+            const newState = prev.map(item => {
+                const verificationResult = results.find(r => r.itemId === item.id);
+                if (verificationResult) {
+                    if (verificationResult.isCorrect) {
+                        // Stays orbiting
+                        return item;
+                    } else {
+                        // Bounces off!
+                        return { ...item, status: 'rejected', targetOrbit: null };
+                    }
+                }
+                return item;
+            });
+
+            // Check if game is won (all items orbiting and correct)
+            if (newState.every(i => i.status === 'orbiting')) {
+                setGameState('won');
+            }
+            return newState;
+        });
     };
 
     const handleReset = () => {
@@ -503,8 +561,6 @@ export default function OrbitalOrder() {
             targetOrbit: null
         })));
         setSelectedItemId(null);
-        setScore(0);
-        setErrors(0);
         setGameState('playing');
         setStartedAt(Date.now());
         setError('');
@@ -520,7 +576,7 @@ export default function OrbitalOrder() {
             <div className="absolute inset-0 z-0 cursor-default">
                 <Canvas camera={{ position: [0, 8, 20], fov: 60 }}>
                     <ambientLight intensity={0.4} />
-                    <pointLight position={[0, 0, 0]} intensity={3} color="#fcd34d" distance={60} />
+                    <pointLight position={[0, 0, 0]} intensity={4} color="#fcd34d" distance={75} />
 
                     {/* Background */}
                     <Suspense fallback={null}>
@@ -532,7 +588,7 @@ export default function OrbitalOrder() {
                     <OrbitControls
                         enablePan={false}
                         minDistance={10}
-                        maxDistance={1500}
+                        maxDistance={100}
                         maxPolarAngle={Math.PI / 2 - 0.1}
                         autoRotate={!selectedItemId && gameState === 'playing'}
                         autoRotateSpeed={0.5}
@@ -541,34 +597,43 @@ export default function OrbitalOrder() {
                     <Suspense fallback={null}>
                         {/* THE CORE */}
                         <Float speed={2} rotationIntensity={0.5} floatIntensity={1}>
-                            <group scale={0.0030}>
+                            <group scale={0.0045}>
                                 <Sun />
                             </group>
 
                             {/* Corona / Glow effects */}
-                            <Sphere args={[0.5, 32, 32]} position={[0, 0, 0]}>
+                            <Sphere args={[0.7, 32, 32]} position={[0, 0, 0]}>
                                 <meshBasicMaterial
                                     color="#fbbf24"
                                     transparent
-                                    opacity={0.6}
+                                    opacity={0.75}
                                     blending={THREE.AdditiveBlending}
                                     depthWrite={false}
                                 />
                             </Sphere>
-                            <Sphere args={[0.8, 32, 32]} position={[0, 0, 0]}>
+                            <Sphere args={[1.1, 32, 32]} position={[0, 0, 0]}>
                                 <meshBasicMaterial
                                     color="#f59e0b"
                                     transparent
-                                    opacity={0.3}
+                                    opacity={0.45}
                                     blending={THREE.AdditiveBlending}
                                     depthWrite={false}
                                 />
                             </Sphere>
-                            <Sphere args={[2.0, 32, 32]} position={[0, 0, 0]}>
+                            <Sphere args={[2.4, 32, 32]} position={[0, 0, 0]}>
                                 <meshBasicMaterial
                                     color="#ea580c"
                                     transparent
-                                    opacity={0.25}
+                                    opacity={0.28}
+                                    blending={THREE.AdditiveBlending}
+                                    depthWrite={false}
+                                />
+                            </Sphere>
+                            <Sphere args={[3.2, 32, 32]} position={[0, 0, 0]}>
+                                <meshBasicMaterial
+                                    color="#fbbf24"
+                                    transparent
+                                    opacity={0.18}
                                     blending={THREE.AdditiveBlending}
                                     depthWrite={false}
                                 />
@@ -611,22 +676,18 @@ export default function OrbitalOrder() {
             {/* 2D UI Overlay */}
             <div className="absolute top-0 left-0 w-full p-8 p-pointer-events-none z-10 flex justify-between items-start pointer-events-none">
                 <div className="pointer-events-auto bg-black/40 backdrop-blur-xl border border-white/10 p-6 rounded-3xl max-w-sm">
-                    <h1 className="text-3xl font-black text-transparent bg-clip-text bg-linear-to-r from-emerald-400 to-cyan-400 mb-2">
+                    <h1 className="text-3xl font-black font-['Orbitron'] text-transparent bg-clip-text bg-linear-to-r from-emerald-400 to-cyan-400 mb-2">
                         Orbital Order
                     </h1>
                     <p className="text-zinc-300 text-sm mb-4 leading-relaxed font-medium">
                         {content.title}
                     </p>
-                    <div className="flex gap-4">
-                        <div className="bg-emerald-500/20 border border-emerald-500/30 rounded-xl p-3 flex-1 text-center">
-                            <p className="text-xs text-emerald-400 font-bold mb-1 uppercase tracking-wider">Aciertos</p>
-                            <p className="text-xl font-bold text-emerald-300">{score}</p>
-                        </div>
-                        <div className="bg-red-500/20 border border-red-500/30 rounded-xl p-3 flex-1 text-center">
-                            <p className="text-xs text-red-400 font-bold mb-1 uppercase tracking-wider">Fallos</p>
-                            <p className="text-xl font-bold text-red-300">{errors}</p>
-                        </div>
-                    </div>
+                    <button
+                        onClick={handleVerify}
+                        className="w-full py-4 mt-2 rounded-2xl font-bold text-lg transition-all duration-300 flex items-center justify-center gap-2 border shadow-lg font-['Orbitron'] bg-cyan-500 hover:bg-cyan-400 text-black border-cyan-400 cursor-pointer hover:shadow-cyan-500/25 hover:scale-[1.02]"
+                    >
+                        <CheckCircle2 className="w-5 h-5" /> Verificar Sistema
+                    </button>
 
                     {error ? (
                         <div className="mt-4 rounded-2xl border border-red-500/30 bg-red-500/10 p-3 text-sm text-red-200">
@@ -659,7 +720,7 @@ export default function OrbitalOrder() {
                             <div className="mx-auto w-20 h-20 bg-emerald-500/20 rounded-full flex items-center justify-center mb-6">
                                 <CheckCircle2 className="w-12 h-12 text-emerald-400" />
                             </div>
-                            <h2 className="text-4xl font-black text-white mb-4">¡Sistema Estable!</h2>
+                            <h2 className="text-4xl font-black font-['Orbitron'] text-white mb-4">¡Sistema Estable!</h2>
                             <p className="text-zinc-400 mb-8 font-medium">Has ordenado correctamente todos los conceptos en sus jerarquías. El núcleo funciona perfectamente.</p>
                             <button
                                 onClick={handleReset}

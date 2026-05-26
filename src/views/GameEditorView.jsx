@@ -1,5 +1,5 @@
 import { motion } from 'motion/react';
-import { AlertCircle, CheckCircle2, Code2, Eye, Loader, Save } from 'lucide-react';
+import { AlertCircle, CheckCircle2, Code2, Eye, Loader, Save, Trash2 } from 'lucide-react';
 import { SessionModeCards } from '@/components/organisms/SessionModeSelector';
 import { validateGameContent } from '@/games/shared/gameContentValidation';
 import { useGameEditor } from '@/hooks/useGameEditor';
@@ -16,6 +16,7 @@ export default function GameEditorView() {
         isLoading,
         isSaving,
         isLaunching,
+        isDeleting,
         error,
         success,
         showAdvancedJson,
@@ -35,6 +36,7 @@ export default function GameEditorView() {
         handleSubmit,
         handleCreateSession,
         handlePreview,
+        handleDelete,
         goBack,
     } = useGameEditor();
 
@@ -226,6 +228,21 @@ export default function GameEditorView() {
                     </div>
 
                     <div className="flex items-center justify-end gap-3">
+                        {isEditing ? (
+                            <button
+                                type="button"
+                                onClick={handleDelete}
+                                disabled={isSaving || isLaunching || isDeleting}
+                                className="mr-auto inline-flex items-center gap-2 rounded-2xl border border-red-500/30 bg-red-500/15 px-5 py-3 font-bold text-red-200 transition hover:bg-red-500/25 disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer"
+                            >
+                                {isDeleting ? (
+                                    <Loader className="h-5 w-5 animate-spin" />
+                                ) : (
+                                    <Trash2 className="h-5 w-5" />
+                                )}
+                                Eliminar juego
+                            </button>
+                        ) : null}
                         <button
                             type="button"
                             onClick={handlePreview}
@@ -237,7 +254,7 @@ export default function GameEditorView() {
                         <button
                             type="button"
                             onClick={handleCreateSession}
-                            disabled={isSaving || isLaunching}
+                            disabled={isSaving || isLaunching || isDeleting}
                             className="rounded-2xl border border-emerald-400/30 bg-emerald-400/15 px-5 py-3 font-bold text-emerald-200 transition hover:bg-emerald-400/25 disabled:cursor-not-allowed disabled:opacity-50"
                         >
                             {isLaunching ? 'Creando sesión...' : isEditing ? 'Crear sesión con este juego' : 'Guardar y crear sesión'}
@@ -245,7 +262,7 @@ export default function GameEditorView() {
                         {isEditing ? (
                             <button
                                 type="submit"
-                                disabled={isSaving || isLaunching}
+                                disabled={isSaving || isLaunching || isDeleting}
                                 className="flex items-center gap-2 rounded-2xl bg-cyan-400 px-5 py-3 font-bold text-zinc-950 transition hover:bg-cyan-300 disabled:cursor-not-allowed disabled:opacity-50"
                             >
                                 {isSaving ? <Loader className="h-5 w-5 animate-spin" /> : <Save className="h-5 w-5" />}

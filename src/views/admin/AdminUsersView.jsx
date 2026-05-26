@@ -1,6 +1,7 @@
-import { AlertTriangle, Search, ShieldCheck, Trash2, UserCog, Users } from 'lucide-react';
+import { AlertTriangle, Search, ShieldCheck, Trash2, UserCog, Users, UserPlus, X, Loader } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { AnimatePresence, motion } from 'motion/react';
 import PaginationControls from '@/components/ui/PaginationControls';
 import LoadingScreen from '@/components/ui/LoadingScreen';
 import { useAdminUsersView } from '@/hooks/useAdminUsersView';
@@ -11,15 +12,47 @@ const USERS_PER_PAGE = 8;
 const ROLE_OPTIONS = [
     { value: 'admin', label: 'Admin' },
     { value: 'teacher', label: 'Teacher' },
-    { value: 'student', label: 'Student' },
 ];
 
 export default function AdminUsersView() {
-    const { users, metrics, loading, error, pendingUserId, changeUserRole, removeUser } = useAdminUsersView();
+    const { users, metrics, loading, error, pendingUserId, changeUserRole, removeUser, createUser } = useAdminUsersView();
     const [query, setQuery] = useState('');
     const [page, setPage] = useState(1);
     const [selectedUserId, setSelectedUserId] = useState(null);
     const [feedback, setFeedback] = useState({ type: '', message: '' });
+
+    const [showCreateModal, setShowCreateModal] = useState(false);
+    const [createForm, setCreateForm] = useState({ name: '', email: '', password: '', role: 'teacher' });
+    const [createFeedback, setCreateFeedback] = useState({ type: '', message: '' });
+    const [isCreating, setIsCreating] = useState(false);
+
+    async function handleCreateUser(e) {
+        e.preventDefault();
+        setCreateFeedback({ type: '', message: '' });
+        setIsCreating(true);
+
+        if (!createForm.name || !createForm.email || !createForm.password) {
+            setCreateFeedback({ type: 'error', message: 'Por favor, rellena todos los campos.' });
+            setIsCreating(false);
+            return;
+        }
+
+        const result = await createUser(createForm);
+
+        if (!result.success) {
+            setCreateFeedback({ type: 'error', message: result.error || 'Error al crear el usuario.' });
+            setIsCreating(false);
+            return;
+        }
+
+        setCreateFeedback({ type: 'success', message: 'Usuario creado exitosamente.' });
+        setCreateForm({ name: '', email: '', password: '', role: 'teacher' });
+        setIsCreating(false);
+        setTimeout(() => {
+            setShowCreateModal(false);
+            setCreateFeedback({ type: '', message: '' });
+        }, 1500);
+    }
 
     const filteredUsers = useMemo(() => {
         const normalized = query.trim().toLowerCase();
@@ -117,6 +150,13 @@ export default function AdminUsersView() {
                         </div>
 
                         <div className="flex flex-wrap gap-3">
+                            <button
+                                onClick={() => setShowCreateModal(true)}
+                                className="inline-flex items-center gap-2 rounded-2xl border border-emerald-400/30 bg-emerald-400/15 px-5 py-3 text-sm font-semibold text-emerald-100 transition hover:bg-emerald-400/20 cursor-pointer"
+                            >
+                                <UserPlus className="h-4 w-4" />
+                                Crear usuario
+                            </button>
                             <Link to="/admin/dashboard" className="rounded-2xl border border-cyan-400/30 bg-cyan-400/15 px-5 py-3 text-sm font-semibold text-cyan-100 transition hover:bg-cyan-400/20">Volver al dashboard</Link>
                             <Link to="/admin/audit" className="rounded-2xl border border-white/10 bg-white/5 px-5 py-3 text-sm font-semibold text-white transition hover:bg-white/10">Ver actividad</Link>
                         </div>
@@ -259,12 +299,11 @@ export default function AdminUsersView() {
                                 {[
                                     { label: 'Admins', value: metrics.admins, tone: 'cyan' },
                                     { label: 'Teachers', value: metrics.teachers, tone: 'emerald' },
-                                    { label: 'Students', value: metrics.students, tone: 'amber' },
                                 ].map((row) => (
                                     <div key={row.label} className="rounded-2xl border border-white/10 bg-white/5 p-4">
                                         <div className="flex items-center justify-between gap-4">
                                             <p className="font-semibold text-white">{row.label}</p>
-                                            <span className={`font-['Orbitron'] text-2xl font-black ${row.tone === 'cyan' ? 'text-cyan-200' : row.tone === 'emerald' ? 'text-emerald-200' : 'text-amber-200'}`}>{row.value}</span>
+                                            <span className={`font-['Orbitron'] text-2xl font-black ${row.tone === 'cyan' ? 'text-cyan-200' : 'text-emerald-200'}`}>{row.value}</span>
                                         </div>
                                     </div>
                                 ))}
@@ -289,6 +328,136 @@ export default function AdminUsersView() {
                     </div>
                 </div>
             </div>
+            
+            {/* Modal de Creación de Usuario */}
+            <AnimatePresence>
+                {showCreateModal && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+                        {/* Backdrop overlay */}
+                        <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            onClick={() => !isCreating && setShowCreateModal(false)}
+                            className="absolute inset-0 bg-black/60 backdrop-blur-md"
+                        />
+
+                        {/* Modal Container */}
+                        <motion.div
+                            initial={{ opacity: 0, scale: 0.95, y: 15 }}
+                            animate={{ opacity: 1, scale: 1, y: 0 }}
+                            exit={{ opacity: 0, scale: 0.95, y: 15 }}
+                            transition={{ duration: 0.3, ease: "easeOut" }}
+                            className="relative z-10 w-full max-w-md overflow-hidden rounded-3xl border border-white/10 bg-zinc-950/95 p-6 shadow-2xl backdrop-blur-2xl sm:p-8"
+                        >
+                            {/* Glowing light ball behind */}
+                            <div className="pointer-events-none absolute -left-12 -top-12 h-32 w-32 rounded-full bg-emerald-500/10 blur-[50px]" />
+                            <div className="pointer-events-none absolute -right-12 -bottom-12 h-32 w-32 rounded-full bg-cyan-500/10 blur-[50px]" />
+
+                            {/* Header */}
+                            <div className="relative mb-6 flex items-center justify-between">
+                                <div className="flex items-center gap-3">
+                                    <div className="rounded-2xl border border-emerald-400/20 bg-emerald-400/10 p-2.5 text-emerald-200">
+                                        <UserPlus className="h-5 w-5" />
+                                    </div>
+                                    <div>
+                                        <h2 className="font-['Orbitron'] text-lg font-black text-white">Nuevo usuario</h2>
+                                        <p className="text-xs text-zinc-500">Alta de cuenta administrativa.</p>
+                                    </div>
+                                </div>
+                                <button
+                                    type="button"
+                                    disabled={isCreating}
+                                    onClick={() => setShowCreateModal(false)}
+                                    className="rounded-xl border border-white/6 bg-white/3 p-2 text-zinc-400 hover:bg-white/8 hover:text-white transition disabled:opacity-50"
+                                >
+                                    <X className="h-4 w-4" />
+                                </button>
+                            </div>
+
+                            {/* Form */}
+                            <form onSubmit={handleCreateUser} className="relative space-y-4">
+                                {createFeedback.message && (
+                                    <div className={`rounded-xl border px-3.5 py-2.5 text-xs font-semibold leading-relaxed ${createFeedback.type === 'error' ? 'border-red-500/20 bg-red-500/10 text-red-200' : 'border-emerald-500/20 bg-emerald-500/10 text-emerald-200'}`}>
+                                        {createFeedback.message}
+                                    </div>
+                                )}
+
+                                <div className="space-y-1">
+                                    <label className="text-[10px] font-bold uppercase tracking-wider text-zinc-500">Nombre Completo</label>
+                                    <input
+                                        type="text"
+                                        required
+                                        disabled={isCreating}
+                                        value={createForm.name}
+                                        onChange={(e) => setCreateForm({ ...createForm, name: e.target.value })}
+                                        placeholder="Ej. Albert Monlau"
+                                        className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-sm text-white outline-none focus:border-emerald-400/30 transition placeholder:text-zinc-600 disabled:opacity-50"
+                                    />
+                                </div>
+
+                                <div className="space-y-1">
+                                    <label className="text-[10px] font-bold uppercase tracking-wider text-zinc-500">Correo Electrónico</label>
+                                    <input
+                                        type="email"
+                                        required
+                                        disabled={isCreating}
+                                        value={createForm.email}
+                                        onChange={(e) => setCreateForm({ ...createForm, email: e.target.value })}
+                                        placeholder="ejemplo@monlau.com"
+                                        className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-sm text-white outline-none focus:border-emerald-400/30 transition placeholder:text-zinc-600 disabled:opacity-50"
+                                    />
+                                </div>
+
+                                <div className="space-y-1">
+                                    <label className="text-[10px] font-bold uppercase tracking-wider text-zinc-500">Contraseña temporal</label>
+                                    <input
+                                        type="password"
+                                        required
+                                        minLength="6"
+                                        disabled={isCreating}
+                                        value={createForm.password}
+                                        onChange={(e) => setCreateForm({ ...createForm, password: e.target.value })}
+                                        placeholder="••••••••"
+                                        className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-sm text-white outline-none focus:border-emerald-400/30 transition placeholder:text-zinc-600 disabled:opacity-50"
+                                    />
+                                </div>
+
+                                <div className="space-y-1">
+                                    <label className="text-[10px] font-bold uppercase tracking-wider text-zinc-500">Rol asignado</label>
+                                    <select
+                                        value={createForm.role}
+                                        disabled={isCreating}
+                                        onChange={(e) => setCreateForm({ ...createForm, role: e.target.value })}
+                                        className="w-full rounded-xl border border-white/10 bg-black px-4 py-2.5 text-sm text-white outline-none focus:border-emerald-400/30 transition disabled:opacity-50"
+                                    >
+                                        <option value="teacher" className="bg-zinc-950 text-white">Teacher</option>
+                                        <option value="admin" className="bg-zinc-950 text-white">Admin</option>
+                                    </select>
+                                </div>
+
+                                <button
+                                    type="submit"
+                                    disabled={isCreating}
+                                    className="flex w-full items-center justify-center gap-2 rounded-xl bg-emerald-400 py-3 text-sm font-bold text-zinc-950 transition hover:bg-emerald-300 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                                >
+                                    {isCreating ? (
+                                        <>
+                                            <Loader className="h-4 w-4 animate-spin" />
+                                            Creando cuenta...
+                                        </>
+                                    ) : (
+                                        <>
+                                            <UserPlus className="h-4 w-4" />
+                                            Guardar y dar de alta
+                                        </>
+                                    )}
+                                </button>
+                            </form>
+                        </motion.div>
+                    </div>
+                )}
+            </AnimatePresence>
         </div>
     );
 }

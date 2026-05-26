@@ -3,6 +3,7 @@ import { AlertCircle, ArrowDown, ArrowUp, CheckCircle2, Loader, PlusCircle, Save
 import { SessionModeCards } from '@/components/organisms/SessionModeSelector';
 import { useLessonPlanEditor } from '@/hooks/useLessonPlanEditor';
 import LoadingScreen from '@/components/ui/LoadingScreen';
+import blurBg from '../public/images/as02.jpg';
 
 function SelectedGameCard({ game, index, total, onMoveUp, onMoveDown, onRemove }) {
     return (
@@ -56,8 +57,19 @@ export default function LessonPlanEditorView() {
     }
 
     return (
-        <div className="min-h-screen px-8 py-10 text-white">
-            <div className="mx-auto max-w-7xl">
+        <div className="relative min-h-screen px-8 py-10 text-white overflow-hidden bg-zinc-950">
+            {/* Background image with subtle animation and gradient overlay */}
+            <div className="absolute inset-0 z-0 select-none pointer-events-none">
+                <img
+                    src={blurBg}
+                    alt="Background Blur"
+                    className="w-full h-full object-cover opacity-25 scale-105"
+                />
+                <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_20%,#09090b_90%)]" />
+                <div className="absolute inset-0 bg-zinc-950/20" />
+            </div>
+
+            <div className="mx-auto max-w-7xl relative z-10">
                 <div className="mb-8 flex items-end justify-between gap-6">
                     <div>
                         <h1 className="text-4xl font-black font-['Orbitron']">{isEditing ? 'EDITAR LESSON PLAN' : 'CREAR LESSON PLAN'}</h1>
@@ -86,7 +98,7 @@ export default function LessonPlanEditorView() {
                         </motion.div>
                     ) : null}
 
-                    <div className="grid gap-6 xl:grid-cols-[0.95fr_1.05fr]">
+                    <div className="flex flex-col gap-6">
                         <div className="rounded-3xl border border-white/10 bg-black/30 p-6 backdrop-blur-xl">
                             <label className="mb-2 block text-sm font-medium text-zinc-300">Nombre</label>
                             <input

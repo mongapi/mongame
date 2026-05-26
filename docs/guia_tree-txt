@@ -1,0 +1,93 @@
+### Representación Visual del Proyecto - Frontend (`tree`)
+
+mongame-frontend/
+├── .env                  # Variables de entorno locales (credenciales, URL de API)
+├── .env.example          # Plantilla pública para las variables de entorno
+├── components.json       # Configuración para Shadcn UI (componentes de interfaz)
+├── Dockerfile            # Configuración del contenedor que se usa para desplegar la app
+├── docker-compose.yml    # Orquestación de contenedores
+├── jsconfig.json         # Configuración de JavaScript (alias de rutas como '@')
+├── package.json          # Dependencias del proyecto y scripts de ejecución
+├── pnpm-workspace.yaml   # Configuración de monorreferencia o monorepo pnpm
+├── vite.config.js        # Archivo de configuración de Vite (bundler del proyecto)
+├── index.html            # Punto de entrada HTML principal
+├── docs/                 # Guías y especificaciones técnicas (3D, mecánicas, etc.)
+└── src/                  # Directorio principal con todo el código fuente
+    ├── App.jsx           # Componente raíz de React (gestión de layouts y rutas)
+    ├── main.jsx          # Punto de entrada para el renderizado de React en el DOM
+    ├── index.css         # Estilos globales y directivas de Tailwind CSS
+    ├── api/              # Conexión y peticiones a la API del backend
+    ├── router/           # Configuración del enrutador (React Router)
+    ├── layouts/          # Plantillas de diseño estructural (Admin, Teacher, Game)
+    ├── lib/              # Utilidades de terceros y configuraciones globales (Echo, utils)
+    ├── public/           # Recursos estáticos o assets internos
+    ├── views/            # Vistas principales de la aplicación (presentación visual)
+    ├── hooks/            # Lógica de estado y llamadas asíncronas de las vistas (Custom Hooks)
+    ├── games/            # Implementación y mecánicas de cada tipo de juego
+    └── components/       # Componentes de UI reutilizables y estructurados
+```
+
+---
+
+### Propósito de los Directorios y Archivos en la Raíz
+
+*   **`src/`**: Es el núcleo del desarrollo. Contiene todo el código de React, componentes, estilos, lógica de juego y enrutamiento.
+*   **`docs/`**: Contiene guías internas de desarrollo, específicamente para el manejo de modelos 3D, animaciones y mecánicas complejas como las de `OrbitalOrder`.
+*   **`vite.config.js`**: Define cómo se compila y optimiza la aplicación. Configura plugins como React e integra alias para resolver rutas de forma más limpia (por ejemplo, usar `import ... from '@/components/...'` en lugar de rutas relativas largas).
+*   **`components.json`**: Estructura de configuración utilizada por el framework de UI Tailwind/Shadcn para añadir componentes de interfaz reutilizables directamente a tu carpeta de componentes.
+*   **`jsconfig.json`**: Ayuda al editor de código (como VS Code) a entender los alias definidos en Vite y provee autocompletado inteligente.
+*   **`Dockerfile` & `docker-compose.yml`**: Configuración para construir y desplegar el frontend en entornos aislados o de producción usando Docker.
+
+---
+
+### Arquitectura y Estructura Interna en `src/`
+
+El proyecto sigue una arquitectura altamente escalable basada en la **separación de responsabilidades** (Separation of Concerns). Se observa una división clara entre la **capa de visualización** y la **capa de lógica de negocio** a través del uso de Custom Hooks.
+
+#### 📁 `src/views/` vs. 📁 `src/hooks/`
+
+En lugar de mezclar la lógica de llamadas a la API y manejo de estados complejos dentro de los archivos visuales de React, el proyecto implementa un patrón donde cada vista tiene un hook personalizado asociado:
+
+*   **`views/`**: Alberga componentes contenedores o pantallas completas (ej. `GameLibraryView.jsx`, `DashboardView.jsx`). Su único rol es estructurar el diseño visual y renderizar componentes.
+
+*   **`hooks/`**: Contiene la lógica pura de la pantalla correspondiente (ej. `useGameLibraryView.js`, `useTeacherDashboard.js`). Aquí se manejan peticiones `fetch/axios`, estados de carga, filtros y funciones interactivas.
+
+#### 📁 `src/games/`
+Este directorio contiene los minijuegos interactivos de la plataforma, tanto en 2D como en entornos tridimensionales (3D) usando librerías gráficas como Three.js/React Three Fiber:
+*   **Juegos 3D**: `Hangman3D.jsx` (Ahorcado), `MemoryGame3D.jsx`, `Shooter3D.jsx`, `AdivinaQue3D.jsx`.
+*   **Juegos 2D / Tradicionales**: `CompletarEnunciado.jsx`, `MemoryGame.jsx`, `OrbitalOrder.jsx`, `OrdenarCronologias.jsx`.
+*   **`games/shared/`**: Lógica o componentes visuales comunes compartidos exclusivamente por los juegos (ej. temporizadores, controladores de puntuación, pantallas de fin de juego).
+
+#### 📁 `src/components/`
+Componentes atómicos reutilizables en múltiples pantallas. Se dividen en subcarpetas temáticas:
+*   **`ui/`**: Componentes visuales básicos de bajo nivel como botones, diálogos, entradas de texto e inputs, gestionados por Shadcn UI.
+*   **`auth/`**: Componentes dedicados al flujo de inicio de sesión y registro de usuarios.
+*   **`canvas3D/`**: Elementos de escena tridimensionales, luces, cámaras y cargadores de modelos 3D que sirven de soporte a los juegos interactivos.
+*   **`organisms/`**: Combinación de componentes de UI que forman secciones más complejas de la página.
+
+#### 📁 `src/layouts/`
+Define las plantillas o marcos de visualización generales que envuelven a las vistas según el rol del usuario:
+*   `AdminLayout.jsx`: Marco de navegación para administradores.
+*   `TeacherLayout.jsx`: Interfaz de control y navegación para profesores.
+*   `GameLayout.jsx`: Marco inmersivo específico para la ejecución y visualización de los juegos.
+
+#### 📁 `src/api/` y `src/router/`
+*   **`api/api.jsx`**: Centraliza todas las llamadas HTTP (probablemente utilizando Axios o Fetch) hacia la API del backend, simplificando la gestión de tokens de autorización y URLs base.
+*   **`router/`**:
+    *   `paths.js`: Define constantes con las rutas de la app (ej. `/dashboard`, `/login`) para evitar escribir strings manuales en el código.
+    *   `routes.jsx`: Define la jerarquía de rutas, asociando cada ruta con su respectivo `Layout` y `View`.
+
+#### 📁 `src/lib/`
+*   `echo.js`: Configura la conexión de WebSockets (Laravel Echo o similar) para eventos en tiempo real (esencial si hay mecánicas multijugador o tableros en vivo).
+*   `utils.js`: Pequeñas utilidades helper (como `cn` para concatenar dinámicamente clases CSS de Tailwind).
+
+---
+
+### Resumen del flujo de trabajo recomendado
+
+Si planeas crear una nueva sección o juego en el proyecto:
+1. **Define la ruta** en `src/router/paths.js` y mapéala a una vista en `routes.jsx`.
+2. **Crea el componente visual** en `src/views/` (ej. `NuevaVista.jsx`).
+3. **Extrae la lógica** creando un custom hook en `src/hooks/` (ej. `useNuevaVista.js`) que maneje los estados y los efectos, importándolo luego dentro de `NuevaVista.jsx`.
+4. Si necesitas llamadas al backend, agrégalas en `src/api/api.jsx`.
+5. Si el juego es interactivo, implementa su lógica en `src/games/` y utiliza los componentes tridimensionales en `src/components/canvas3D/` si requiere capacidades 3D.

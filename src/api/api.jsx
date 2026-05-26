@@ -8,9 +8,13 @@ function readSessionPin() {
     return new URLSearchParams(window.location.search).get('pin') || '';
 }
 
-// 1. CONFIGURACIÓN BASE DE AXIOS
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000'; //CONFIGURACIÓN BASE DE AXIOS
 
+
+/**
+ * El interceptor de solicitud (request interceptor) se ejecuta **cada vez**
+ * que estás a punto de enviar una petición.
+ */
 const api = axios.create({
     baseURL: `${API_URL}/api`,
     headers: {
@@ -19,7 +23,11 @@ const api = axios.create({
     },
 });
 
-// 2. INTERCEPTOR PARA AGREGAR TOKEN AUTOMÁTICAMENTE
+/**
+ * INTERCEPTOR PARA AGREGAR TOKEN AUTOMÁTICAMENTE
+ * Su trabajo es "enganchar" el token en el encabezado Authorization antes de que
+ * la petición salga hacia Laravel.
+ */
 api.interceptors.request.use(
     (config) => {
         const token = localStorage.getItem('token');
@@ -31,7 +39,10 @@ api.interceptors.request.use(
     (error) => Promise.reject(error)
 );
 
-// 3. INTERCEPTOR PARA MANEJAR RESPUESTAS Y ERRORES
+/**
+ * INTERCEPTOR PARA MANEJAR RESPUESTAS Y ERRORES
+ * Se ejecuta cada vez que recibes una respuesta del servidor (sea éxito o error).
+ */
 api.interceptors.response.use(
     (response) => response,
     (error) => {
@@ -45,18 +56,23 @@ api.interceptors.response.use(
     }
 );
 
-// 4. FUNCIONES DE AUTENTICACIÓN
+// FUNCIONES DE AUTENTICACIÓN 
 export const authAPI = {
-    // LOGIN: Envía email y password, recibe token
+
+    /**
+     * Función que permite el inicio de sesión
+     * @param {*} credentials - Email y contraseña
+     * @returns Objeto con token y usuario si es exitoso, o error si falla
+     */
     async login(credentials) {
         try {
             const response = await api.post('/auth/login', credentials);
             const { token, user } = response.data;
-            
+
             // Guardar token y usuario en localStorage
             localStorage.setItem('token', token);
             localStorage.setItem('user', JSON.stringify(user));
-            
+
             return { success: true, data: { token, user } };
         } catch (error) {
             const message = error.response?.data?.message || 'Error de conexión';
@@ -64,16 +80,20 @@ export const authAPI = {
         }
     },
 
-    // REGISTER: Envía datos de usuario, recibe token 
+    /**
+     * Función que permite el registro de un nuevo usuario
+     * @param {*} userData - Datos del usuario
+     * @returns Objeto con token y usuario si es exitoso, o error si falla
+     */
     async register(userData) {
         try {
             const response = await api.post('/auth/register', userData);
             const { token, user } = response.data;
-            
+
             // Guardar token y usuario en localStorage
             localStorage.setItem('token', token);
             localStorage.setItem('user', JSON.stringify(user));
-            
+
             return { success: true, data: { token, user } };
         } catch (error) {
             const message = error.response?.data?.message || 'Error de conexión';
@@ -81,32 +101,47 @@ export const authAPI = {
         }
     },
 
-    // LOGOUT: Elimina token del servidor y localStorage
+    /**
+     * Función que permite cerrar sesión
+     * Elimina el token y el usuario del localStorage
+     */
     async logout() {
         try {
             await api.post('/auth/logout');
         } catch (error) {
             console.log('Error al cerrar sesión:', error);
         } finally {
-            // Siempre limpiar localStorage
             localStorage.removeItem('token');
             localStorage.removeItem('user');
         }
     },
 
-    // Verificar si el usuario está autenticado
+    /**
+     * Función que permite verificar si el usuario está autenticado
+     * @returns Booleano que indica si el usuario está autenticado
+     */
     isAuthenticated() {
         return !!localStorage.getItem('token');
     },
 
-    // Obtener usuario actual
+    /**
+     * Función que permite obtener el usuario actual
+     * @returns Objeto con el usuario actual
+     */
     getCurrentUser() {
         const userStr = localStorage.getItem('user');
         return userStr ? JSON.parse(userStr) : null;
     }
 };
 
+// FUNCIONES DE SESIONES
+
 export const sessionAPI = {
+
+    /**
+     * Función que permite listar las sesiones
+     * @returns Objeto con éxito si es exitoso, o error si falla
+     */
     async list() {
         try {
             const response = await api.get('/sessions');
@@ -117,6 +152,11 @@ export const sessionAPI = {
         }
     },
 
+    /**
+     * Función que permite obtener una sesión específica
+     * @param {*} id - ID de la sesión
+     * @returns Objeto con éxito si es exitoso, o error si falla
+     */
     async get(id) {
         try {
             const pin = readSessionPin();
@@ -130,6 +170,11 @@ export const sessionAPI = {
         }
     },
 
+    /**
+     * Función que permite obtener los resultados de una sesión específica
+     * @param {*} id - ID de la sesión
+     * @returns Objeto con éxito si es exitoso, o error si falla
+     */
     async results(id) {
         try {
             const response = await api.get(`/sessions/${id}/results`);
@@ -140,6 +185,11 @@ export const sessionAPI = {
         }
     },
 
+    /**
+     * Función que permite exportar los resultados de una sesión específica
+     * @param {*} id - ID de la sesión
+     * @returns Objeto con éxito si es exitoso, o error si falla
+     */
     async exportResults(id) {
         try {
             const response = await api.get(`/sessions/${id}/results/export`, {
@@ -160,6 +210,11 @@ export const sessionAPI = {
         }
     },
 
+    /**
+     * Función que permite unirse a una sesión por medio del PIN
+     * @param {*} pin - PIN de la sesión
+     * @returns Objeto con éxito si es exitoso, o error si falla
+     */
     async joinByPin(pin) {
         try {
             const response = await api.get(`/sessions/join/${pin}`);
@@ -171,6 +226,11 @@ export const sessionAPI = {
         }
     },
 
+    /**
+     * Función que permite crear una sesión
+     * @param {*} payload - Datos de la sesión
+     * @returns Objeto con éxito si es exitoso, o error si falla
+     */
     async create(payload) {
         try {
             const response = await api.post('/sessions', payload);
@@ -181,6 +241,11 @@ export const sessionAPI = {
         }
     },
 
+    /**
+     * Función que permite avanzar a la siguiente fase de una sesión
+     * @param {*} sessionId - ID de la sesión
+     * @returns Objeto con éxito si es exitoso, o error si falla
+     */
     async nextPhase(sessionId) {
         try {
             const response = await api.post(`/sessions/${sessionId}/next-phase`);
@@ -191,6 +256,12 @@ export const sessionAPI = {
         }
     },
 
+    /**
+     * Función que permite enviar una respuesta en una sesión específica
+     * @param {*} sessionId - ID de la sesión
+     * @param {*} payload - Datos de la respuesta
+     * @returns Objeto con éxito si es exitoso, o error si falla
+     */
     async submitAnswer(sessionId, payload) {
         try {
             const response = await api.post(`/sessions/${sessionId}/answers`, {
@@ -204,6 +275,12 @@ export const sessionAPI = {
         }
     },
 
+    /**
+     * Función que permite actualizar la presencia de una sesión específica
+     * @param {*} sessionId - ID de la sesión
+     * @param {*} payload - Datos de la presencia
+     * @returns Objeto con éxito si es exitoso, o error si falla
+     */
     async touchPresence(sessionId, payload) {
         try {
             const response = await api.post(`/sessions/${sessionId}/presence`, payload);
@@ -214,6 +291,12 @@ export const sessionAPI = {
         }
     },
 
+    /**
+     * Función que permite cerrar la presencia de una sesión específica
+     * @param {*} sessionId - ID de la sesión
+     * @param {*} payload - Datos de la presencia
+     * @returns Objeto con éxito si es exitoso, o error si falla
+     */
     async leavePresence(sessionId, payload) {
         try {
             const response = await api.post(`/sessions/${sessionId}/presence/leave`, payload);
@@ -222,10 +305,31 @@ export const sessionAPI = {
             const message = error.response?.data?.message || 'No se pudo cerrar la presencia de la sesión';
             return { success: false, error: message, details: error.response?.data?.errors ?? null };
         }
+    },
+
+    /**
+     * Función que permite eliminar una sesión específica
+     * @param {*} id - ID de la sesión
+     * @returns Objeto con éxito si es exitoso, o error si falla
+     */
+    async delete(id) {
+        try {
+            const response = await api.delete(`/sessions/${id}`);
+            return { success: true, data: response.data.data };
+        } catch (error) {
+            const message = error.response?.data?.message || 'No se pudo eliminar la sesión';
+            return { success: false, error: message };
+        }
     }
 };
 
+// FUNCIONES DE TIPOS DE JUEGO
 export const gameTypeAPI = {
+
+    /**
+     * Función que permite listar los tipos de juego
+     * @returns Objeto con éxito si es exitoso, o error si falla
+     */
     async list() {
         try {
             const response = await api.get('/game-types');
@@ -237,7 +341,12 @@ export const gameTypeAPI = {
     }
 };
 
+// FUNCIONES DE JUEGOS
 export const gameAPI = {
+    /**
+     * Función que permite listar los juegos disponibles
+     * @returns Objeto con éxito si es exitoso, o error si falla
+     */
     async list() {
         try {
             const response = await api.get('/games');
@@ -248,6 +357,11 @@ export const gameAPI = {
         }
     },
 
+    /**
+     * Función que permite obtener un juego específico
+     * @param {*} id - ID del juego
+     * @returns Objeto con éxito si es exitoso, o error si falla
+     */
     async get(id) {
         try {
             const response = await api.get(`/games/${id}`);
@@ -258,6 +372,11 @@ export const gameAPI = {
         }
     },
 
+    /**
+     * Función que permite crear un juego
+     * @param {*} payload - Datos del juego
+     * @returns Objeto con éxito si es exitoso, o error si falla
+     */
     async create(payload) {
         try {
             const response = await api.post('/games', payload);
@@ -268,6 +387,12 @@ export const gameAPI = {
         }
     },
 
+    /**
+     * Función que permite actualizar un juego específico
+     * @param {*} id - ID del juego
+     * @param {*} payload - Datos del juego
+     * @returns Objeto con éxito si es exitoso, o error si falla
+     */
     async update(id, payload) {
         try {
             const response = await api.put(`/games/${id}`, payload);
@@ -276,10 +401,31 @@ export const gameAPI = {
             const message = error.response?.data?.message || 'No se pudo actualizar el juego';
             return { success: false, error: message, details: error.response?.data?.errors ?? null };
         }
+    },
+
+    /**
+     * Función que permite eliminar un juego específico
+     * @param {*} id - ID del juego
+     * @returns Objeto con éxito si es exitoso, o error si falla
+     */
+    async delete(id) {
+        try {
+            const response = await api.delete(`/games/${id}`);
+            return { success: true, data: response.data.data };
+        } catch (error) {
+            const message = error.response?.data?.message || 'No se pudo eliminar el juego';
+            return { success: false, error: message };
+        }
     }
 };
 
+// FUNCIONES DE PLANES DE LECCIONES
 export const lessonPlanAPI = {
+
+    /**
+     * Función que permite listar los planes de lecciones
+     * @returns Objeto con éxito si es exitoso, o error si falla
+     */
     async list() {
         try {
             const response = await api.get('/lesson-plans');
@@ -290,6 +436,11 @@ export const lessonPlanAPI = {
         }
     },
 
+    /**
+     * Función que permite obtener un lesson plan específico
+     * @param {*} id - ID del lesson plan
+     * @returns Objeto con éxito si es exitoso, o error si falla
+     */
     async get(id) {
         try {
             const response = await api.get(`/lesson-plans/${id}`);
@@ -300,6 +451,11 @@ export const lessonPlanAPI = {
         }
     },
 
+    /**
+     * Función que permite crear un lesson plan
+     * @param {*} payload - Datos del lesson plan
+     * @returns Objeto con éxito si es exitoso, o error si falla
+     */
     async create(payload) {
         try {
             const response = await api.post('/lesson-plans', payload);
@@ -310,6 +466,12 @@ export const lessonPlanAPI = {
         }
     },
 
+    /**
+     * Función que permite actualizar un lesson plan específico
+     * @param {*} id - ID del lesson plan
+     * @param {*} payload - Datos del lesson plan
+     * @returns Objeto con éxito si es exitoso, o error si falla
+     */
     async update(id, payload) {
         try {
             const response = await api.put(`/lesson-plans/${id}`, payload);
@@ -321,7 +483,12 @@ export const lessonPlanAPI = {
     },
 };
 
+// FUNCIONES DE ADMINISTRACIÓN
 export const adminAPI = {
+    /**
+     * Función que permite obtener el dashboard de admin
+     * @returns Objeto con éxito si es exitoso, o error si falla
+     */
     async dashboard() {
         try {
             const response = await api.get('/admin/dashboard');
@@ -332,6 +499,10 @@ export const adminAPI = {
         }
     },
 
+    /**
+     * Función que permite obtener la gestión de usuarios
+     * @returns Objeto con éxito si es exitoso, o error si falla
+     */
     async users() {
         try {
             const response = await api.get('/admin/users');
@@ -342,6 +513,12 @@ export const adminAPI = {
         }
     },
 
+    /**
+     * Función que permite actualizar el rol de un usuario específico
+     * @param {*} id - ID del usuario
+     * @param {*} role - Rol del usuario
+     * @returns Objeto con éxito si es exitoso, o error si falla
+     */
     async updateUserRole(id, role) {
         try {
             const response = await api.patch(`/admin/users/${id}/role`, { role });
@@ -352,6 +529,11 @@ export const adminAPI = {
         }
     },
 
+    /**
+     * Función que permite eliminar un usuario específico
+     * @param {*} id - ID del usuario
+     * @returns Objeto con éxito si es exitoso, o error si falla
+     */
     async deleteUser(id) {
         try {
             const response = await api.delete(`/admin/users/${id}`);
@@ -362,6 +544,25 @@ export const adminAPI = {
         }
     },
 
+    /**
+     * Función que permite a un administrador crear un nuevo usuario
+     * @param {*} payload - Datos del usuario (name, email, password, role)
+     * @returns Objeto con éxito si es exitoso, o error si falla
+     */
+    async createUser(payload) {
+        try {
+            const response = await api.post('/admin/users', payload);
+            return { success: true, data: response.data.data };
+        } catch (error) {
+            const message = error.response?.data?.message || 'No se pudo crear el usuario';
+            return { success: false, error: message };
+        }
+    },
+
+    /**
+     * Función que permite obtener el catálogo de tipos de juego
+     * @returns Objeto con éxito si es exitoso, o error si falla
+     */
     async gameTypes() {
         try {
             const response = await api.get('/admin/game-types');
@@ -372,6 +573,10 @@ export const adminAPI = {
         }
     },
 
+    /**
+     * Función que permite obtener el registro de auditoría
+     * @returns Objeto con éxito si es exitoso, o error si falla
+     */
     async audit() {
         try {
             const response = await api.get('/admin/audit');
@@ -383,5 +588,4 @@ export const adminAPI = {
     },
 };
 
-// 5. EXPORTAR API CONFIGURADA PARA OTRAS PETICIONES
 export default api;

@@ -281,7 +281,7 @@ export default function CompletarEnunciado() {
     };
 
     return (
-        <div className="flex min-h-[calc(100vh-80px)] items-center justify-center p-4 font-sans text-stone-100 selection:bg-blue-500/30">
+        <div className="flex min-h-screen items-center justify-center p-4 font-sans text-stone-100 selection:bg-blue-500/30">
             <GameExitButton onExit={handleExit} label={exitLabel} />
             <GameSessionFinishedOverlay visible={sessionFinished} onExit={handleExit} actionLabel={finishActionLabel} />
             {/* Background elements */}
@@ -290,18 +290,18 @@ export default function CompletarEnunciado() {
                 <div className="absolute top-[60%] -right-[10%] w-[40%] h-[40%] rounded-full bg-cyan-900/10 blur-[100px]" />
             </div>
 
-            <div className="relative z-10 w-full max-w-5xl rounded-[2.5rem] border border-white/5 bg-white/2 p-8 shadow-2xl backdrop-blur-3xl sm:p-12">
-                <div className="mb-12 text-center">
-                    <h1 className="mb-4 flex items-center justify-center gap-4 bg-linear-to-r from-sky-300 via-blue-400 to-sky-300 bg-clip-text text-4xl font-black tracking-tight text-transparent sm:text-5xl">
+            <div className="relative z-10 w-full max-w-5xl rounded-[2.5rem] border border-white/5 bg-white/2 p-6 sm:p-10 shadow-2xl backdrop-blur-3xl max-h-[calc(100vh-6rem)] overflow-hidden overflow-y-auto">
+                <div className="mb-10 text-center">
+                    <h1 className="mb-4 text-3xl font-semibold tracking-tight text-white sm:text-4xl">
                         {levelData.title}
                     </h1>
-                    <p className="text-lg text-zinc-400 font-medium">
+                    <p className="text-base text-zinc-400 sm:text-lg">
                         {levelData.instruction}
                     </p>
                 </div>
 
-                <div className="mb-12 rounded-3xl border border-white/5 bg-black/40 p-8 shadow-[inset_0_0_40px_rgba(0,0,0,0.5)] sm:p-12">
-                    <p className="text-center text-2xl font-medium leading-14 text-zinc-200 sm:leading-16">
+                <div className="mb-12 rounded-3xl border border-white/5 bg-black/40 p-6 shadow-[inset_0_0_40px_rgba(0,0,0,0.5)] sm:p-10">
+                    <p className="text-left text-lg font-medium leading-8 text-zinc-200 sm:text-xl sm:leading-9">
                         {levelData.textParts.map((part, index) => {
                             const blank = levelData.blanks[index];
 
@@ -442,10 +442,11 @@ function BlankDropzone({ blankId, filledOptionId, options, onDrop, onDragOver, o
             onDragOver={onDragOver}
             className={`
                 relative inline-flex items-center justify-center
-                mx-3 min-w-44 h-12 px-6 align-middle
+                mx-1 min-w-[8rem] max-w-[14rem] h-12 px-4 align-middle
                 border-2 rounded-xl transition-all duration-300
                 ${stateStyles}
                 ${!filledOption && status !== 'success' ? "hover:border-blue-500/50 hover:bg-white/3" : ""}
+                sm:mx-3 sm:min-w-44
             `}
         >
             {filledOption ? (
@@ -479,7 +480,7 @@ function DraggableOption({ option, onDragStart, onDragEnd, disabled }) {
             onDragStart={(e) => onDragStart(e, option.id)}
             onDragEnd={onDragEnd}
             className={`
-                px-7 py-3.5 rounded-xl font-bold tracking-wide text-lg shadow-xl
+                px-5 py-3 rounded-xl font-bold tracking-wide text-base sm:text-lg shadow-xl max-w-full
                 ${disabled
                     ? 'opacity-50 cursor-not-allowed bg-zinc-800/80 text-zinc-500 border border-zinc-700/50'
                     : 'cursor-grab active:cursor-grabbing border border-blue-400/30 bg-linear-to-br from-blue-500 to-cyan-600 text-white transition-transform hover:-translate-y-1 hover:scale-105 hover:shadow-[0_10px_20px_rgba(59,130,246,0.3)]'}

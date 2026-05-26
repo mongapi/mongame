@@ -25,7 +25,7 @@ export function useGameLibraryView() {
     const [lessonPlanSort, setLessonPlanSort] = useState('recent');
     const [gamesPage, setGamesPage] = useState(1);
     const [lessonPlansPage, setLessonPlansPage] = useState(1);
-    const [sessionMode, setSessionMode] = useState('individual');
+    const [sessionMode, setSessionMode] = useState(() => localStorage.getItem('preferred_session_mode') || 'individual');
     const [pendingLaunch, setPendingLaunch] = useState(null);
     const [isConfirmingLaunch, setIsConfirmingLaunch] = useState(false);
 
@@ -310,6 +310,27 @@ export function useGameLibraryView() {
         await loadLibrary();
     };
 
+    const deleteGame = async (gameId) => {
+        if (!window.confirm('¿Estás seguro de que deseas eliminar este juego de forma permanente?')) {
+            return;
+        }
+
+        setError('');
+        setSuccess('');
+        setIsLoading(true);
+
+        const result = await gameAPI.delete(gameId);
+        if (!result.success) {
+            setError(result.error);
+            setIsLoading(false);
+            return;
+        }
+
+        setSuccess('Juego eliminado con éxito.');
+        await loadLibrary();
+    };
+
+
     const duplicateLessonPlan = async (lessonPlan) => {
         setError('');
         setSuccess('');
@@ -411,5 +432,6 @@ export function useGameLibraryView() {
         duplicateGame,
         duplicateLessonPlan,
         previewGame,
+        deleteGame,
     };
 }

@@ -43,6 +43,10 @@ export default function AdminDashboardView() {
         );
     }
 
+    const totalByRole = dashboard.metrics.users_by_role.admin + dashboard.metrics.users_by_role.teacher;
+    const adminPct = totalByRole > 0 ? Math.round((dashboard.metrics.users_by_role.admin / totalByRole) * 100) : 0;
+    const teacherPct = totalByRole > 0 ? Math.round((dashboard.metrics.users_by_role.teacher / totalByRole) * 100) : 0;
+
     return (
         <div className="min-h-screen px-4 py-6 text-white sm:px-6 sm:py-10 lg:px-8">
             <div className="mx-auto max-w-7xl space-y-8">
@@ -59,25 +63,53 @@ export default function AdminDashboardView() {
                 </div>
 
                 <div className="grid gap-6 xl:grid-cols-[1.15fr_0.85fr]">
-                    <div className="rounded-3xl border border-white/10 bg-black/30 p-6 backdrop-blur-xl">
-                        <div className="mb-5 flex items-center justify-between gap-4">
+                    <div className="rounded-3xl border border-white/10 bg-black/30 p-5 backdrop-blur-xl">
+                        <div className="mb-4 flex items-center justify-between gap-4">
                             <div>
                                 <h2 className="font-['Orbitron'] text-xl font-black text-white">Usuarios por rol</h2>
-                                <p className="mt-2 text-sm text-zinc-500">Distribución actual de cuentas dadas de alta.</p>
+                                <p className="mt-1.5 text-xs text-zinc-500">Distribución actual de cuentas dadas de alta.</p>
                             </div>
                         </div>
-                        <div className="grid gap-4 md:grid-cols-3">
-                            <div className="rounded-2xl border border-white/10 bg-white/5 p-5">
-                                <p className="text-xs font-bold uppercase tracking-[0.18em] text-zinc-500">Admin</p>
-                                <p className="mt-3 font-['Orbitron'] text-3xl font-black text-white">{dashboard.metrics.users_by_role.admin}</p>
+                        <div className="grid gap-3.5 md:grid-cols-2">
+                            <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
+                                <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-zinc-500">Admin</p>
+                                <p className="mt-2 font-['Orbitron'] text-2xl font-black text-white">{dashboard.metrics.users_by_role.admin}</p>
                             </div>
-                            <div className="rounded-2xl border border-white/10 bg-white/5 p-5">
-                                <p className="text-xs font-bold uppercase tracking-[0.18em] text-zinc-500">Teacher</p>
-                                <p className="mt-3 font-['Orbitron'] text-3xl font-black text-white">{dashboard.metrics.users_by_role.teacher}</p>
+                            <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
+                                <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-zinc-500">Teacher</p>
+                                <p className="mt-2 font-['Orbitron'] text-2xl font-black text-white">{dashboard.metrics.users_by_role.teacher}</p>
                             </div>
-                            <div className="rounded-2xl border border-white/10 bg-white/5 p-5">
-                                <p className="text-xs font-bold uppercase tracking-[0.18em] text-zinc-500">Student</p>
-                                <p className="mt-3 font-['Orbitron'] text-3xl font-black text-white">{dashboard.metrics.users_by_role.student}</p>
+                        </div>
+                        
+                        <div className="mt-5 border-t border-white/5 pt-4 space-y-4">
+                            <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-zinc-500">Distribución de accesos</p>
+                            <div className="space-y-3.5">
+                                {/* Admin progress bar */}
+                                <div className="space-y-1.5">
+                                    <div className="flex justify-between text-xs">
+                                        <span className="text-zinc-400 font-semibold flex items-center gap-1.5">
+                                            <span className="h-1.5 w-1.5 rounded-full bg-cyan-400 shadow-[0_0_6px_rgba(34,211,238,0.8)]" /> 
+                                            Administradores
+                                        </span>
+                                        <span className="font-bold text-white">{dashboard.metrics.users_by_role.admin} ({adminPct}%)</span>
+                                    </div>
+                                    <div className="h-1.5 w-full rounded-full bg-zinc-950 overflow-hidden">
+                                        <div className="h-full bg-cyan-400 shadow-[0_0_8px_rgba(34,211,238,0.5)] transition-all duration-500" style={{ width: `${adminPct}%` }} />
+                                    </div>
+                                </div>
+                                {/* Teacher progress bar */}
+                                <div className="space-y-1.5">
+                                    <div className="flex justify-between text-xs">
+                                        <span className="text-zinc-400 font-semibold flex items-center gap-1.5">
+                                            <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 shadow-[0_0_6px_rgba(52,211,153,0.8)]" /> 
+                                            Docentes
+                                        </span>
+                                        <span className="font-bold text-white">{dashboard.metrics.users_by_role.teacher} ({teacherPct}%)</span>
+                                    </div>
+                                    <div className="h-1.5 w-full rounded-full bg-zinc-950 overflow-hidden">
+                                        <div className="h-full bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.5)] transition-all duration-500" style={{ width: `${teacherPct}%` }} />
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
